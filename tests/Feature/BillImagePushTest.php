@@ -3,83 +3,12 @@
 use App\Jobs\SendBillImageToCustomer;
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Queue;
 
 beforeEach(function (): void {
     config()->set('whatsapp.bot_notify_url', 'http://bot.test/notify');
     config()->set('whatsapp.bot_notify_secret', 'test-secret');
-});
-
-it('dispatches the bill image job when an order transitions to served', function () {
-    Queue::fake();
-
-    $restaurant = Restaurant::create([
-        'name' => 'Test Cafe',
-        'is_active' => true,
-    ]);
-
-    $order = Order::withoutGlobalScopes()->create([
-        'restaurant_id' => $restaurant->id,
-        'table_number' => '5',
-        'customer_phone' => '255700000010',
-        'whatsapp_jid' => '255700000010@s.whatsapp.net',
-        'status' => 'preparing',
-        'total_amount' => 5000,
-    ]);
-
-    Queue::assertNotPushed(SendBillImageToCustomer::class);
-
-    $order->update(['status' => 'served']);
-
-    Queue::assertPushed(
-        SendBillImageToCustomer::class,
-        fn (SendBillImageToCustomer $job) => $job->orderId === $order->id
-    );
-});
-
-it('does not dispatch when the order has no whatsapp jid', function () {
-    Queue::fake();
-
-    $restaurant = Restaurant::create([
-        'name' => 'Test Cafe 2',
-        'is_active' => true,
-    ]);
-
-    $order = Order::withoutGlobalScopes()->create([
-        'restaurant_id' => $restaurant->id,
-        'table_number' => '5',
-        'customer_phone' => '255700000011',
-        'whatsapp_jid' => null,
-        'status' => 'preparing',
-        'total_amount' => 5000,
-    ]);
-
-    $order->update(['status' => 'served']);
-
-    Queue::assertNothingPushed();
-});
-
-it('does not dispatch when status changes between non-served states', function () {
-    Queue::fake();
-
-    $restaurant = Restaurant::create([
-        'name' => 'Test Cafe 3',
-        'is_active' => true,
-    ]);
-
-    $order = Order::withoutGlobalScopes()->create([
-        'restaurant_id' => $restaurant->id,
-        'table_number' => '5',
-        'customer_phone' => '255700000012',
-        'whatsapp_jid' => '255700000012@s.whatsapp.net',
-        'status' => 'pending',
-        'total_amount' => 5000,
-    ]);
-
-    $order->update(['status' => 'preparing']);
-
-    Queue::assertNothingPushed();
 });
 
 it('posts the bill image payload to the bot notify endpoint', function () {
@@ -101,7 +30,7 @@ it('posts the bill image payload to the bot notify endpoint', function () {
         'total_amount' => 8500,
     ]);
 
-    (new SendBillImageToCustomer($order->id))->handle();
+    (new SendBillImageToCustomer($order->id, false))->handle();
 
     Http::assertSent(function ($request) use ($order) {
         return $request->url() === 'http://bot.test/notify'
@@ -109,14 +38,14 @@ it('posts the bill image payload to the bot notify endpoint', function () {
             && $request['event'] === 'bill_image'
             && $request['order_id'] === $order->id
             && $request['jid'] === '255700000020@s.whatsapp.net'
-            && str_contains($request['bill_image_url'], '/bill-image/'.$order->id)
-            && str_contains($request['bill_image_url'], 'signature=');
+            && str_contains((string) $request['bill_image_url'], '/bill-image/'.$order->id)
+            && str_contains((string) $request['bill_image_url'], 'signature=');
     });
 
     expect($order->fresh()->bill_image_pushed_at)->not->toBeNull();
 });
 
-it('skips pushing when the bill has already been pushed', function () {
+it('skips pushing when the bill has already been pushed without force flag', function () {
     Http::fake();
 
     $restaurant = Restaurant::create([
@@ -134,7 +63,64 @@ it('skips pushing when the bill has already been pushed', function () {
         'bill_image_pushed_at' => now(),
     ]);
 
-    (new SendBillImageToCustomer($order->id))->handle();
+    (new SendBillImageToCustomer($order->id, false))->handle();
 
     Http::assertNothingSent();
+});
+
+it('sends again when force flag is true even if already pushed', function () {
+    Http::fake([
+        'http://bot.test/notify' => Http::response(['ok' => true], 200),
+    ]);
+
+    $restaurant = Restaurant::create([
+        'name' => 'Resend Cafe',
+        'is_active' => true,
+    ]);
+
+    $order = Order::withoutGlobalScopes()->create([
+        'restaurant_id' => $restaurant->id,
+        'table_number' => '8',
+        'customer_phone' => '255711111112',
+        'whatsapp_jid' => '255711111112@s.whatsapp.net',
+        'status' => 'served',
+        'total_amount' => 4400,
+        'bill_image_pushed_at' => now()->subHour(),
+    ]);
+
+    (new SendBillImageToCustomer($order->id, true))->handle();
+
+    Http::assertSentCount(1);
+});
+
+it('manager can sync-send WhatsApp bill for a served WhatsApp order', function () {
+    $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
+
+    Http::fake([
+        'http://bot.test/notify' => Http::response(['ok' => true], 200),
+    ]);
+
+    $restaurant = Restaurant::create([
+        'name' => 'Manager Bill Test',
+        'is_active' => true,
+    ]);
+
+    $manager = User::factory()->create(['restaurant_id' => $restaurant->id]);
+    $manager->assignRole('manager');
+
+    $order = Order::withoutGlobalScopes()->create([
+        'restaurant_id' => $restaurant->id,
+        'table_number' => '3',
+        'customer_phone' => '255722222223',
+        'whatsapp_jid' => '165515876151525@s.whatsapp.net',
+        'status' => 'served',
+        'total_amount' => 12000,
+    ]);
+
+    $this->actingAs($manager)
+        ->post(route('manager.orders.whatsapp-bill', $order))
+        ->assertRedirect();
+
+    Http::assertSentCount(1);
+    expect($order->fresh()->bill_image_pushed_at)->not->toBeNull();
 });

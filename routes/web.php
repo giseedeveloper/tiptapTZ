@@ -176,6 +176,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('/orders/history/export', [\App\Http\Controllers\Manager\OrderHistoryController::class, 'export'])->name('orders.history.export');
     Route::get('/orders/{order}', [\App\Http\Controllers\Manager\OrderHistoryController::class, 'show'])->name('orders.show');
     Route::post('/orders', [\App\Http\Controllers\Manager\LiveOrderController::class, 'store'])->name('orders.store');
+    Route::post('/orders/{order}/whatsapp-bill', [\App\Http\Controllers\Manager\LiveOrderController::class, 'sendWhatsAppBill'])->name('orders.whatsapp-bill');
     Route::put('/orders/{order}', [\App\Http\Controllers\Manager\LiveOrderController::class, 'update'])->name('orders.update');
     Route::delete('/orders/{order}', [\App\Http\Controllers\Manager\LiveOrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/menu', [\App\Http\Controllers\Manager\MenuController::class, 'index'])->name('menu.index');

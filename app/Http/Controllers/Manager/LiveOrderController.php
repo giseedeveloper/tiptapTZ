@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendBillImageToCustomer;
 use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Throwable;
 
 class LiveOrderController extends Controller
 {
@@ -106,6 +108,35 @@ class LiveOrderController extends Controller
         }
 
         return redirect()->back()->with('success', 'Order updated successfully');
+    }
+
+    /**
+     * Send the WhatsApp-customer bill image notification (explicit waiter/manager step).
+     * Runs synchronously against the notify endpoint so no queue worker is required.
+     */
+    public function sendWhatsAppBill(Order $order)
+    {
+        if ($order->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403);
+        }
+
+        if ($order->status !== 'served') {
+            return redirect()->back()->with('error', 'Bill can only be sent when the order is in Served status.');
+        }
+
+        if (empty($order->whatsapp_jid)) {
+            return redirect()->back()->with('error', 'No WhatsApp link on this order (not from WhatsApp bot). Ask the customer via WhatsApp or use Process Payment.');
+        }
+
+        try {
+            SendBillImageToCustomer::dispatchSync($order->id, true);
+        } catch (Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', 'Could not reach the WhatsApp bot. Ensure the bot is running and NOTIFY URL/secret are correct.');
+        }
+
+        return redirect()->back()->with('success', 'Bill image push was sent to the customer\'s WhatsApp.');
     }
 
     public function destroy($id)

@@ -29,6 +29,17 @@
         </div>
     </div>
 
+    @if(session('success'))
+        <div class="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="mb-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <!-- Live Kanban Board -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Pending -->
@@ -203,6 +214,18 @@
                             @endforeach
                         </div>
                         <div class="flex flex-wrap gap-2">
+                            @if(filled($order->whatsapp_jid))
+                                <form action="{{ route('manager.orders.whatsapp-bill', $order) }}" method="POST"
+                                      class="inline"
+                                      onsubmit="return confirm('Send bill image to this customer\'s WhatsApp number?');">
+                                    @csrf
+                                    <button type="submit"
+                                            class="flex-1 min-w-[120px] py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm border border-white/20 transition-all"
+                                            title="Generates signed bill PNG and notifies the WhatsApp bot">
+                                        Finish order · WhatsApp bill
+                                    </button>
+                                </form>
+                            @endif
                             <button onclick="openPaymentModal({{ $order->id }}, {{ $order->total_amount }})"
                                     class="flex-1 min-w-[120px] bg-gradient-to-r from-violet-600 to-cyan-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-violet-500/25 transition-all">
                                 Process Payment

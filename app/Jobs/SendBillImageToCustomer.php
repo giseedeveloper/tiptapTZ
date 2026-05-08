@@ -16,7 +16,10 @@ class SendBillImageToCustomer implements ShouldQueue
 
     public int $backoff = 30;
 
-    public function __construct(public int $orderId) {}
+    public function __construct(
+        public int $orderId,
+        public bool $force = false
+    ) {}
 
     public function handle(): void
     {
@@ -24,7 +27,19 @@ class SendBillImageToCustomer implements ShouldQueue
             ->with('restaurant')
             ->find($this->orderId);
 
-        if (! $order || ! $order->shouldPushBillImage()) {
+        if (! $order) {
+            return;
+        }
+
+        if ($order->status !== 'served' || empty($order->whatsapp_jid)) {
+            Log::warning('Bill image skipped: order not served or no WhatsApp JID.', [
+                'order_id' => $order->id ?? null,
+            ]);
+
+            return;
+        }
+
+        if (! $this->force && ! is_null($order->bill_image_pushed_at)) {
             return;
         }
 
