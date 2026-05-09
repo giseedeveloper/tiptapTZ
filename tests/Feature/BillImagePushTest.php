@@ -30,7 +30,8 @@ it('uses bill_image_base_url for signed bill link when configured', function () 
     ]);
 
     $url = $order->billImageUrl();
-    expect($url)->toStartWith('https://example.test/public/bill-image/'.$order->id.'?signature=');
+    expect($url)->toStartWith('https://example.test/public/bill-image/'.$order->id.'/');
+    expect($url)->toMatch('/^https:\/\/example\.test\/public\/bill-image\/\d+\/[a-f0-9]{64}$/');
 });
 
 it('posts the bill image payload to the bot notify endpoint', function () {
@@ -60,8 +61,7 @@ it('posts the bill image payload to the bot notify endpoint', function () {
             && $request['event'] === 'bill_image'
             && $request['order_id'] === $order->id
             && $request['jid'] === '255700000020@s.whatsapp.net'
-            && str_contains((string) $request['bill_image_url'], '/bill-image/'.$order->id)
-            && str_contains((string) $request['bill_image_url'], 'signature=');
+            && preg_match('#/bill-image/'.$order->id.'/([a-f0-9]{64})$#', (string) $request['bill_image_url']);
     });
 
     expect($order->fresh()->bill_image_pushed_at)->not->toBeNull();

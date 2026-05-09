@@ -20,7 +20,11 @@ Route::get('/fix-storage', function () {
 
 // Serve profile & menu_images from storage (works when storage:link missing on host)
 Route::get('/serve-storage/{path}', \App\Http\Controllers\ServeStorageController::class)->where('path', '.*')->name('storage.serve');
-Route::get('/bill-image/{orderId}', BillImageController::class)->name('bill.image');
+// Path signature avoids some WAFs that block ?signature=... on shared hosting.
+Route::get('/bill-image/{orderId}/{signature}', BillImageController::class)
+    ->where(['orderId' => '[0-9]+', 'signature' => '[a-f0-9]{64}'])
+    ->name('bill.image');
+Route::get('/bill-image/{orderId}', BillImageController::class)->where('orderId', '[0-9]+')->name('bill.image.legacy');
 
 // DEBUG: Test Selcom Authentication - DELETE AFTER TESTING!
 Route::get('/test-selcom', function () {

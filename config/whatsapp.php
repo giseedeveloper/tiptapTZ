@@ -35,6 +35,9 @@ return [
     | https://tiptapafrica.co.tz/bill-image/... which returns 404 and Baileys
     | reports "Failed to fetch stream".
     |
+    | Bill URLs use /bill-image/{id}/{signature} (path) so shared-host WAFs that
+    | block ?signature=... still allow the bot to download the PNG.
+    |
     | Leave empty to use APP_URL + route (default).
     |
     */

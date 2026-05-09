@@ -9,6 +9,8 @@ use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 
 it('returns bill image for a valid signed order url', function () {
+    config()->set('whatsapp.bill_image_base_url', '');
+
     $restaurant = Restaurant::create([
         'name' => 'Samaki Grill',
         'is_active' => true,
@@ -45,12 +47,36 @@ it('returns bill image for a valid signed order url', function () {
         'total' => 12000,
     ]);
 
-    $response = $this->get($order->billImageUrl());
+    $url = $order->billImageUrl();
+    expect($url)->toContain('/bill-image/'.$order->id.'/');
+
+    $response = $this->get($url);
 
     $response->assertOk();
     $response->assertHeader('content-type', 'image/png');
     expect(substr($response->getContent(), 0, 8))->toBe(chr(0x89).'PNG'.chr(0x0D).chr(0x0A).chr(0x1A).chr(0x0A));
     expect(strlen($response->getContent()))->toBeGreaterThan(5000);
+});
+
+it('accepts legacy bill image URL with signature query parameter', function () {
+    $restaurant = Restaurant::create([
+        'name' => 'Legacy Bill',
+        'is_active' => true,
+    ]);
+
+    $order = Order::withoutGlobalScopes()->create([
+        'restaurant_id' => $restaurant->id,
+        'table_number' => '1',
+        'customer_phone' => '255700000011',
+        'status' => 'served',
+        'total_amount' => 500,
+    ]);
+
+    $sig = $order->billImageSignature();
+    $response = $this->get('/bill-image/'.$order->id.'?signature='.$sig);
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'image/png');
 });
 
 it('includes bill image url in bot order status when order is served', function () {
