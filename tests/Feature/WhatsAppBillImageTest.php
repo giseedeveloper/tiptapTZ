@@ -49,6 +49,8 @@ it('returns bill image for a valid signed order url', function () {
 
     $response->assertOk();
     $response->assertHeader('content-type', 'image/png');
+    expect(substr($response->getContent(), 0, 8))->toBe(chr(0x89).'PNG'.chr(0x0D).chr(0x0A).chr(0x1A).chr(0x0A));
+    expect(strlen($response->getContent()))->toBeGreaterThan(5000);
 });
 
 it('includes bill image url in bot order status when order is served', function () {
