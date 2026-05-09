@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use RuntimeException;
 use Throwable;
 
 class BillImageService
@@ -46,18 +47,13 @@ class BillImageService
     }
 
     /**
-     * True when PHP GD can render TrueType text and DejaVu fonts from dompdf are present.
-     * Shared hosts often lack FreeType — then the designed bill would 500 and the bot cannot fetch the PNG.
+     * True when TrueType helpers exist and readable DejaVu fonts are available.
+     * We intentionally do not trust gd_info()['FreeType Support'] alone — some hosts report it
+     * incorrectly; we try the designed renderer and fall back to simple PNG on any failure.
      */
     private function supportsDesignedBill(): bool
     {
         if (! function_exists('imagettftext') || ! function_exists('imagettfbbox')) {
-            return false;
-        }
-
-        $gd = function_exists('gd_info') ? gd_info() : [];
-        $freeType = $gd['FreeType Support'] ?? false;
-        if ($freeType !== true && $freeType !== 1 && $freeType !== '1' && $freeType !== 'Yes') {
             return false;
         }
 
@@ -191,16 +187,22 @@ class BillImageService
      */
     private function fontPaths(): array
     {
-        $base = base_path('vendor/dompdf/dompdf/lib/fonts');
-        $regular = $base.'/DejaVuSans.ttf';
-        $bold = $base.'/DejaVuSans-Bold.ttf';
-        if (! is_readable($regular) || ! is_readable($bold)) {
-            throw new InvalidArgumentException(
-                'DejaVu fonts not found. Run composer install so dompdf fonts exist under vendor/dompdf/dompdf/lib/fonts.'
-            );
+        $dirs = [
+            resource_path('fonts'),
+            base_path('vendor/dompdf/dompdf/lib/fonts'),
+        ];
+
+        foreach ($dirs as $base) {
+            $regular = $base.'/DejaVuSans.ttf';
+            $bold = $base.'/DejaVuSans-Bold.ttf';
+            if (is_readable($regular) && is_readable($bold)) {
+                return ['regular' => $regular, 'bold' => $bold];
+            }
         }
 
-        return ['regular' => $regular, 'bold' => $bold];
+        throw new InvalidArgumentException(
+            'DejaVu fonts not found. Run `php artisan bill:install-fonts` or composer install (vendor/dompdf/.../fonts).'
+        );
     }
 
     private function allocate(\GdImage $im, int $r, int $g, int $b): int
@@ -484,14 +486,17 @@ class BillImageService
 
     private function ttf(\GdImage $im, string $font, float $size, int $x, int $y, int $color, string $text): void
     {
-        imagettftext($im, $size, 0, $x, $y, $color, $font, $text);
+        $result = imagettftext($im, $size, 0, $x, $y, $color, $font, $text);
+        if ($result === false) {
+            throw new RuntimeException('imagettftext failed (PHP GD may lack FreeType).');
+        }
     }
 
     private function ttfCenter(\GdImage $im, string $font, float $size, int $y, int $color, string $text): void
     {
         $box = imagettfbbox($size, 0, $font, $text);
         if ($box === false) {
-            return;
+            throw new RuntimeException('imagettfbbox failed.');
         }
         $tw = (int) abs($box[2] - $box[0]);
         $x = (int) ((self::WIDTH - $tw) / 2);
