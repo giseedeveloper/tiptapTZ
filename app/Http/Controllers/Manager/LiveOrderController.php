@@ -24,7 +24,6 @@ class LiveOrderController extends Controller
             ->latest()
             ->get();
 
-            
         $preparingOrders = Order::with(['items.menuItem', 'waiter'])
             ->where('restaurant_id', $restaurantId)
             ->where('status', 'preparing')
@@ -128,6 +127,14 @@ class LiveOrderController extends Controller
         }
 
         if (empty($order->whatsapp_jid)) {
+            $digitsOnlyPhone = preg_replace('/\D+/', '', (string) $order->customer_phone);
+            if (! empty($digitsOnlyPhone)) {
+                $order->forceFill(['whatsapp_jid' => $digitsOnlyPhone.'@s.whatsapp.net'])->saveQuietly();
+                $order->refresh();
+            }
+        }
+
+        if (empty($order->whatsapp_jid)) {
             return redirect()->back()->with('error', 'No WhatsApp link on this order (not from WhatsApp bot). Ask the customer via WhatsApp or use Process Payment.');
         }
 
@@ -148,7 +155,6 @@ class LiveOrderController extends Controller
                 'Could not reach the WhatsApp bot. Ensure the bot is running, NOTIFY URL/secret match the bot `.env`, and the notify server is deployed on port 3001.'.$suffix
             );
         }
-
 
         return redirect()->back()->with('success', 'Bill image push was sent to the customer\'s WhatsApp.');
     }

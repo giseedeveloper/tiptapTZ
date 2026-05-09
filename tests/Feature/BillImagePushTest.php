@@ -124,3 +124,39 @@ it('manager can sync-send WhatsApp bill for a served WhatsApp order', function (
     Http::assertSentCount(1);
     expect($order->fresh()->bill_image_pushed_at)->not->toBeNull();
 });
+
+it('manager send bill derives whatsapp jid from customer phone when missing', function () {
+    $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
+
+    Http::fake([
+        'http://bot.test/notify' => Http::response(['ok' => true], 200),
+    ]);
+
+    $restaurant = Restaurant::create([
+        'name' => 'Fallback JID Test',
+        'is_active' => true,
+    ]);
+
+    $manager = User::factory()->create(['restaurant_id' => $restaurant->id]);
+    $manager->assignRole('manager');
+
+    $order = Order::withoutGlobalScopes()->create([
+        'restaurant_id' => $restaurant->id,
+        'table_number' => '6',
+        'customer_phone' => '+255 711 222 333',
+        'whatsapp_jid' => null,
+        'status' => 'served',
+        'total_amount' => 9800,
+    ]);
+
+    $this->actingAs($manager)
+        ->post(route('manager.orders.whatsapp-bill', $order))
+        ->assertRedirect();
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'http://bot.test/notify'
+            && $request['jid'] === '255711222333@s.whatsapp.net';
+    });
+
+    expect($order->fresh()->whatsapp_jid)->toBe('255711222333@s.whatsapp.net');
+});

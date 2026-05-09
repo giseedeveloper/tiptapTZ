@@ -215,7 +215,9 @@
                         </div>
                         <div class="flex flex-wrap gap-2">
                             @php
-                                $isWhatsAppOrder = filled($order->whatsapp_jid);
+                                $digitsOnlyPhone = preg_replace('/\D+/', '', (string) $order->customer_phone);
+                                $hasPhoneFallbackForWhatsApp = filled($digitsOnlyPhone) && strlen($digitsOnlyPhone) >= 9;
+                                $isWhatsAppOrder = filled($order->whatsapp_jid) || $hasPhoneFallbackForWhatsApp;
                                 $billAlreadySent = ! is_null($order->bill_image_pushed_at);
                             @endphp
 
