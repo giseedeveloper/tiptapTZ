@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendBillImageToCustomer;
 use App\Models\Order;
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Throwable;
 
@@ -22,6 +24,7 @@ class LiveOrderController extends Controller
             ->latest()
             ->get();
 
+            
         $preparingOrders = Order::with(['items.menuItem', 'waiter'])
             ->where('restaurant_id', $restaurantId)
             ->where('status', 'preparing')
@@ -133,8 +136,19 @@ class LiveOrderController extends Controller
         } catch (Throwable $e) {
             report($e);
 
-            return redirect()->back()->with('error', 'Could not reach the WhatsApp bot. Ensure the bot is running and NOTIFY URL/secret are correct.');
+            $suffix = '';
+            if ($e instanceof RequestException) {
+                $suffix = ' Bot responded with HTTP '.$e->response->status().'.';
+            } elseif ($e instanceof ConnectionException) {
+                $suffix = ' Connection failed — the web host may be blocking outbound traffic to that URL or port.';
+            }
+
+            return redirect()->back()->with(
+                'error',
+                'Could not reach the WhatsApp bot. Ensure the bot is running, NOTIFY URL/secret match the bot `.env`, and the notify server is deployed on port 3001.'.$suffix
+            );
         }
+
 
         return redirect()->back()->with('success', 'Bill image push was sent to the customer\'s WhatsApp.');
     }
