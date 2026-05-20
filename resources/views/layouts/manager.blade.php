@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Favicon -->
-    <link rel="icon" type="image/jpeg" href="{{ asset('logo.jpeg') }}">
-    <link rel="shortcut icon" href="{{ asset('logo.jpeg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -93,6 +93,21 @@
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg, rgba(139, 92, 246, 0.8) 0%, rgba(6, 182, 212, 0.8) 100%);
+        }
+
+        /* Sidebar nav: scroll with pointer/wheel when expanded or collapsed; scrollbar never visible */
+        #mobile-sidebar nav.sidebar-nav-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overscroll-behavior: contain;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #mobile-sidebar nav.sidebar-nav-scroll::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
         }
 
         /* Glassmorphism Effects */
@@ -183,12 +198,98 @@
         /* Hide scrollbar utility */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Custom scrollbar for sidebar - hidden but functional */
-        .custom-scrollbar::-webkit-scrollbar { display: none; }
-        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .sidebar-link { min-height: 44px; }
         .sidebar-link:focus { outline: none; box-shadow: 0 0 0 2px #0f0a1e, 0 0 0 4px rgba(139, 92, 246, 0.6); }
+
+        .sidebar-profile-card {
+            background: linear-gradient(145deg, rgba(28, 22, 51, 0.85) 0%, rgba(15, 10, 30, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow:
+                0 4px 24px -4px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-profile-card:hover {
+            border-color: rgba(139, 92, 246, 0.2);
+            box-shadow:
+                0 8px 28px -6px rgba(139, 92, 246, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-profile-avatar {
+            background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+            box-shadow: 0 4px 14px -2px rgba(124, 58, 237, 0.45);
+        }
+
+        .sidebar-profile-logout {
+            color: rgba(255, 255, 255, 0.35);
+            transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .sidebar-profile-logout:hover {
+            color: #f87171;
+            background-color: rgba(248, 113, 113, 0.1);
+            transform: translateX(1px);
+        }
+
+        #mobile-sidebar.sidebar-collapsed .sidebar-profile-card {
+            padding: 0.5rem;
+            justify-content: center;
+        }
+
+        #mobile-sidebar.sidebar-collapsed .sidebar-profile-logout-form {
+            display: none;
+        }
+
+        .sidebar-user-area {
+            position: relative;
+        }
+
+        .sidebar-profile-popover {
+            position: fixed;
+            z-index: 200;
+            min-width: 10.5rem;
+            padding: 0.35rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(145deg, rgba(28, 22, 51, 0.98) 0%, rgba(15, 10, 30, 0.99) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.65);
+        }
+
+        .sidebar-profile-popover.hidden {
+            display: none;
+        }
+
+        .sidebar-profile-popover-submit {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
+            transition: color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .sidebar-profile-popover-submit:hover {
+            color: #fca5a5;
+            background-color: rgba(248, 113, 113, 0.12);
+        }
+
+        #sidebar-profile-avatar-btn {
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            background: transparent;
+        }
+
+        #sidebar-profile-avatar-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px #0f0a1e, 0 0 0 4px rgba(139, 92, 246, 0.55);
+            border-radius: 0.75rem;
+        }
         /* Sidebar visibility: NOT relying on Tailwind – layout CSS only */
         #mobile-sidebar { transition: transform 0.3s ease-out, width 0.3s ease-out; }
         /* Mobile: closed by default */
@@ -204,12 +305,29 @@
             body.sidebar-collapsed-main main#main-content { margin-left: 3.5rem; }
         }
         body.sidebar-mobile-open #sidebar-overlay { display: block !important; opacity: 1 !important; pointer-events: auto !important; }
+        @media (max-width: 767px) {
+            body.sidebar-mobile-open { overflow: hidden; }
+        }
+
+        main#main-content {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .manager-portal-heading {
+            min-width: 0;
+        }
+
+        .manager-portal-heading h1 {
+            font-size: clamp(1.25rem, 2.5vw + 0.5rem, 1.875rem);
+            line-height: 1.2;
+            word-break: break-word;
+        }
 
         /* Sidebar collapsed (desktop): narrow, icons only */
         #mobile-sidebar.sidebar-collapsed { width: 3.5rem; }
         #mobile-sidebar.sidebar-collapsed .sidebar-link span,
         #mobile-sidebar.sidebar-collapsed .sidebar-label,
-        #mobile-sidebar.sidebar-collapsed .sidebar-logo-text,
         #mobile-sidebar.sidebar-collapsed .sidebar-user-text { display: none !important; }
         #mobile-sidebar.sidebar-collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; margin-left: 0.5rem; margin-right: 0.5rem; }
         #mobile-sidebar.sidebar-collapsed .sidebar-link > div:first-child { margin: 0; }
@@ -217,28 +335,60 @@
         #mobile-sidebar.sidebar-collapsed .sidebar-user-area .flex-1 { display: none; }
         #mobile-sidebar.sidebar-collapsed .sidebar-user-area { justify-content: center; }
         body.sidebar-collapsed-main main#main-content { margin-left: 3.5rem; }
+
+        #mobile-sidebar.sidebar-collapsed .sidebar-logo-row {
+            justify-content: center;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        #mobile-sidebar.sidebar-collapsed .sidebar-logo-row .sidebar-logo-spacer,
+        #mobile-sidebar.sidebar-collapsed .sidebar-logo-row #sidebar-toggle {
+            display: none !important;
+        }
+
+        #sidebar-logo-toggle {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #sidebar-logo-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+        }
+
+        #sidebar-logo-toggle:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-white min-h-screen pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-violet-600 focus:text-white focus:rounded-xl focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-[#0f0a1e] focus:outline-none">Skip to main content</a>
     
     <!-- Overlay (mobile only) -->
-    <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm hidden md:hidden transition-opacity duration-300 opacity-0 cursor-pointer" aria-hidden="true"></div>
+    <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm hidden md:hidden transition-opacity duration-300 opacity-0 cursor-pointer" aria-hidden="true"></div>
+
+    @php
+        $managerUser = Auth::user();
+        $managerUser?->loadMissing('restaurant');
+        $managerRestaurantName = $managerUser?->restaurant?->name;
+    @endphp
 
     <div class="flex min-h-screen">
         <!-- Premium Manager Sidebar: drawer on mobile, persistent on md+ with toggle -->
-        <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-[100] w-72 md:w-48 bg-surface-900/95 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col overflow-hidden sidebar-closed-mobile" role="navigation" aria-label="Manager navigation">
-            <!-- Logo Area -->
-            <div class="p-6 pb-4 flex justify-between items-center border-b border-white/5 shrink-0">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 flex shrink-0 items-center justify-center overflow-hidden rounded-full">
-                        <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div class="sidebar-logo-text min-w-0">
-                        <span class="text-xl font-black text-white tracking-tight block leading-none hidden">TIP<span class="gradient-text">TAP</span></span>
-                        <span class="text-[10px] font-semibold text-white/40 uppercase tracking-[0.2em]">Manager Portal</span>
-                    </div>
-                </div>
+        <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-[100] w-[min(252px,85vw)] md:w-48 bg-surface-900/95 backdrop-blur-xl border-r border-white/10 flex flex-col overflow-hidden sidebar-closed-mobile" role="navigation" aria-label="Manager navigation">
+            <!-- Logo Area (click logo to expand/collapse on desktop) -->
+            <div class="px-4 py-4 flex items-center gap-2 border-b border-white/5 shrink-0 sidebar-logo-row">
+                <button
+                    type="button"
+                    id="sidebar-logo-toggle"
+                    class="w-10 h-10 flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]"
+                    aria-label="Toggle sidebar"
+                    title="Toggle sidebar"
+                >
+                    <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="w-full h-full object-contain">
+                </button>
+                <div class="flex-1 sidebar-logo-spacer"></div>
                 <div class="flex items-center gap-1 shrink-0">
                     <button type="button" id="sidebar-toggle" class="hidden md:flex min-h-[44px] min-w-[44px] items-center justify-center p-2.5 text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Collapse sidebar" title="Collapse sidebar">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sidebar-toggle-icon-collapse" title="Collapse"><path d="m15 18-6-6 6-6"/></svg>
@@ -253,7 +403,7 @@
             </div>
 
             <!-- Navigation Links -->
-            <nav class="flex-1 py-4 custom-scrollbar overflow-y-auto overflow-x-hidden">
+            <nav class="flex-1 py-4 sidebar-nav-scroll overflow-y-auto overflow-x-hidden">
                 <div class="mb-3 px-5 sidebar-label">
                     <p class="text-[9px] font-bold text-white/25 uppercase tracking-[0.25em]">Main Menu</p>
                 </div>
@@ -374,6 +524,24 @@
                     <span class="font-medium text-xs">API Settings</span>
                 </a>
 
+                <a href="{{ route('manager.tips.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.tips.index') ? 'sidebar-link-active' : 'text-white/55' }}">
+                    <div class="w-7 h-7 rounded-md bg-gradient-to-br from-yellow-500/20 to-amber-500/20 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.tips.index') ? 'text-yellow-400' : 'text-white/50' }}">
+                            <circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-xs">Tips</span>
+                </a>
+
+                <a href="{{ route('manager.reports.performance') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.reports.*') ? 'sidebar-link-active' : 'text-white/55' }}">
+                    <div class="w-7 h-7 rounded-md bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.reports.*') ? 'text-indigo-400' : 'text-white/50' }}">
+                            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-xs">Reports</span>
+                </a>
+
                 <a href="{{ route('manager.help.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.help.index') ? 'sidebar-link-active' : 'text-white/55' }}">
                     <div class="w-7 h-7 rounded-md bg-gradient-to-br from-sky-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.help.index') ? 'text-sky-400' : 'text-white/50' }}">
@@ -385,20 +553,51 @@
             </nav>
 
             <!-- User Profile Area -->
-            <div class="p-4 border-t border-white/5 shrink-0 sidebar-user-area">
-                <div class="glass-card rounded-xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-violet-600 to-cyan-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-violet-500/20">
-                        {{ substr(Auth::user()->name, 0, 1) }}
-                    </div>
-                    <div class="flex-1 min-w-0 sidebar-user-text">
-                        <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name }}</p>
-                        <p class="text-[10px] font-medium text-white/40 truncate">Manager Account</p>
-                    </div>
+            <div class="p-3 pt-2 border-t border-white/5 shrink-0 sidebar-user-area">
+                <div id="sidebar-profile-popover" class="sidebar-profile-popover hidden" role="menu" aria-label="Account menu">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+                        <button type="submit" class="sidebar-profile-popover-submit" role="menuitem">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-rose-400">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" x2="9" y1="12" y2="12"/>
+                            </svg>
+                            Sign out
+                        </button>
+                    </form>
+                </div>
+                <div class="sidebar-profile-card rounded-2xl p-3.5 flex items-center gap-3 transition-all duration-300">
+                    <button
+                        type="button"
+                        id="sidebar-profile-avatar-btn"
+                        class="sidebar-profile-avatar w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white text-base font-semibold lowercase select-none"
+                        aria-label="Account menu"
+                        aria-expanded="false"
+                        aria-controls="sidebar-profile-popover"
+                    >
+                        {{ strtolower(substr($managerUser->name, 0, 1)) }}
+                    </button>
+                    <div class="flex-1 min-w-0 sidebar-user-text">
+                        <p class="text-sm font-bold text-white leading-tight truncate" title="{{ $managerUser->name }}">
+                            {{ $managerUser->name }}
+                        </p>
+                        <p class="text-[11px] font-medium text-white/45 leading-snug truncate mt-0.5" title="{{ $managerRestaurantName ?? $managerUser->email }}">
+                            {{ $managerRestaurantName ?? $managerUser->email }}
+                        </p>
+                    </div>
+                    <form method="POST" action="{{ route('logout') }}" class="sidebar-profile-logout-form shrink-0">
+                        @csrf
+                        <button
+                            type="submit"
+                            class="sidebar-profile-logout min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]"
+                            aria-label="Log out"
+                            title="Log out"
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" x2="9" y1="12" y2="12"/>
                             </svg>
                         </button>
                     </form>
@@ -407,37 +606,30 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main id="main-content" class="flex-1 min-h-screen flex flex-col w-full relative z-0 transition-[margin] duration-300 md:ml-72" tabindex="-1">
+        <main id="main-content" class="flex-1 min-h-screen flex flex-col w-full relative z-0 transition-[margin] duration-300 md:ml-48 portal-ambient" tabindex="-1">
             <!-- Mobile Header -->
-            <div class="md:hidden glass sticky top-0 z-30 px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="openSidebar()" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Open menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
-                        </svg>
-                    </button>
-                    <span class="font-bold text-white/90 text-lg tracking-tight">TIP<span class="gradient-text">TAP</span></span>
-                </div>
-                <div class="w-9 h-9 flex items-center justify-center overflow-hidden rounded-full">
-                    <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
+            <div class="md:hidden glass sticky top-0 z-30 px-4 py-3 flex items-center gap-3 min-w-0">
+                <button type="button" onclick="openSidebar()" class="shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <div class="flex-1 min-w-0 manager-portal-heading">
+                    <p class="text-[10px] font-semibold text-violet-400 uppercase tracking-wide mb-0.5">Manager Portal</p>
+                    <h1 class="font-bold text-white tracking-tight break-words">{{ $header ?? 'Dashboard' }}</h1>
                 </div>
             </div>
 
             <!-- Desktop Header & Content -->
-            <div class="p-4 md:p-8 flex-1">
-                <!-- Desktop Top Bar: sidebar toggle + title -->
-                <div class="hidden md:flex justify-between items-center mb-8">
-                    <div class="flex items-center gap-5">
-                        <button type="button" id="sidebar-toggle-top" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 glass rounded-xl hover:bg-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Toggle sidebar" title="Toggle sidebar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sidebar-toggle-top-icon"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
-                        </button>
-                        <div>
-                            <p class="text-[11px] font-semibold text-violet-400 uppercase tracking-[0.15em] mb-1">Manager Portal</p>
-                            <h1 class="text-3xl font-bold text-white tracking-tight">{{ $header ?? 'Dashboard' }}</h1>
-                        </div>
+            <div class="p-4 md:p-6 lg:p-8 flex-1">
+                <!-- Desktop Top Bar -->
+                <div class="hidden md:flex justify-between items-start gap-4 mb-8 min-w-0">
+                    <div class="min-w-0 flex-1 manager-portal-heading">
+                        <p class="text-[11px] font-semibold text-violet-400 uppercase tracking-wide mb-1">Manager Portal</p>
+                        <h1 class="font-bold text-white tracking-tight break-words">{{ $header ?? 'Dashboard' }}</h1>
                     </div>
-                    
-                    <div class="flex items-center gap-5">
+
+                    <div class="flex items-center gap-5 shrink-0">
                         <div class="glass px-4 py-2.5 rounded-xl flex items-center gap-3">
                             <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                             <span class="text-[11px] font-semibold text-white/80 uppercase tracking-wider">System Live</span>
@@ -445,8 +637,25 @@
                     </div>
                 </div>
 
-                {{ $slot }}
+                <div class="manager-page">
+                    {{ $slot }}
+                </div>
             </div>
+
+            @if(session('status'))
+                <div id="toast-status" class="fixed bottom-8 right-8 z-[200] animate-float">
+                    <div class="glass-card px-6 py-4 rounded-2xl border-violet-500/20 flex items-center gap-4 shadow-2xl shadow-violet-500/10">
+                        <div class="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-violet-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white uppercase tracking-wider">Welcome</p>
+                            <p class="text-sm text-white/60">{{ session('status') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <script>setTimeout(() => document.getElementById('toast-status')?.remove(), 6000);</script>
+            @endif
 
             <!-- Toast Notifications -->
             @if(session('success'))
@@ -524,6 +733,7 @@
             overlay.classList.add('opacity-0');
             setTimeout(function() { overlay.classList.add('hidden'); }, 300);
             document.body.style.overflow = '';
+            closeProfilePopover();
         }
         function isSidebarVisible() {
             var el = document.getElementById('mobile-sidebar');
@@ -538,6 +748,7 @@
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                closeProfilePopover();
                 closeSidebar();
             }
         });
@@ -547,6 +758,47 @@
         function isSidebarCollapsed() {
             return document.getElementById('mobile-sidebar').classList.contains('sidebar-collapsed');
         }
+        function closeProfilePopover() {
+            var popover = document.getElementById('sidebar-profile-popover');
+            var avatarBtn = document.getElementById('sidebar-profile-avatar-btn');
+            if (popover) {
+                popover.classList.add('hidden');
+            }
+            if (avatarBtn) {
+                avatarBtn.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function positionProfilePopover() {
+            var popover = document.getElementById('sidebar-profile-popover');
+            var avatarBtn = document.getElementById('sidebar-profile-avatar-btn');
+            var sidebar = document.getElementById('mobile-sidebar');
+            if (!popover || !avatarBtn || !sidebar || sidebar.classList.contains('sidebar-closed-mobile')) {
+                return;
+            }
+            var rect = avatarBtn.getBoundingClientRect();
+            popover.style.left = (rect.right + 8) + 'px';
+            popover.style.top = Math.max(8, rect.top - 4) + 'px';
+            popover.style.bottom = 'auto';
+        }
+
+        function toggleProfilePopover() {
+            var sidebar = document.getElementById('mobile-sidebar');
+            var popover = document.getElementById('sidebar-profile-popover');
+            var avatarBtn = document.getElementById('sidebar-profile-avatar-btn');
+            if (!sidebar || !popover || !avatarBtn || !sidebar.classList.contains('sidebar-collapsed')) {
+                return;
+            }
+            var willOpen = popover.classList.contains('hidden');
+            if (willOpen) {
+                positionProfilePopover();
+                popover.classList.remove('hidden');
+                avatarBtn.setAttribute('aria-expanded', 'true');
+            } else {
+                closeProfilePopover();
+            }
+        }
+
         function setSidebarCollapsed(collapsed) {
             var sidebar = document.getElementById('mobile-sidebar');
             var iconCollapse = document.getElementById('sidebar-toggle-icon-collapse');
@@ -563,20 +815,45 @@
                 if (iconCollapse) iconCollapse.classList.remove('hidden');
                 if (iconExpand) iconExpand.classList.add('hidden');
                 try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
+                closeProfilePopover();
             }
         }
         function toggleManagerSidebar() {
             setSidebarCollapsed(!isSidebarCollapsed());
         }
-        function onMenuButtonClick() {
-            if (!isSidebarVisible()) {
-                openSidebar();
-            } else {
+        function isDesktopLayout() {
+            return window.matchMedia('(min-width: 768px)').matches;
+        }
+        function handleLogoSidebarToggle() {
+            if (isDesktopLayout()) {
                 toggleManagerSidebar();
+            } else {
+                toggleSidebar();
             }
         }
-        document.getElementById('sidebar-toggle') && document.getElementById('sidebar-toggle').addEventListener('click', toggleManagerSidebar);
-        document.getElementById('sidebar-toggle-top') && document.getElementById('sidebar-toggle-top').addEventListener('click', onMenuButtonClick);
+        document.getElementById('sidebar-toggle')?.addEventListener('click', toggleManagerSidebar);
+        document.getElementById('sidebar-logo-toggle')?.addEventListener('click', handleLogoSidebarToggle);
+        document.getElementById('sidebar-profile-avatar-btn')?.addEventListener('click', function (event) {
+            event.stopPropagation();
+            toggleProfilePopover();
+        });
+        document.addEventListener('click', function (event) {
+            var popover = document.getElementById('sidebar-profile-popover');
+            var avatarBtn = document.getElementById('sidebar-profile-avatar-btn');
+            if (!popover || popover.classList.contains('hidden')) {
+                return;
+            }
+            if (popover.contains(event.target) || avatarBtn?.contains(event.target)) {
+                return;
+            }
+            closeProfilePopover();
+        });
+        window.addEventListener('resize', function () {
+            var popover = document.getElementById('sidebar-profile-popover');
+            if (popover && !popover.classList.contains('hidden')) {
+                positionProfilePopover();
+            }
+        });
         (function applySavedSidebarState() {
             try {
                 if (localStorage.getItem(STORAGE_KEY) === '1') setSidebarCollapsed(true);

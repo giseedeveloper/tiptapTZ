@@ -28,16 +28,16 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo.jpeg"
-  adaptive_icon_background: "#0A0614"
-  adaptive_icon_foreground: "assets/images/logo.jpeg"
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo.png"
   remove_alpha_ios: true
   android_rounded_icon: true
   ios_rounded_icon: true
   web:
     generate: true
-    image_path: "assets/images/logo.jpeg"
-    background_color: "#0A0614"
+    image_path: "assets/images/logo.png"
+    background_color: "#FFFFFF"
     theme_color: "#06B6D4"
     rounded_icon: true
 

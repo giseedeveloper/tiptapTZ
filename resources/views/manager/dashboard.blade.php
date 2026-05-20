@@ -83,6 +83,8 @@
         </div>
     </div>
 
+    @include('manager.partials.dashboard-analytics', ['analytics' => $analytics])
+
     <!-- Smart Live Order Tracking -->
     <div class="mb-10">
         <div class="flex items-center justify-between mb-6">

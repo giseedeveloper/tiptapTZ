@@ -12,8 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/jpeg" href="{{ asset('logo.jpeg') }}">
-    <link rel="shortcut icon" href="{{ asset('logo.jpeg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -42,6 +42,35 @@
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg, rgba(139, 92, 246, 0.8) 0%, rgba(6, 182, 212, 0.8) 100%);
+        }
+
+        #mobile-sidebar nav.sidebar-nav-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overscroll-behavior: contain;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #mobile-sidebar nav.sidebar-nav-scroll::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        main#main-content {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .portal-heading {
+            min-width: 0;
+        }
+
+        .portal-heading h1 {
+            font-size: clamp(1.25rem, 2.5vw + 0.5rem, 1.875rem);
+            line-height: 1.2;
+            word-break: break-word;
         }
 
         /* Glassmorphism Effects */
@@ -83,7 +112,6 @@
         .sidebar-link-active {
             background: linear-gradient(90deg, rgba(139, 92, 246, 0.2) 0%, transparent 100%);
             color: #fff !important;
-            border-left: 3px solid #8b5cf6;
         }
         
         .sidebar-link-active::before {
@@ -148,10 +176,13 @@
             #mobile-sidebar,
             #mobile-sidebar.sidebar-closed-mobile { transform: translateX(0) !important; visibility: visible !important; }
             #mobile-sidebar.sidebar-collapsed { width: 3.5rem !important; }
-            main#main-content { margin-left: 13rem; }
+            main#main-content { margin-left: 12rem; }
             body.sidebar-collapsed-main main#main-content { margin-left: 3.5rem; }
         }
         body.sidebar-mobile-open #sidebar-overlay { display: block !important; opacity: 1 !important; pointer-events: auto !important; }
+        @media (max-width: 767px) {
+            body.sidebar-mobile-open { overflow: hidden; }
+        }
         #mobile-sidebar.sidebar-collapsed { width: 3.5rem; }
         #mobile-sidebar.sidebar-collapsed .sidebar-link span,
         #mobile-sidebar.sidebar-collapsed .sidebar-label,
@@ -163,25 +194,24 @@
         #mobile-sidebar.sidebar-collapsed nav .px-6 { padding-left: 0; padding-right: 0; }
         #mobile-sidebar.sidebar-collapsed .sidebar-logout-area .sidebar-logout-text { display: none; }
         #mobile-sidebar.sidebar-collapsed .sidebar-logout-area button { justify-content: center; padding: 0.75rem; }
-        body.sidebar-collapsed-main main#main-content { margin-left: 5rem; }
+        body.sidebar-collapsed-main main#main-content { margin-left: 3.5rem; }
     </style>
 </head>
 <body class="font-sans antialiased text-white min-h-screen pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-violet-600 focus:text-white focus:rounded-xl focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-[#0f0a1e] focus:outline-none">Skip to main content</a>
     
     <!-- Overlay (mobile only) -->
-    <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm hidden md:hidden transition-opacity duration-300 opacity-0 cursor-pointer" aria-hidden="true"></div>
+    <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm hidden md:hidden transition-opacity duration-300 opacity-0 cursor-pointer" aria-hidden="true"></div>
 
     <div class="flex min-h-screen">
         <!-- Premium Dark Sidebar: drawer on mobile, persistent on md+ with toggle -->
-        <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-[100] w-52 sidebar-gradient flex flex-col h-screen shadow-2xl shadow-black/50 border-r border-white/5 sidebar-closed-mobile" style="width: 13rem;">
-            <div class="p-4 pb-3 flex justify-between items-center border-b border-white/5 shrink-0">
+        <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-[100] w-[min(252px,85vw)] md:w-48 bg-surface-900/95 backdrop-blur-xl border-r border-white/10 flex flex-col overflow-hidden sidebar-closed-mobile" role="navigation" aria-label="Admin navigation">
+            <div class="px-4 py-4 flex justify-between items-center border-b border-white/5 shrink-0">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-8 h-8 flex shrink-0 items-center justify-center overflow-hidden rounded-full">
-                        <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
+                    <div class="w-10 h-10 flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+                        <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="w-full h-full object-contain">
                     </div>
                     <div class="sidebar-logo-text min-w-0">
-                        <span class="text-base font-black text-white tracking-tight block leading-none hidden">TIP<span class="gradient-text">TAP</span></span>
                         <span class="text-[9px] font-semibold text-white/40 uppercase tracking-[0.2em]">Super Admin</span>
                     </div>
                 </div>
@@ -198,7 +228,7 @@
                 </div>
             </div>
 
-            <nav class="flex-1 py-4 custom-scrollbar overflow-y-auto overflow-x-hidden">
+            <nav class="flex-1 py-4 sidebar-nav-scroll overflow-y-auto overflow-x-hidden">
                 <div class="mb-3 px-4 sidebar-label">
                     <p class="text-[9px] font-bold text-white/25 uppercase tracking-[0.25em]">Main</p>
                 </div>
@@ -316,36 +346,29 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main id="main-content" class="flex-1 min-h-screen flex flex-col w-full relative z-0 transition-[margin] duration-300 md:ml-52" tabindex="-1">
+        <main id="main-content" class="flex-1 min-h-screen flex flex-col w-full relative z-0 transition-[margin] duration-300 md:ml-48" tabindex="-1">
             <!-- Mobile Header -->
-            <div class="md:hidden glass sticky top-0 z-30 px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="openSidebar()" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Open menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
-                        </svg>
-                    </button>
-                    <span class="font-bold text-white/90 text-lg tracking-tight">TIP<span class="gradient-text">TAP</span></span>
+            <div class="md:hidden glass sticky top-0 z-30 px-4 py-3 flex items-center gap-3 min-w-0">
+                <button type="button" onclick="openSidebar()" class="shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <div class="flex-1 min-w-0 portal-heading">
+                    <p class="text-[10px] font-semibold text-violet-400 uppercase tracking-wide mb-0.5">Super Admin</p>
+                    <h1 class="font-bold text-white tracking-tight break-words">{{ $header ?? 'Dashboard' }}</h1>
                 </div>
-                    <div class="w-9 h-9 flex items-center justify-center overflow-hidden rounded-full">
-                        <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
-                    </div>
             </div>
 
             <!-- Desktop Header & Content -->
-            <div class="p-4 md:p-8 flex-1">
-                <div class="hidden md:flex justify-between items-center mb-8">
-                    <div class="flex items-center gap-5">
-                        <button type="button" id="sidebar-toggle-top" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 glass rounded-xl hover:bg-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Toggle sidebar" title="Toggle sidebar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
-                        </button>
-                        <div>
-                            <p class="text-[11px] font-semibold text-violet-400 uppercase tracking-[0.15em] mb-1">System Overview</p>
-                            <h1 class="text-3xl font-bold text-white tracking-tight">{{ $header ?? 'Dashboard' }}</h1>
-                        </div>
+            <div class="p-4 md:p-6 lg:p-8 flex-1">
+                <div class="hidden md:flex justify-between items-start gap-4 mb-8 min-w-0">
+                    <div class="min-w-0 flex-1 portal-heading">
+                        <p class="text-[11px] font-semibold text-violet-400 uppercase tracking-wide mb-1">Super Admin</p>
+                        <h1 class="font-bold text-white tracking-tight break-words">{{ $header ?? 'Dashboard' }}</h1>
                     </div>
                     
-                    <div class="flex items-center gap-5">
+                    <div class="flex items-center gap-5 shrink-0">
                         <div class="glass px-4 py-2.5 rounded-xl flex items-center gap-3">
                             <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                             <span class="text-[11px] font-semibold text-white/80 uppercase tracking-wider">System Online</span>
@@ -441,21 +464,9 @@
             setTimeout(function() { overlay.classList.add('hidden'); }, 300);
             document.body.style.overflow = '';
         }
-        function isSidebarVisible() {
-            var el = document.getElementById('mobile-sidebar');
-            if (!el) return false;
-            var r = el.getBoundingClientRect();
-            return r.left >= -10 && r.width > 0;
-        }
-
         function toggleSidebar() {
             if (document.getElementById('mobile-sidebar').classList.contains('sidebar-open')) closeSidebar();
             else openSidebar();
-        }
-        function onMenuButtonClick() {
-            if (!isSidebarVisible()) openSidebar();
-            else if (window.matchMedia('(min-width: 768px)').matches) toggleAdminSidebar();
-            else closeSidebar();
         }
 
         document.addEventListener('keydown', function(e) {
@@ -486,7 +497,6 @@
         }
         function toggleAdminSidebar() { setAdminSidebarCollapsed(!isAdminSidebarCollapsed()); }
         document.getElementById('sidebar-toggle') && document.getElementById('sidebar-toggle').addEventListener('click', toggleAdminSidebar);
-        document.getElementById('sidebar-toggle-top') && document.getElementById('sidebar-toggle-top').addEventListener('click', onMenuButtonClick);
         try { if (localStorage.getItem(ADMIN_SIDEBAR_KEY) === '1') setAdminSidebarCollapsed(true); } catch (e) {}
 
         window.addEventListener('load', function() {

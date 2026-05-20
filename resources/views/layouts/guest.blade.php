@@ -13,8 +13,8 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         
         <!-- Favicon -->
-        <link rel="icon" type="image/jpeg" href="{{ asset('logo.jpeg') }}">
-        <link rel="shortcut icon" href="{{ asset('logo.jpeg') }}">
+        <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+        <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -79,7 +79,7 @@
             <!-- Logo -->
             <a href="/" class="flex items-center gap-3 group mb-8">
                 <div class="w-14 h-14 flex items-center justify-center overflow-hidden rounded-full transform group-hover:rotate-12 transition-all duration-500 animate-pulse-glow">
-                    <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
+                    <img src="{{ asset('images/logo.png') }}" alt="TIPTAP Logo" class="w-full h-full object-contain bg-white">
                 </div>
                 <div>
                     <span class="text-2xl font-black text-white tracking-tight block leading-none hidden">TIP<span class="gradient-text">TAP</span></span>
@@ -99,7 +99,17 @@
             </div>
 
             <!-- Footer -->
-            <p class="mt-8 text-white/30 text-xs font-medium">© {{ date('Y') }} TIPTAP  . All rights reserved.</p>
+            <p class="mt-8 text-white/30 text-xs font-medium flex items-center justify-center gap-2">
+                <img
+                    src="{{ asset('images/flags/tz.svg') }}"
+                    alt="Tanzania flag"
+                    width="24"
+                    height="18"
+                    class="h-[18px] w-6 shrink-0 rounded-[2px] shadow-sm ring-1 ring-white/25 object-cover"
+                    title="Tanzania"
+                >
+                <span>&copy; {{ date('Y') }} TIPTAP. All rights reserved.</span>
+            </p>
         </div>
     </body>
 </html>

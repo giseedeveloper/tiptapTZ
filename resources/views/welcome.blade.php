@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>TIPTAP | QR & WhatsApp Ordering for Restaurants</title>
-    <meta name="description" content="The smartest QR and WhatsApp ordering system for modern restaurants in Tanzania. TipTap Bot, instant mobile money, kitchen display, and live analytics.">
+    <meta name="description" content="The smartest QR and WhatsApp ordering system for modern restaurants in Tanzania. TipTap Rafiki, instant mobile money, kitchen display, and live analytics.">
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
@@ -160,7 +160,7 @@
                 <div class="flex-1 text-center lg:text-left max-w-xl mx-auto lg:mx-0">
                     <div class="inline-flex items-center gap-2 rounded-full pl-1 pr-4 py-1 mb-8 bg-white/70 backdrop-blur-md border border-white shadow-sm">
                         <span class="rounded-full bg-gradient-to-r from-fin-primary to-fin-primary-dark px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">Live</span>
-                        <span class="text-xs font-medium text-fin-muted">TipTap Bot &middot; WhatsApp &middot; QR &middot; M-Pesa</span>
+                        <span class="text-xs font-medium text-fin-muted">TipTap Rafiki &middot; WhatsApp &middot; QR &middot; M-Pesa</span>
                     </div>
                     <h1 class="text-[2rem] sm:text-[2.75rem] lg:text-[3rem] font-light leading-[1.08] tracking-tight text-fin-ink mb-6">
                         <span class="text-hero-gradient font-normal">Review, pay and tip</span><br>
@@ -212,11 +212,6 @@
                     </div>
                 @endforeach
             </div>
-            <div class="flex flex-wrap justify-center items-center gap-x-10 gap-y-4 mt-14 pt-10 border-t border-fin-ink/5">
-                @foreach(['SAMAKISAMAKI', 'AKEMI', 'CTFM', 'ELEMENTS', 'THE PIER'] as $brand)
-                    <span class="text-xs font-bold text-fin-ink/40 tracking-[0.15em] uppercase hover:text-fin-primary transition-colors">{{ $brand }}</span>
-                @endforeach
-            </div>
         </div>
     </section>
 
@@ -233,7 +228,7 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <div class="fin-card feature-card-lg rounded-3xl p-8 md:col-span-7 reveal">
                     <div class="icon-box mb-6"><i data-lucide="bot" class="w-6 h-6 text-fin-primary"></i></div>
-                    <h3 class="text-2xl font-semibold text-fin-ink mb-3 tracking-tight">TipTap Bot on WhatsApp</h3>
+                    <h3 class="text-2xl font-semibold text-fin-ink mb-3 tracking-tight">TipTap Rafiki on WhatsApp</h3>
                     <p class="text-fin-muted leading-relaxed max-w-md text-[0.95rem]">Customers browse your menu, order, request the bill, and pay &mdash; all inside one chat. English and Swahili supported.</p>
                     <div class="mt-8 p-5 rounded-2xl bg-white border border-fin-primary/10 shadow-inner max-w-sm">
                         <div class="flex gap-3 items-center">
@@ -287,7 +282,7 @@
             <div class="grid md:grid-cols-3 gap-12 md:gap-6">
                 @foreach([
                     ['01', 'qr-code', 'Scan QR at table', 'Guests scan the code, no app download required.'],
-                    ['02', 'messages-square', 'Chat with TipTap Bot', 'Browse menu, order, and pay inside WhatsApp.'],
+                    ['02', 'messages-square', 'Chat with TipTap Rafiki', 'Browse menu, order, and pay inside WhatsApp.'],
                     ['03', 'utensils-crossed', 'Kitchen & waiter sync', 'Orders flow instantly to staff and the kitchen.'],
                 ] as [$num, $icon, $title, $desc])
                     <div class="step-line text-center reveal">
@@ -350,7 +345,7 @@
                     <h3 class="font-semibold text-fin-ink text-lg">Business</h3>
                     <p class="mt-3"><span class="text-4xl font-light text-hero-accent tracking-tight">50k</span><span class="text-sm text-fin-muted ml-1">TZS / month</span></p>
                     <ul class="mt-8 space-y-3.5 text-sm text-fin-ink flex-1">
-                        @foreach(['Unlimited tables', 'TipTap WhatsApp Bot', 'Mobile money payments', 'Kitchen display'] as $f)
+                        @foreach(['Unlimited tables', 'TipTap Rafiki', 'Mobile money payments', 'Kitchen display'] as $f)
                             <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full bg-fin-primary/15 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 text-fin-primary-dark"></i></span>{{ $f }}</li>
                         @endforeach
                     </ul>
@@ -379,7 +374,7 @@
             </div>
             <div class="space-y-3 reveal">
                 @foreach([
-                    ['What is TIPTAP?', 'A restaurant operating system: QR ordering, TipTap Bot on WhatsApp, mobile money payments, kitchen display, and manager dashboards built for Tanzania.'],
+                    ['What is TIPTAP?', 'A restaurant operating system: QR ordering, TipTap Rafiki on WhatsApp, mobile money payments, kitchen display, and manager dashboards built for Tanzania.'],
                     ['Do customers need an app?', 'No. Guests scan a QR code and order through WhatsApp, the chat they already use every day.'],
                     ['Which payments are supported?', 'M-Pesa, TigoPesa, and Airtel Money via Selcom. Tips and bills are tracked in real time.'],
                     ['Can waiters register separately?', 'Yes. Waiters receive a unique TIPTAP-W code and link to venues through their manager.'],
@@ -403,7 +398,7 @@
             <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 30% 20%, white, transparent 45%), radial-gradient(circle at 80% 80%, #C6BDFA, transparent 40%);"></div>
             <div class="relative px-8 py-16 lg:py-20 text-center">
                 <h2 class="text-3xl lg:text-4xl font-light text-white mb-4 tracking-tight">Upgrade your restaurant today</h2>
-                <p class="text-white/85 font-normal mb-10 max-w-md mx-auto text-base leading-relaxed">Join venues already using TipTap Bot, QR ordering, and instant mobile payments.</p>
+                <p class="text-white/85 font-normal mb-10 max-w-md mx-auto text-base leading-relaxed">Join venues already using TipTap Rafiki, QR ordering, and instant mobile payments.</p>
                 <a href="{{ route('restaurant.register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-10 py-4 text-sm font-bold text-fin-primary-dark shadow-2xl hover:scale-[1.03] transition-transform">
                     Create free account
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>

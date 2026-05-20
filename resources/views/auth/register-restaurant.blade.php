@@ -9,7 +9,7 @@
             <!-- Chat Header -->
             <div class="flex items-center gap-4 mb-8">
                 <div class="w-12 h-12 flex items-center justify-center overflow-hidden rounded-full">
-                    <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
+                    <img src="{{ asset('images/logo.png') }}" alt="TIPTAP Logo" class="w-full h-full object-contain bg-white">
                 </div>
                 <div>
                     <h2 class="text-xl font-black text-white">TIPTAP Assistant</h2>

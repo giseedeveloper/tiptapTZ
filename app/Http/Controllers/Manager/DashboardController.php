@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Feedback;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\ManagerDashboardAnalytics;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,7 +20,7 @@ class DashboardController extends Controller
         // Stats
         $totalOrdersToday = Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->count();
         $revenueToday = Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->where('status', 'paid')->sum('total_amount');
-        $avgRating = Feedback::whereHas('order', function($q) use ($restaurantId) {
+        $avgRating = Feedback::whereHas('order', function ($q) use ($restaurantId) {
             $q->where('restaurant_id', $restaurantId);
         })->avg('rating') ?? 0;
         $waitersOnline = User::role('waiter')->where('restaurant_id', $restaurantId)->where('is_online', true)->count();
@@ -31,12 +32,14 @@ class DashboardController extends Controller
         $paidOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)->where('status', 'paid')->whereDate('created_at', $today)->latest()->take(10)->get();
 
         // Feedback
-        $recentFeedback = Feedback::with('order')->whereHas('order', function($q) use ($restaurantId) {
+        $recentFeedback = Feedback::with('order')->whereHas('order', function ($q) use ($restaurantId) {
             $q->where('restaurant_id', $restaurantId);
         })->latest()->take(5)->get();
 
         // Tips: not shown to manager (policy: don't show tips to manager)
         $waiterTips = collect();
+
+        $analytics = app(ManagerDashboardAnalytics::class)->forRestaurant($restaurantId);
 
         return view('manager.dashboard', compact(
             'totalOrdersToday',
@@ -48,7 +51,8 @@ class DashboardController extends Controller
             'servedOrders',
             'paidOrders',
             'recentFeedback',
-            'waiterTips'
+            'waiterTips',
+            'analytics'
         ));
     }
 
@@ -60,7 +64,7 @@ class DashboardController extends Controller
         $stats = [
             'total_orders_today' => Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->count(),
             'revenue_today' => Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->where('status', 'paid')->sum('total_amount'),
-            'avg_rating' => number_format(Feedback::whereHas('order', function($q) use ($restaurantId) {
+            'avg_rating' => number_format(Feedback::whereHas('order', function ($q) use ($restaurantId) {
                 $q->where('restaurant_id', $restaurantId);
             })->avg('rating') ?? 0, 1),
             'waiters_online' => User::role('waiter')->where('restaurant_id', $restaurantId)->where('is_online', true)->count(),

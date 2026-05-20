@@ -12,8 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/jpeg" href="{{ asset('logo.jpeg') }}">
-    <link rel="shortcut icon" href="{{ asset('logo.jpeg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -142,10 +142,13 @@
             #mobile-sidebar,
             #mobile-sidebar.sidebar-closed-mobile { transform: translateX(0) !important; visibility: visible !important; }
             #mobile-sidebar.sidebar-collapsed { width: 3.5rem !important; }
-            main#main-content { margin-left: 13rem; }
+            main#main-content { margin-left: 12rem; }
             body.sidebar-collapsed-main main#main-content { margin-left: 3.5rem; }
         }
         body.sidebar-mobile-open #sidebar-overlay { display: block !important; opacity: 1 !important; pointer-events: auto !important; }
+        @media (max-width: 767px) {
+            body.sidebar-mobile-open { overflow: hidden; }
+        }
         #mobile-sidebar.sidebar-collapsed { width: 3.5rem; }
         #mobile-sidebar.sidebar-collapsed .sidebar-link span,
         #mobile-sidebar.sidebar-collapsed .sidebar-label,
@@ -157,7 +160,29 @@
         #mobile-sidebar.sidebar-collapsed nav .px-6 { padding-left: 0; padding-right: 0; }
         #mobile-sidebar.sidebar-collapsed .sidebar-user-area .flex-1 { display: none; }
         #mobile-sidebar.sidebar-collapsed .sidebar-user-area { justify-content: center; }
-        body.sidebar-collapsed-main main#main-content { margin-left: 5rem; }
+        body.sidebar-collapsed-main main#main-content { margin-left: 3.5rem; }
+
+        #mobile-sidebar nav.sidebar-nav-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overscroll-behavior: contain;
+        }
+
+        #mobile-sidebar nav.sidebar-nav-scroll::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        .portal-heading {
+            min-width: 0;
+        }
+
+        .portal-heading h1 {
+            font-size: clamp(1.25rem, 2.5vw + 0.5rem, 1.875rem);
+            line-height: 1.2;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-white min-h-screen pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
@@ -168,11 +193,11 @@
 
     <div class="flex min-h-screen">
         <!-- Premium Waiter Sidebar: drawer on mobile, persistent on md+ with toggle -->
-        <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-[100] w-52 sidebar-gradient flex flex-col h-screen shadow-2xl shadow-black/50 border-r border-white/5 sidebar-closed-mobile" style="width: 13rem;">
-            <div class="p-4 pb-3 flex justify-between items-center border-b border-white/5 shrink-0">
+        <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-[100] w-[min(252px,85vw)] md:w-48 bg-surface-900/95 backdrop-blur-xl border-r border-white/10 flex flex-col overflow-hidden sidebar-closed-mobile" role="navigation" aria-label="Waiter navigation">
+            <div class="px-4 py-4 flex justify-between items-center border-b border-white/5 shrink-0">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-8 h-8 flex shrink-0 items-center justify-center overflow-hidden rounded-full">
-                        <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
+                    <div class="w-10 h-10 flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+                        <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="w-full h-full object-contain">
                     </div>
                     <div class="sidebar-logo-text min-w-0">
                         <span class="text-base font-black text-white tracking-tight block leading-none hidden">TIP<span class="gradient-text">TAP</span></span>
@@ -192,7 +217,7 @@
                 </div>
             </div>
 
-            <nav class="flex-1 py-4 custom-scrollbar overflow-y-auto overflow-x-hidden">
+            <nav class="flex-1 py-4 sidebar-nav-scroll overflow-y-auto overflow-x-hidden">
                 <div class="mb-3 px-4 sidebar-label">
                     <p class="text-[9px] font-bold text-white/25 uppercase tracking-[0.25em]">Main</p>
                 </div>
@@ -352,33 +377,26 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main id="main-content" class="flex-1 min-h-screen flex flex-col w-full relative z-0 transition-[margin] duration-300 md:ml-52" tabindex="-1">
+        <main id="main-content" class="flex-1 min-h-screen flex flex-col w-full relative z-0 transition-[margin] duration-300 md:ml-48" tabindex="-1">
             <!-- Mobile Header -->
-            <div class="md:hidden glass sticky top-0 z-30 px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="openSidebar()" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Open menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
-                        </svg>
-                    </button>
-                    <span class="font-bold text-white/90 text-lg tracking-tight">TIP<span class="gradient-text">TAP</span></span>
+            <div class="md:hidden glass sticky top-0 z-30 px-4 py-3 flex items-center gap-3 min-w-0">
+                <button type="button" onclick="openSidebar()" class="shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <div class="flex-1 min-w-0 portal-heading">
+                    <p class="text-[10px] font-semibold text-violet-400 uppercase tracking-wide mb-0.5">Waiter Portal</p>
+                    <h1 class="font-bold text-white tracking-tight break-words">{{ $header ?? 'Dashboard' }}</h1>
                 </div>
-                    <div class="w-9 h-9 flex items-center justify-center overflow-hidden rounded-full">
-                        <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
-                    </div>
             </div>
 
             <!-- Desktop Header & Content -->
-            <div class="p-4 lg:p-8 flex-1">
-                <div class="hidden md:flex justify-between items-center mb-8">
-                    <div class="flex items-center gap-5">
-                        <button type="button" id="sidebar-toggle-top" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 glass rounded-xl hover:bg-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]" aria-label="Toggle sidebar" title="Toggle sidebar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
-                        </button>
-                        <div>
-                            <p class="text-[11px] font-semibold text-violet-400 uppercase tracking-[0.15em] mb-1">Waiter Portal</p>
-                            <h1 class="text-3xl font-bold text-white tracking-tight">{{ $header ?? 'Dashboard' }}</h1>
-                        </div>
+            <div class="p-4 md:p-6 lg:p-8 flex-1">
+                <div class="hidden md:flex justify-between items-start gap-4 mb-8 min-w-0">
+                    <div class="min-w-0 flex-1 portal-heading">
+                        <p class="text-[11px] font-semibold text-violet-400 uppercase tracking-wide mb-1">Waiter Portal</p>
+                        <h1 class="font-bold text-white tracking-tight break-words">{{ $header ?? 'Dashboard' }}</h1>
                     </div>
                     
                     <div class="flex items-center gap-5">
@@ -484,21 +502,21 @@
                         <form action="{{ route('waiter.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                             @csrf
                             <div>
-                                <label for="profileName" class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Jina lako</label>
+                                <label for="profileName" class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Your name</label>
                                 <input type="text" name="name" id="profileName" value="{{ old('name', $layoutWaiter->name) }}" required maxlength="255" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500 focus:border-transparent">
                                 @error('name')
                                     <p class="text-rose-400 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
                             <div>
-                                <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Picha ya wasifu</label>
+                                <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1 block">Profile photo</label>
                                 <input type="file" name="profile_photo" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" class="w-full text-sm text-white/70 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-600 file:text-white file:font-semibold file:cursor-pointer hover:file:bg-violet-500">
-                                <p class="text-white/40 text-xs mt-1">JPG, PNG, GIF au WebP. Ukiweka mpya, ile ya zamani itabadilishwa.</p>
+                                <p class="text-white/40 text-xs mt-1">JPG, PNG, GIF or WebP. Uploading a new file replaces the previous one.</p>
                                 @error('profile_photo')
                                     <p class="text-rose-400 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
-                            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all">Hifadhi mabadiliko</button>
+                            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all">Save changes</button>
                         </form>
                     </div>
                 </div>
@@ -583,7 +601,6 @@
         }
         function toggleWaiterSidebar() { setWaiterSidebarCollapsed(!isWaiterSidebarCollapsed()); }
         document.getElementById('sidebar-toggle') && document.getElementById('sidebar-toggle').addEventListener('click', toggleWaiterSidebar);
-        document.getElementById('sidebar-toggle-top') && document.getElementById('sidebar-toggle-top').addEventListener('click', toggleWaiterSidebar);
         try { if (localStorage.getItem(WAITER_SIDEBAR_KEY) === '1') setWaiterSidebarCollapsed(true); } catch (e) {}
 
         window.addEventListener('load', function() {

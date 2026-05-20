@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/jpeg" href="{{ asset('logo.jpeg') }}">
-    <link rel="shortcut icon" href="{{ asset('logo.jpeg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; box-sizing: border-box; }
@@ -41,7 +41,7 @@
             <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div class="flex items-center gap-2 shrink-0">
                     <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden flex items-center justify-center shadow-lg shadow-violet-500/20">
-                        <img src="{{ asset('logo.jpeg') }}" alt="TIPTAP Logo" class="w-full h-full object-cover">
+                        <img src="{{ asset('images/logo.png') }}" alt="TIPTAP Logo" class="w-full h-full object-contain bg-white">
                     </div>
                     <span class="text-lg sm:text-xl font-black text-white tracking-tight">TIPTAP <span class="gradient-text">ORDER</span></span>
                 </div>

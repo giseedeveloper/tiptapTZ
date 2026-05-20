@@ -126,7 +126,17 @@
                 </div>
             </div>
 
-            <p class="mt-6 sm:mt-8 text-[#64708B] text-xs font-medium text-center">&copy; {{ date('Y') }} TIPTAP. All rights reserved.</p>
+            <p class="login-footer mt-6 sm:mt-8 text-[#64708B] text-xs font-medium text-center flex items-center justify-center gap-2">
+                <img
+                    src="{{ asset('images/flags/tz.svg') }}"
+                    alt="Tanzania flag"
+                    width="24"
+                    height="18"
+                    class="h-[18px] w-6 shrink-0 rounded-[2px] shadow-sm ring-1 ring-black/10 object-cover"
+                    title="Tanzania"
+                >
+                <span>&copy; {{ date('Y') }} TIPTAP. All rights reserved.</span>
+            </p>
         </div>
     </body>
 </html>

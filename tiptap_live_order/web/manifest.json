@@ -3,7 +3,7 @@
     "short_name": "tiptap_live_order",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0A0614",
+    "background_color": "#FFFFFF",
     "theme_color": "#06B6D4",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",

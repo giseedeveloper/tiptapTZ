@@ -14,7 +14,7 @@
         <div class="bg-[#E5DDD5] h-[540px] sm:h-[580px] flex flex-col overflow-hidden">
             <div class="bg-gradient-to-r from-[#075E54] to-[#128C7E] px-3.5 py-3 flex items-center gap-3 shrink-0 shadow-md">
                 <div class="w-10 h-10 rounded-full bg-white p-0.5 ring-2 ring-white/30 shrink-0 overflow-hidden">
-                    <img src="{{ asset('images/logo.png') }}" alt="TipTap Rafiki" class="w-full h-full object-contain rounded-full">
+                    <img src="{{ asset('images/logo.png') }}" alt="TAPTAP" class="w-full h-full object-contain rounded-full">
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-white text-[15px] font-semibold leading-tight tracking-tight">TipTap Rafiki</p>

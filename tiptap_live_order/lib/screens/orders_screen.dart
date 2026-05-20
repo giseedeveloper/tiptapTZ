@@ -316,7 +316,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                 ),
                 child: ClipOval(
                   child: Image.asset(
-                    'assets/images/logo.jpeg',
+                    'assets/images/logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),
