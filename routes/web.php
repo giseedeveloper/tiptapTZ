@@ -8,9 +8,7 @@ use App\Http\Controllers\RestaurantRegistrationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect('/login');
-});
+Route::view('/', 'welcome')->name('home');
 
 Route::get('/fix-storage', function () {
     \Illuminate\Support\Facades\Artisan::call('storage:link');

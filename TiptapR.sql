@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 18, 2026 at 08:54 PM
+-- Generation Time: May 19, 2026 at 09:58 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `tiptapaf`
+-- Database: `TiptapR`
 --
 
 -- --------------------------------------------------------
@@ -585,7 +585,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (48, '2026_02_23_212736_create_admin_activity_logs_table', 29),
 (49, '2026_02_23_213847_create_admin_sent_notifications_table', 30),
 (50, '2026_02_23_214848_add_waiter_online_status_to_users_table', 31),
-(51, '2026_02_26_114031_create_order_portal_passwords_table', 32);
+(51, '2026_02_26_114031_create_order_portal_passwords_table', 32),
+(52, '2026_05_08_163344_add_whatsapp_jid_and_bill_pushed_at_to_orders_table', 33);
 
 -- --------------------------------------------------------
 
@@ -680,6 +681,8 @@ CREATE TABLE `orders` (
   `table_number` varchar(255) DEFAULT NULL,
   `customer_phone` varchar(255) DEFAULT NULL,
   `customer_name` varchar(255) DEFAULT NULL,
+  `whatsapp_jid` varchar(191) DEFAULT NULL,
+  `bill_image_pushed_at` timestamp NULL DEFAULT NULL,
   `status` varchar(255) NOT NULL DEFAULT 'pending',
   `is_vip` tinyint(1) NOT NULL DEFAULT 0,
   `payment_reference` varchar(255) DEFAULT NULL,
@@ -694,44 +697,46 @@ CREATE TABLE `orders` (
 -- Dumping data for table `orders`
 --
 
-INSERT INTO `orders` (`id`, `restaurant_id`, `table_number`, `customer_phone`, `customer_name`, `status`, `is_vip`, `payment_reference`, `total_amount`, `notes`, `created_at`, `updated_at`, `waiter_id`) VALUES
-(4, 3, '3', '165515876151525', NULL, 'pending', 0, NULL, 3000.00, NULL, '2026-01-03 23:26:48', '2026-01-03 23:26:48', NULL),
-(5, 3, '3', '165515876151525', NULL, 'pending', 0, NULL, 3000.00, NULL, '2026-01-03 23:33:48', '2026-01-03 23:33:48', NULL),
-(7, 2, '1', '165515876151525', NULL, 'paid', 0, NULL, 40000.00, NULL, '2026-01-03 23:57:52', '2026-01-03 23:58:51', NULL),
-(9, 2, '1', '165515876151525', NULL, 'paid', 0, NULL, 10000.00, NULL, '2026-01-04 10:42:20', '2026-01-04 10:45:17', NULL),
-(10, 2, '2', '165515876151525', NULL, 'paid', 0, NULL, 28000.00, NULL, '2026-01-06 06:27:38', '2026-01-06 06:28:17', NULL),
-(11, 2, '1', '165515876151525', NULL, 'paid', 0, NULL, 10000.00, NULL, '2026-01-06 08:03:07', '2026-01-06 08:05:06', NULL),
-(12, 2, '1', '165515876151525', NULL, 'ready', 0, NULL, 28000.00, NULL, '2026-01-10 13:16:20', '2026-02-15 07:03:22', 15),
-(26, 6, 'Mawenzi', '0753228505', NULL, 'served', 0, NULL, 10000.00, NULL, '2026-01-17 07:34:33', '2026-01-17 07:36:35', NULL),
-(27, 6, 'Mawenzi', NULL, NULL, 'ready', 0, NULL, 20000.00, NULL, '2026-01-17 07:39:18', '2026-01-17 07:42:25', NULL),
-(29, 2, NULL, '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, NULL, 0.00, 'Order from text: Nataka soda chupa 2', '2026-02-01 10:02:21', '2026-02-27 06:14:34', 12),
-(35, 2, 'table_11', '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, 'ORD-35-1772112211', 25000.00, 'Order from text: Maji, chips na kuku', '2026-02-26 09:38:45', '2026-02-26 10:26:38', 22),
-(36, 2, 'table_13', '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:49:37', '2026-02-26 11:51:46', 22),
-(37, 2, 'table_13', '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:54:41', '2026-02-26 14:48:17', 22),
-(38, 2, 'table_13', '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, 'ORD-38-1772128189', 25000.00, NULL, '2026-02-26 11:54:57', '2026-02-27 06:14:09', 22),
-(40, 2, 'table_11', '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:55:46', '2026-02-28 02:18:16', 22),
-(44, 2, 'table_11', '165515876151525', 'SKY SOFTWARE DEVELOPER', 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:56:18', '2026-02-26 14:45:52', 22),
-(46, 2, 'front', '', '', 'paid', 0, NULL, 40000.00, NULL, '2026-02-27 06:18:01', '2026-02-27 06:27:23', 16),
-(47, 2, 'front', '', '', 'paid', 0, 'ORD-47-1772256022', 25000.00, NULL, '2026-02-28 02:18:48', '2026-02-28 02:23:34', 22),
-(48, 2, 'Uhuru', '', '', 'paid', 0, NULL, 40000.00, NULL, '2026-02-28 03:08:10', '2026-03-01 12:01:57', 22),
-(49, 2, 'Mawenzi', '', '', 'paid', 0, NULL, 25000.00, NULL, '2026-03-01 11:59:14', '2026-03-01 12:03:27', 22),
-(50, 2, 'Uhuru', '', '', 'ready', 0, NULL, 65000.00, NULL, '2026-03-01 12:08:08', '2026-03-01 12:16:51', 22),
-(51, 2, 'Mawenzi', '', '', 'paid', 0, NULL, 30000.00, NULL, '2026-03-01 12:13:33', '2026-03-01 12:15:35', 23),
-(52, 2, 'Mawenzi', '', '', 'ready', 0, NULL, 100000.00, NULL, '2026-03-01 12:17:46', '2026-03-01 12:20:01', 23),
-(53, 2, 'Mawenzi', '', '', 'paid', 0, NULL, 65000.00, NULL, '2026-03-01 12:28:03', '2026-03-01 12:32:05', 23),
-(54, 2, 'Uhuru', '', '', 'paid', 0, 'ORD-54-1773325469', 55000.00, NULL, '2026-03-01 13:27:15', '2026-03-12 11:25:04', 23),
-(55, 2, 'Mawenzi', '', '', 'paid', 0, NULL, 25000.00, NULL, '2026-03-12 07:34:44', '2026-03-12 07:36:01', 23),
-(56, 2, 'Mawenzi', '', '', 'ready', 0, NULL, 25000.00, NULL, '2026-03-12 11:22:33', '2026-03-13 11:44:56', 23),
-(57, 2, 'Uhuru', '', '', 'ready', 0, NULL, 10000.00, NULL, '2026-03-12 11:44:45', '2026-03-13 11:44:31', 23),
-(58, 2, 'Mawenzi', '', '', 'paid', 0, NULL, 25000.00, NULL, '2026-03-12 11:48:16', '2026-03-13 11:47:08', 23),
-(59, 2, 'Mawenzi', '', '', 'paid', 0, NULL, 5000.00, NULL, '2026-03-12 13:53:09', '2026-03-13 03:13:43', 23),
-(60, 2, 'Mawenzi', '', '', 'ready', 0, NULL, 10000.00, NULL, '2026-03-13 11:45:51', '2026-03-13 11:46:40', 23),
-(61, 2, 'Mawenzi', '', '', 'ready', 0, NULL, 10000.00, NULL, '2026-03-15 10:05:58', '2026-03-15 10:08:37', 23),
-(62, 2, 'Uhuru', '', '', 'ready', 0, NULL, 10000.00, NULL, '2026-03-15 10:09:55', '2026-03-15 10:10:46', 23),
-(63, 2, 'Mawenzi', '', '', 'ready', 0, NULL, 5000.00, NULL, '2026-03-15 10:12:53', '2026-03-15 10:14:08', 23),
-(64, 2, 'Uhuru', '', '', 'ready', 0, NULL, 25000.00, NULL, '2026-03-15 10:18:06', '2026-03-15 10:19:19', 23),
-(65, 2, 'Mawenzi', '0678165524', 'Kelvin', 'ready', 0, NULL, 60000.00, NULL, '2026-03-15 19:58:56', '2026-03-15 20:14:11', NULL),
-(66, 2, 'Mawenzi', '0653494745', 'Kelvin', 'ready', 0, NULL, 40000.00, NULL, '2026-03-15 20:33:20', '2026-03-15 20:33:34', NULL);
+INSERT INTO `orders` (`id`, `restaurant_id`, `table_number`, `customer_phone`, `customer_name`, `whatsapp_jid`, `bill_image_pushed_at`, `status`, `is_vip`, `payment_reference`, `total_amount`, `notes`, `created_at`, `updated_at`, `waiter_id`) VALUES
+(4, 3, '3', '165515876151525', NULL, NULL, NULL, 'pending', 0, NULL, 3000.00, NULL, '2026-01-03 23:26:48', '2026-01-03 23:26:48', NULL),
+(5, 3, '3', '165515876151525', NULL, NULL, NULL, 'pending', 0, NULL, 3000.00, NULL, '2026-01-03 23:33:48', '2026-01-03 23:33:48', NULL),
+(7, 2, '1', '165515876151525', NULL, NULL, NULL, 'paid', 0, NULL, 40000.00, NULL, '2026-01-03 23:57:52', '2026-01-03 23:58:51', NULL),
+(9, 2, '1', '165515876151525', NULL, NULL, NULL, 'paid', 0, NULL, 10000.00, NULL, '2026-01-04 10:42:20', '2026-01-04 10:45:17', NULL),
+(10, 2, '2', '165515876151525', NULL, NULL, NULL, 'paid', 0, NULL, 28000.00, NULL, '2026-01-06 06:27:38', '2026-01-06 06:28:17', NULL),
+(11, 2, '1', '165515876151525', NULL, NULL, NULL, 'paid', 0, NULL, 10000.00, NULL, '2026-01-06 08:03:07', '2026-01-06 08:05:06', NULL),
+(12, 2, '1', '165515876151525', NULL, NULL, NULL, 'ready', 0, NULL, 28000.00, NULL, '2026-01-10 13:16:20', '2026-02-15 07:03:22', 15),
+(26, 6, 'Mawenzi', '0753228505', NULL, NULL, NULL, 'served', 0, NULL, 10000.00, NULL, '2026-01-17 07:34:33', '2026-01-17 07:36:35', NULL),
+(27, 6, 'Mawenzi', NULL, NULL, NULL, NULL, 'ready', 0, NULL, 20000.00, NULL, '2026-01-17 07:39:18', '2026-01-17 07:42:25', NULL),
+(29, 2, NULL, '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, NULL, 0.00, 'Order from text: Nataka soda chupa 2', '2026-02-01 10:02:21', '2026-02-27 06:14:34', 12),
+(35, 2, 'table_11', '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, 'ORD-35-1772112211', 25000.00, 'Order from text: Maji, chips na kuku', '2026-02-26 09:38:45', '2026-02-26 10:26:38', 22),
+(36, 2, 'table_13', '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:49:37', '2026-02-26 11:51:46', 22),
+(37, 2, 'table_13', '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:54:41', '2026-02-26 14:48:17', 22),
+(38, 2, 'table_13', '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, 'ORD-38-1772128189', 25000.00, NULL, '2026-02-26 11:54:57', '2026-02-27 06:14:09', 22),
+(40, 2, 'table_11', '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:55:46', '2026-02-28 02:18:16', 22),
+(44, 2, 'table_11', '165515876151525', 'SKY SOFTWARE DEVELOPER', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-02-26 11:56:18', '2026-02-26 14:45:52', 22),
+(46, 2, 'front', '', '', NULL, NULL, 'paid', 0, NULL, 40000.00, NULL, '2026-02-27 06:18:01', '2026-02-27 06:27:23', 16),
+(47, 2, 'front', '', '', NULL, NULL, 'paid', 0, 'ORD-47-1772256022', 25000.00, NULL, '2026-02-28 02:18:48', '2026-02-28 02:23:34', 22),
+(48, 2, 'Uhuru', '', '', NULL, NULL, 'paid', 0, NULL, 40000.00, NULL, '2026-02-28 03:08:10', '2026-03-01 12:01:57', 22),
+(49, 2, 'Mawenzi', '', '', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-03-01 11:59:14', '2026-03-01 12:03:27', 22),
+(50, 2, 'Uhuru', '', '', NULL, NULL, 'ready', 0, NULL, 65000.00, NULL, '2026-03-01 12:08:08', '2026-03-01 12:16:51', 22),
+(51, 2, 'Mawenzi', '', '', NULL, NULL, 'paid', 0, NULL, 30000.00, NULL, '2026-03-01 12:13:33', '2026-03-01 12:15:35', 23),
+(52, 2, 'Mawenzi', '', '', NULL, NULL, 'ready', 0, NULL, 100000.00, NULL, '2026-03-01 12:17:46', '2026-03-01 12:20:01', 23),
+(53, 2, 'Mawenzi', '', '', NULL, NULL, 'paid', 0, NULL, 65000.00, NULL, '2026-03-01 12:28:03', '2026-03-01 12:32:05', 23),
+(54, 2, 'Uhuru', '', '', NULL, NULL, 'paid', 0, 'ORD-54-1773325469', 55000.00, NULL, '2026-03-01 13:27:15', '2026-03-12 11:25:04', 23),
+(55, 2, 'Mawenzi', '', '', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-03-12 07:34:44', '2026-03-12 07:36:01', 23),
+(56, 2, 'Mawenzi', '', '', NULL, NULL, 'ready', 0, NULL, 25000.00, NULL, '2026-03-12 11:22:33', '2026-03-13 11:44:56', 23),
+(57, 2, 'Uhuru', '', '', NULL, NULL, 'ready', 0, NULL, 10000.00, NULL, '2026-03-12 11:44:45', '2026-03-13 11:44:31', 23),
+(58, 2, 'Mawenzi', '', '', NULL, NULL, 'paid', 0, NULL, 25000.00, NULL, '2026-03-12 11:48:16', '2026-03-13 11:47:08', 23),
+(59, 2, 'Mawenzi', '', '', NULL, NULL, 'paid', 0, NULL, 5000.00, NULL, '2026-03-12 13:53:09', '2026-03-13 03:13:43', 23),
+(60, 2, 'Mawenzi', '', '', NULL, NULL, 'ready', 0, NULL, 10000.00, NULL, '2026-03-13 11:45:51', '2026-03-13 11:46:40', 23),
+(61, 2, 'Mawenzi', '', '', NULL, NULL, 'ready', 0, NULL, 10000.00, NULL, '2026-03-15 10:05:58', '2026-03-15 10:08:37', 23),
+(62, 2, 'Uhuru', '', '', NULL, NULL, 'ready', 0, NULL, 10000.00, NULL, '2026-03-15 10:09:55', '2026-03-15 10:10:46', 23),
+(63, 2, 'Mawenzi', '', '', NULL, NULL, 'ready', 0, NULL, 5000.00, NULL, '2026-03-15 10:12:53', '2026-03-15 10:14:08', 23),
+(64, 2, 'Uhuru', '', '', NULL, NULL, 'ready', 0, NULL, 25000.00, NULL, '2026-03-15 10:18:06', '2026-03-15 10:19:19', 23),
+(65, 2, 'Mawenzi', '0678165524', 'Kelvin', NULL, NULL, 'ready', 0, NULL, 60000.00, NULL, '2026-03-15 19:58:56', '2026-03-15 20:14:11', NULL),
+(66, 2, 'Mawenzi', '0653494745', 'Kelvin', NULL, NULL, 'ready', 0, NULL, 40000.00, NULL, '2026-03-15 20:33:20', '2026-03-15 20:33:34', NULL),
+(67, 2, 'Mawenzi', '0678154423', 'Erick', NULL, NULL, 'served', 0, NULL, 10000.00, NULL, '2026-05-08 11:40:48', '2026-05-08 11:40:51', NULL),
+(68, 2, 'Mawenzi', '0678154423', 'Erick', NULL, NULL, 'pending', 0, NULL, 60000.00, NULL, '2026-05-08 11:41:36', '2026-05-08 11:41:36', NULL);
 
 -- --------------------------------------------------------
 
@@ -762,7 +767,9 @@ INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `name`, `quantity`,
 (2, 5, 5, NULL, 1, 3000.00, 3000.00, 'pending', NULL, '2026-01-03 23:33:48', '2026-01-03 23:33:48'),
 (24, 26, 6, 'Chicken Shawarma', 1, 10000.00, 10000.00, 'pending', NULL, '2026-01-17 07:34:33', '2026-01-17 07:34:33'),
 (25, 27, 6, 'Chicken Shawarma', 2, 10000.00, 20000.00, 'pending', NULL, '2026-01-17 07:39:18', '2026-01-17 07:39:18'),
-(27, 29, NULL, 'Nataka soda chupa 2', 1, 0.00, 0.00, 'pending', NULL, '2026-02-01 10:02:21', '2026-02-01 10:02:21');
+(27, 29, NULL, 'Nataka soda chupa 2', 1, 0.00, 0.00, 'pending', NULL, '2026-02-01 10:02:21', '2026-02-01 10:02:21'),
+(100, 67, 13, 'Chips Mayai', 1, 10000.00, 10000.00, 'pending', NULL, '2026-05-08 11:40:48', '2026-05-08 11:40:48'),
+(101, 68, 13, 'Chips Mayai', 6, 10000.00, 60000.00, 'pending', NULL, '2026-05-08 11:41:36', '2026-05-08 11:41:36');
 
 -- --------------------------------------------------------
 
@@ -1113,7 +1120,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('3XAKZZqh8EXS2mx5ButiNnOyv76rIWo7WNkSRWGY', NULL, '127.0.0.1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:148.0) Gecko/20100101 Firefox/148.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoidkVrVGJ6UFY0WDE0VEEwb2psU2hVMjFkM1gzVVhPcUFvVEZ1Nk0wUiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9sb2dpbiI7czo1OiJyb3V0ZSI7czo1OiJsb2dpbiI7fX0=', 1774345541);
+('3ZGkEhaPiqIwrOBVx9ub5lokVFsp6hi5D70yRcns', 4, '127.0.0.1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoidlFKMDcxbmNrd2RCMVFTREE3VDFRcjEwQ0phN3dhZUVMUTFNeFlpcyI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjI6e3M6MzoidXJsIjtzOjQxOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWFuYWdlci9saXZlLW9yZGVycyI7czo1OiJyb3V0ZSI7czoxOToibWFuYWdlci5vcmRlcnMubGl2ZSI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjQ7fQ==', 1778261840);
 
 -- --------------------------------------------------------
 
@@ -1489,7 +1496,8 @@ ALTER TABLE `notifications`
 ALTER TABLE `orders`
   ADD PRIMARY KEY (`id`),
   ADD KEY `orders_restaurant_id_foreign` (`restaurant_id`),
-  ADD KEY `orders_waiter_id_foreign` (`waiter_id`);
+  ADD KEY `orders_waiter_id_foreign` (`waiter_id`),
+  ADD KEY `orders_whatsapp_jid_index` (`whatsapp_jid`);
 
 --
 -- Indexes for table `order_items`
@@ -1696,19 +1704,19 @@ ALTER TABLE `menu_items`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- AUTO_INCREMENT for table `order_portal_passwords`

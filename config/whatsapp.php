@@ -21,7 +21,12 @@ return [
 
     'bot_notify_secret' => env('WHATSAPP_BOT_NOTIFY_SECRET'),
 
-    'bot_notify_timeout' => (int) env('WHATSAPP_BOT_NOTIFY_TIMEOUT', 8),
+    /*
+    | Seconds to wait for the bot to fetch the bill PNG and send it on WhatsApp.
+    | 8s is often too short; use 45–90 on production if you see "Could not connect"
+    | while bot logs show the message was sent (Laravel gave up waiting first).
+    */
+    'bot_notify_timeout' => (int) env('WHATSAPP_BOT_NOTIFY_TIMEOUT', 60),
 
     /*
     |--------------------------------------------------------------------------

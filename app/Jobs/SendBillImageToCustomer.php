@@ -91,7 +91,10 @@ class SendBillImageToCustomer implements ShouldQueue
             'caption' => $this->buildCaption($order),
         ];
 
-        $response = Http::timeout((int) config('whatsapp.bot_notify_timeout', 8))
+        $timeout = max(15, (int) config('whatsapp.bot_notify_timeout', 60));
+
+        $response = Http::timeout($timeout)
+            ->connectTimeout(min(25, $timeout))
             ->withHeaders(['X-Bot-Secret' => $secret])
             ->acceptJson()
             ->asJson()

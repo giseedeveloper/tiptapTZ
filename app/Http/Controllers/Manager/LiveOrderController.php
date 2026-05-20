@@ -189,7 +189,7 @@ class LiveOrderController extends Controller
             if ($e instanceof ConnectionException) {
                 return redirect()->back()->with(
                     'error',
-                    'Could not connect to the WhatsApp notify URL. The web host may be blocking outbound HTTPS, or the URL is wrong. Check WHATSAPP_BOT_NOTIFY_URL and try curl from the host.'
+                    'Could not reach the WhatsApp notify URL in time. Try increasing WHATSAPP_BOT_NOTIFY_TIMEOUT (e.g. 90) in .env, then php artisan config:clear. If bot logs already show “Pushed bill image”, the message may have been sent—Laravel often stops waiting before the bot finishes fetching the bill and uploading to WhatsApp. Also verify WHATSAPP_BOT_NOTIFY_URL and that your host allows outbound HTTPS to that address.'
                 );
             }
 
