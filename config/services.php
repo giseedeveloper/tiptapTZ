@@ -42,4 +42,12 @@ return [
         'visible_after_minutes' => (int) env('FEEDBACK_VISIBLE_AFTER_MINUTES', 60),
     ],
 
+    'whatsapp' => [
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'),
+        'graph_version' => env('WHATSAPP_GRAPH_VERSION', 'v20.0'),
+    ],
+
 ];

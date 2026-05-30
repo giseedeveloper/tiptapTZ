@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendBillImageToCustomer;
 use App\Models\Order;
+use App\Services\OrderBillNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -98,7 +99,30 @@ class LiveOrderController extends Controller
 
         if ($request->has('status')) {
             $request->validate(['status' => 'in:pending,preparing,served,paid']);
-            $order->update(['status' => $request->status]);
+
+            if ($request->status === 'paid' && $order->status !== 'paid') {
+                $order->update(['status' => 'paid']);
+
+                if (! $order->payments()->exists()) {
+                    \App\Models\Payment::create([
+                        'order_id' => $order->id,
+                        'restaurant_id' => $order->restaurant_id,
+                        'waiter_id' => $order->waiter_id,
+                        'customer_phone' => $order->customer_phone,
+                        'amount' => $order->total_amount,
+                        'method' => 'manual',
+                        'status' => 'paid',
+                        'description' => 'Marked paid from live orders board',
+                    ]);
+                }
+            } else {
+                $previousStatus = $order->status;
+                $order->update(['status' => $request->status]);
+
+                if ($request->status === 'served' && $previousStatus !== 'served') {
+                    OrderBillNotification::maybePushBillImage($order);
+                }
+            }
         }
 
         if ($request->has('table_number')) {

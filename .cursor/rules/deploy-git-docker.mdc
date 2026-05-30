@@ -1,0 +1,42 @@
+---
+description: After code changes — commit, push, VPS pull, Docker rebuild
+alwaysApply: true
+---
+
+# Deploy workflow (TAPTAP tz)
+
+When you finish a task that changed code and the user expects it live (or says deploy / push / VPS):
+
+## 1. Local — Git
+
+1. `git status` and `git diff` — confirm only intended files.
+2. **Commit** with a clear message.
+3. **Push** to `origin` on the current branch.
+4. Never commit `.env`, tokens, or `auth_info_baileys/`.
+
+Only skip commit/push if the user explicitly says not to.
+
+## 2. VPS — correct server only
+
+- **Laravel app** — host where TZ site runs (project-specific path).
+- **WhatsApp bot (`tiptopbot/`)** — MCP **`TITAPtz bot`** only (`178.62.61.85`, `wa-notify.tiptapafrica.co.tz`).
+
+```bash
+cd /path/to/TAPTAP_tz
+git pull
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan config:cache
+
+cd tiptopbot
+docker compose down
+docker compose build --no-cache bot
+docker compose up -d bot
+curl -sS http://127.0.0.1:3000/health
+```
+
+## 3. Verify
+
+- Test webhook/health and one WhatsApp message after bot changes.
+
+Report commit hash, branch, and health-check result to the user.

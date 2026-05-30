@@ -1,0 +1,54 @@
+---
+description: TIPTAP — 4 VPS map (Laravel + bot × SA + TZ). Always check before deploy.
+alwaysApply: true
+---
+
+# TIPTAP — VPS 4 (usichanganye)
+
+Kabla ya deploy, SSH, au MCP — thibitisha **MCP sahihi** na **mradi sahihi**.
+
+## Ramani
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  SOUTH AFRICA (TAPTAP_sauth)                                    │
+├──────────────────────────────┬──────────────────────────────────┤
+│  Laravel WEB                 │  WhatsApp BOT                    │
+│  MCP: TIPTAP SOUTH AFRICA    │  MCP: TIPTAPsouth bot            │
+│  IP:  139.59.151.111         │  IP:  167.71.44.10              │
+│  URL: tiptapafrica.co.za     │  URL: wbot.tiptapafrica.co.za    │
+└──────────────────────────────┴──────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  TANZANIA (TAPTAP tz) — mradi huu                             │
+├──────────────────────────────┬──────────────────────────────────┤
+│  Laravel WEB                 │  WhatsApp BOT                    │
+│  MCP: TIPTAP TZ              │  MCP: TITAPtz bot                │
+│  IP:  164.92.242.245         │  IP:  178.62.61.85               │
+│  URL: tiptapafrica.co.tz     │  URL: wa-notify.tiptapafrica.co.tz│
+│  Path: /root/TIPTAP          │  Path: /opt/titap-bot/tiptopbot  │
+│  Repo: ESNyarobi123/Tiptaptz │  Repo: TipTap_tz_bot             │
+└──────────────────────────────┴──────────────────────────────────┘
+```
+
+## Flow (TZ)
+
+```
+Meta → tiptapafrica.co.tz/api/whatsapp/webhook → wa-notify.../inbound
+Bill push → WHATSAPP_BOT_NOTIFY_URL=https://wa-notify.tiptapafrica.co.tz/notify
+```
+
+## MCP names (exact)
+
+| MCP | IP | Tumia kwa |
+|-----|-----|-----------|
+| `TIPTAP TZ` | 164.92.242.245 | **TZ Laravel** (web VPS hii) |
+| `TITAPtz bot` | 178.62.61.85 | **TZ bot** pekee |
+| `TIPTAP SOUTH AFRICA` | 139.59.151.111 | SA Laravel — si TZ |
+| `TIPTAPsouth bot` | 167.71.44.10 | SA bot — si TZ |
+
+## Usifanye
+
+- Laravel TZ → `TITAPtz bot` VPS
+- Bot TZ → `TIPTAP TZ` VPS (164.92…)
+- Changanya SA na TZ

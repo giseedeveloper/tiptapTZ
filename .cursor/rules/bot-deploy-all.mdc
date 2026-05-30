@@ -1,0 +1,17 @@
+---
+description: WhatsApp bot changes — deploy to ALL bot VPS (SA + TZ), never one server only.
+alwaysApply: true
+---
+
+# Bot deploy — kote (SA + TZ)
+
+Angalia pia `TipTap_tz_bot/scripts/deploy-bot-all.sh`.
+
+| MCP | Nchi | IP |
+|-----|------|-----|
+| **TITAPtz bot** | TZ | 178.62.61.85 |
+| **TIPTAPsouth bot** | SA | 167.71.44.10 |
+
+Kila mabadiliko ya `handler.js`, `whatsapp.js`, `lang.js`, n.k. → **deploy bot VPS zote mbili**, si moja tu.
+
+`USE_INTERACTIVE_MENU=true` — buttons, si menu ya namba.

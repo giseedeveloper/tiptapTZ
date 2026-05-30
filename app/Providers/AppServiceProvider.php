@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Notifications\SalaryPaymentConfirmed;
+use App\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -22,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
                     ->where('type', SalaryPaymentConfirmed::class)
                     ->count());
             }
+        });
+
+        View::composer('*', function ($view): void {
+            $view->with('currencySymbol', Money::symbol());
         });
     }
 }

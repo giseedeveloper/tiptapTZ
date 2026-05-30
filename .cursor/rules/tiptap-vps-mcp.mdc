@@ -1,0 +1,36 @@
+---
+description: TIPTAP VPS MCP servers — project mapping (TAPTAP TZ)
+alwaysApply: true
+---
+
+# TIPTAP VPS MCP mapping
+
+This workspace folder is **TAPTAP TZ** (Tanzania). Use only the VPS MCP servers listed for this project.
+
+## This project uses
+
+| MCP server name (exact) | Host | Use for |
+|-------------------------|------|---------|
+| **TIPTAP TZ** | `164.92.242.245` — `tiptapafrica.co.tz` | Laravel TZ web: Docker, nginx, MySQL, `.env`, `php artisan`, deploy from [Tiptaptz](https://github.com/ESNyarobi123/Tiptaptz) |
+| **TITAPtz bot** | `178.62.61.85` — `wa-notify.tiptapafrica.co.tz` | WhatsApp bot TZ (`tiptopbot`), bot Docker, Node logs, `/notify` |
+
+When the user asks to deploy **Laravel / site / dashboard** for Tanzania, use **`TIPTAP TZ`** only.
+When the user asks to deploy or restart the **WhatsApp bot** for TZ, use **`TITAPtz bot`** only.
+
+## Do not use for TAPTAP TZ (unless user explicitly names another project)
+
+| MCP server | Belongs to |
+|------------|------------|
+| **TIPTAP SOUTH AFRICA** | `TAPTAP_sauth` (South Africa Laravel app) |
+| **TIPTAP Saloon** | `Saloon ver` (Saloon Laravel app) |
+
+Never deploy TZ code to South Africa or Saloon VPS, and never use those MCP servers for TZ bot work by default.
+
+## How to invoke
+
+Use `CallMcpTool` with `server` set to the exact MCP name (e.g. `"TITAPtz bot"`). Read the tool schema under the MCP descriptors before calling.
+
+## Related local paths (TZ)
+
+- Laravel app: this repo root
+- WhatsApp bot: `tiptopbot/` or repo `TipTap_tz_bot` — runs on **TITAPtz bot**
