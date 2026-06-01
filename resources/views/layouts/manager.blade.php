@@ -637,6 +637,18 @@
                     </div>
                 </div>
 
+                @if(session('impersonator_id'))
+                    <div class="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-black text-amber-400 uppercase tracking-wider">Impersonation mode</p>
+                            <p class="text-sm text-white/80 mt-0.5">You are viewing this portal as <strong class="text-white">{{ Auth::user()->name }}</strong>. Changes apply to their account.</p>
+                        </div>
+                        <form method="POST" action="{{ route('impersonate.stop') }}" class="shrink-0">@csrf
+                            <button type="submit" class="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded-lg text-xs font-bold uppercase tracking-wider border border-amber-500/30">Exit impersonation</button>
+                        </form>
+                    </div>
+                @endif
+
                 <div class="manager-page">
                     {{ $slot }}
                 </div>

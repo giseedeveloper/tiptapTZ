@@ -3,22 +3,27 @@
         Bot Control Center
     </x-slot>
 
-    @if($botToken)
-    <div class="mb-8 glass-card rounded-2xl p-8 border border-emerald-500/20 overflow-hidden relative group">
-        <div class="absolute top-0 right-0 p-8">
-            <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                <i data-lucide="shield-check" class="w-6 h-6"></i>
-            </div>
+    @if(session('success'))
+        <div class="mb-6 px-4 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-sm font-bold">
+            {{ session('success') }}
         </div>
-        <h3 class="text-lg font-black text-white tracking-tight mb-2">Active Bot API Token</h3>
-        <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-6">Use this token in your bot's .env file as BOT_TOKEN</p>
-        
+    @endif
+
+    @if($newBotToken)
+    <div class="mb-8 glass-card rounded-2xl p-8 border border-amber-500/30 overflow-hidden relative">
+        <h3 class="text-lg font-black text-amber-300 tracking-tight mb-2">New bot token — copy now</h3>
+        <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-6">Paste into your bot server <code class="text-amber-200">.env</code> as <code class="text-amber-200">BOT_TOKEN</code>. This is shown once per generation.</p>
         <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
-            <code class="flex-1 font-mono text-xs text-emerald-400 break-all">{{ $botToken }}</code>
-            <button onclick="navigator.clipboard.writeText('{{ $botToken }}'); alert('Token copied!')" class="p-3 glass text-white rounded-xl hover:bg-white/10 transition-all border border-white/10">
+            <code id="new-bot-token" class="flex-1 font-mono text-xs text-emerald-400 break-all">{{ $newBotToken }}</code>
+            <button type="button" data-copy-target="new-bot-token" class="p-3 glass text-white rounded-xl hover:bg-white/10 transition-all border border-white/10">
                 <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
         </div>
+    </div>
+    @elseif($botTokenConfigured)
+    <div class="mb-8 glass-card rounded-2xl p-8 border border-emerald-500/20">
+        <h3 class="text-lg font-black text-white tracking-tight mb-2">Bot API token configured</h3>
+        <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">A token is set on the server (<code class="text-white/50">BOT_TOKEN</code>). It is not displayed here for security. Regenerate below if you need a new one.</p>
     </div>
     @endif
 
@@ -51,17 +56,20 @@
                     <div class="space-y-2">
                         <label class="text-[9px] font-bold uppercase tracking-wider text-white/40 block">Endpoint URL</label>
                         <div class="flex gap-2">
-                            <input type="url" name="endpoint" value="{{ $bot->endpoint }}" class="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-mono text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all" placeholder="https://api.bot.com/webhook">
+                            <input type="url" name="endpoint" value="{{ old('endpoint', $bot->endpoint) }}" class="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-mono text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all" placeholder="https://api.bot.com/webhook">
                             <button type="submit" class="p-3 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all">
                                 <i data-lucide="save" class="w-4 h-4"></i>
                             </button>
                         </div>
+                        @error('endpoint')
+                            <p class="text-xs text-red-400">{{ $message }}</p>
+                        @enderror
                     </div>
                 </form>
 
                 <div class="flex gap-2 pt-2">
-                    <button class="flex-1 py-3 glass text-white/70 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all">Restart Bot</button>
-                    <button class="flex-1 py-3 glass text-white/70 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all">View Logs</button>
+                    <button type="button" class="flex-1 py-3 glass text-white/70 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all">Restart Bot</button>
+                    <button type="button" class="flex-1 py-3 glass text-white/70 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all">View Logs</button>
                 </div>
             </div>
         </div>
@@ -73,18 +81,41 @@
             <h3 class="text-2xl font-black text-white tracking-tight mb-2">No Bots Configured</h3>
             <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-8">System automation bots will appear here</p>
             <div class="flex flex-col gap-4 mt-8 max-w-md mx-auto">
-                <button class="px-8 py-4 glass text-white rounded-xl font-bold text-sm hover:bg-white/10 transition-all">Register New Bot</button>
-                
+                <button type="button" class="px-8 py-4 glass text-white rounded-xl font-bold text-sm hover:bg-white/10 transition-all">Register New Bot</button>
+
                 <form action="{{ route('admin.bots.generate-token') }}" method="POST">
                     @csrf
                     <button type="submit" class="w-full px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-emerald-500/25 transition-all flex items-center justify-center gap-2">
                         <i data-lucide="key" class="w-4 h-4"></i>
-                        Generate & Sync Bot Token
+                        Generate Bot Token
                     </button>
                 </form>
-                <p class="text-[9px] text-white/40 text-center font-bold uppercase tracking-widest">This will update BOT_TOKEN in your .env file</p>
+                <p class="text-[9px] text-white/40 text-center font-bold uppercase tracking-widest">Copy the token to your bot server — Laravel .env is not modified automatically</p>
             </div>
         </div>
         @endforelse
     </div>
+
+    @if($bots->isNotEmpty())
+    <div class="mt-8 max-w-md">
+        <form action="{{ route('admin.bots.generate-token') }}" method="POST">
+            @csrf
+            <button type="submit" class="w-full px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                Regenerate Bot Token
+            </button>
+        </form>
+    </div>
+    @endif
+
+    <script>
+        document.querySelectorAll('[data-copy-target]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const el = document.getElementById(btn.dataset.copyTarget);
+                if (el) {
+                    navigator.clipboard.writeText(el.textContent.trim());
+                }
+            });
+        });
+    </script>
 </x-admin-layout>

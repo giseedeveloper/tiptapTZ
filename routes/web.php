@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
-Route::get('/fix-storage', function () {
-    \Illuminate\Support\Facades\Artisan::call('storage:link');
-
-    return 'Storage link created!';
-});
-
 // Serve profile & menu_images from storage (works when storage:link missing on host)
 Route::get('/serve-storage/{path}', \App\Http\Controllers\ServeStorageController::class)->where('path', '.*')->name('storage.serve');
 // Path signature avoids some WAFs that block ?signature=... on shared hosting.
@@ -24,77 +18,8 @@ Route::get('/bill-image/{orderId}/{signature}', BillImageController::class)
     ->name('bill.image');
 Route::get('/bill-image/{orderId}', BillImageController::class)->where('orderId', '[0-9]+')->name('bill.image.legacy');
 
-// DEBUG: Test Selcom Authentication - DELETE AFTER TESTING!
-Route::get('/test-selcom', function () {
-    $credentials = [
-        'vendor_id' => 'TILL60917564',
-        'api_key' => 'MOBIAD-BAE4439D874CAFF7',
-        'api_secret' => '8PE3412A-7J3F0K7F-2A254AF-0P636D54',
-        'is_live' => true, // Change to false for sandbox
-    ];
-
-    $timestamp = gmdate('Y-m-d\TH:i:s\Z');
-
-    $payload = [
-        'vendor' => $credentials['vendor_id'],
-        'order_id' => 'TEST-'.time(),
-        'buyer_email' => 'test@test.com',
-        'buyer_name' => 'Test User',
-        'buyer_phone' => '255678165524',
-        'amount' => 1000,
-        'currency' => 'TZS',
-        'buyer_remarks' => 'Test Payment',
-        'merchant_remarks' => 'Test Payment',
-        'no_of_items' => 1,
-    ];
-
-    // Build signed fields string
-    $signedFieldsList = array_keys($payload);
-    $signedFields = implode(',', $signedFieldsList);
-
-    // Build string to sign
-    $stringToSign = 'timestamp='.$timestamp;
-    foreach ($signedFieldsList as $field) {
-        $stringToSign .= '&'.$field.'='.$payload[$field];
-    }
-
-    // Compute digest
-    $digest = base64_encode(hash_hmac('sha256', $stringToSign, $credentials['api_secret'], true));
-
-    $headers = [
-        'Content-Type' => 'application/json',
-        'Authorization' => 'SELCOM '.base64_encode($credentials['api_key']),
-        'Digest-Method' => 'HS256',
-        'Digest' => $digest,
-        'Timestamp' => $timestamp,
-        'Signed-Fields' => $signedFields,
-    ];
-
-    $baseUrl = $credentials['is_live']
-        ? 'https://apigw.selcommobile.com/v1'
-        : 'https://apigwtest.selcommobile.com/v1';
-
-    // Make request
-    $response = \Illuminate\Support\Facades\Http::withHeaders($headers)
-        ->post($baseUrl.'/checkout/create-order-minimal', $payload);
-
-    return response()->json([
-        'debug' => [
-            'timestamp' => $timestamp,
-            'signed_fields' => $signedFields,
-            'string_to_sign' => $stringToSign,
-            'digest' => $digest,
-            'authorization' => $headers['Authorization'],
-            'base_url' => $baseUrl,
-            'payload' => $payload,
-        ],
-        'response' => $response->json(),
-        'status_code' => $response->status(),
-    ]);
-});
-
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 Route::get('/register-restaurant', [RestaurantRegistrationController::class, 'create'])->name('restaurant.register');
@@ -102,6 +27,10 @@ Route::post('/register-restaurant', [RestaurantRegistrationController::class, 's
 
 Route::get('/register-waiter', [\App\Http\Controllers\WaiterRegistrationController::class, 'create'])->name('waiter.register');
 Route::post('/register-waiter', [\App\Http\Controllers\WaiterRegistrationController::class, 'store'])->name('waiter.register.store');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/impersonate/stop', [\App\Http\Controllers\Admin\ImpersonationController::class, 'stop'])->name('impersonate.stop');
+});
 
 Route::get('/dashboard', function () {
     $user = Auth::user();
@@ -129,13 +58,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [AdminDashboard::class, 'getStats'])->name('dashboard.stats');
+    Route::get('/dashboard/analytics', [AdminDashboard::class, 'getAnalytics'])->name('dashboard.analytics');
+
+    Route::get('search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])
+        ->middleware('throttle:admin-search')
+        ->name('search.index');
+    Route::get('live-orders', [\App\Http\Controllers\Admin\LiveOrderController::class, 'index'])->name('live-orders.index');
+    Route::get('live-orders/feed', [\App\Http\Controllers\Admin\LiveOrderController::class, 'feed'])->name('live-orders.feed');
+    Route::get('customer-requests', [\App\Http\Controllers\Admin\CustomerRequestController::class, 'index'])->name('customer-requests.index');
+    Route::post('customer-requests/{id}/complete', [\App\Http\Controllers\Admin\CustomerRequestController::class, 'complete'])->name('customer-requests.complete');
+    Route::get('tips', [\App\Http\Controllers\Admin\TipController::class, 'index'])->name('tips.index');
+    Route::get('payroll', [\App\Http\Controllers\Admin\PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+    Route::get('feedback', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('menus', [\App\Http\Controllers\Admin\MenuController::class, 'index'])->name('menus.index');
+    Route::get('menus/{restaurant}', [\App\Http\Controllers\Admin\MenuController::class, 'show'])->name('menus.show');
+    Route::get('activity-log', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-log.index');
 
     // Restaurants
     Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
     Route::post('restaurants/{restaurant}/toggle-status', [\App\Http\Controllers\Admin\RestaurantController::class, 'toggleStatus'])->name('restaurants.toggle-status');
 
+    Route::post('impersonate/{user}', [\App\Http\Controllers\Admin\ImpersonationController::class, 'start'])->name('impersonate.start');
+
     // Users
-    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class)
+        ->except(['create', 'store']);
 
     // Waiters (all waiters + unique codes + search like manager)
     Route::get('waiters', [\App\Http\Controllers\Admin\WaiterController::class, 'index'])->name('waiters.index');
@@ -143,7 +91,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
 
     // Orders
     Route::get('orders/export', [\App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
-    Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class);
+    Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)
+        ->except(['create', 'store', 'edit']);
 
     // Payments
     Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
@@ -158,7 +107,18 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     // Bots
     Route::get('bots', [\App\Http\Controllers\Admin\BotController::class, 'index'])->name('bots.index');
     Route::post('bots/update-endpoint', [\App\Http\Controllers\Admin\BotController::class, 'updateEndpoint'])->name('bots.update-endpoint');
-    Route::post('bots/generate-token', [\App\Http\Controllers\Admin\BotController::class, 'generateToken'])->name('bots.generate-token');
+    Route::post('bots/generate-token', [\App\Http\Controllers\Admin\BotController::class, 'generateToken'])
+        ->middleware('throttle:bot-token')
+        ->name('bots.generate-token');
+
+    Route::post('system/fix-storage', \App\Http\Controllers\Admin\FixStorageController::class)
+        ->name('fix-storage');
+
+    Route::get('infrastructure/docker', [\App\Http\Controllers\Admin\DockerController::class, 'index'])->name('docker.index');
+    Route::get('infrastructure/docker/status', [\App\Http\Controllers\Admin\DockerController::class, 'status'])->name('docker.status');
+    Route::post('infrastructure/docker/action', [\App\Http\Controllers\Admin\DockerController::class, 'action'])
+        ->middleware('throttle:docker-control')
+        ->name('docker.action');
 
     // Notifications
     Route::get('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');

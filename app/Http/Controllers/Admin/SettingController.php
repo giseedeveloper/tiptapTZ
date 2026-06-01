@@ -3,34 +3,41 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\Admin\UpdateAdminSettingsRequest;
+use App\Models\AdminActivityLog;
+use App\Models\Setting;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class SettingController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        $settings = \App\Models\Setting::all()->groupBy('group');
+        $settings = Setting::all()->groupBy('group');
+
         return view('admin.settings.index', compact('settings'));
     }
 
-    public function update(Request $request)
+    public function update(UpdateAdminSettingsRequest $request): RedirectResponse
     {
-        $data = $request->except('_token');
+        $validated = $request->validated();
 
-        if (! $request->has('demo_push')) {
-            $data['demo_push'] = '0';
-        }
+        foreach ($validated as $key => $value) {
+            $group = config("tiptap.admin_setting_groups.{$key}", 'general');
 
-        foreach ($data as $key => $value) {
-            $payload = ['value' => $value];
-            if ($key === 'demo_push') {
-                $payload['group'] = 'payments';
-            }
-            \App\Models\Setting::updateOrCreate(
+            Setting::updateOrCreate(
                 ['key' => $key],
-                $payload
+                ['value' => (string) $value, 'group' => $group]
             );
         }
+
+        AdminActivityLog::log(
+            'settings.updated',
+            'system',
+            0,
+            null,
+            ['keys' => array_keys($validated)],
+        );
 
         return back()->with('success', 'Settings updated successfully.');
     }

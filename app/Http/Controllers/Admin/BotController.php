@@ -3,72 +3,65 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateBotEndpointRequest;
+use App\Models\AdminActivityLog;
+use App\Models\Bot;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class BotController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        $bots = \App\Models\Bot::all();
-        $botToken = env('BOT_TOKEN');
-        return view('admin.bots.index', compact('bots', 'botToken'));
+        $bots = Bot::all();
+        $botTokenConfigured = filled(config('services.bot.token'));
+        $newBotToken = session('bot_token_plaintext');
+
+        return view('admin.bots.index', compact('bots', 'botTokenConfigured', 'newBotToken'));
     }
 
-    public function updateEndpoint(Request $request)
+    public function updateEndpoint(UpdateBotEndpointRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'bot_id' => 'required|exists:bots,id',
-            'endpoint' => 'required|url',
-        ]);
+        $validated = $request->validated();
 
-        $bot = \App\Models\Bot::findOrFail($validated['bot_id']);
+        $bot = Bot::findOrFail($validated['bot_id']);
         $bot->update(['endpoint' => $validated['endpoint']]);
 
         return back()->with('success', 'Bot endpoint updated successfully.');
     }
 
-    public function generateToken(Request $request)
+    public function generateToken(Request $request): RedirectResponse
     {
-        // 1. Ensure Bot User exists
-        $user = \App\Models\User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'bot@taptap.com'],
             [
                 'name' => 'WhatsApp Bot Service',
-                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
+                'password' => Hash::make(Str::random(32)),
             ]
         );
 
-        // 2. Ensure Role exists and is assigned
-        if (!$user->hasRole('bot_service')) {
+        if (! $user->hasRole('bot_service')) {
             $user->assignRole('bot_service');
         }
 
-        // 3. Generate New Token
-        $user->tokens()->delete(); // Clear old tokens
+        $user->tokens()->delete();
         $token = $user->createToken('WhatsAppBotToken')->plainTextToken;
 
-        // 4. Update .env file
-        $this->updateEnv('BOT_TOKEN', $token);
+        AdminActivityLog::log(
+            'bot_token.generated',
+            User::class,
+            (int) $user->id,
+            null,
+            ['note' => 'New bot API token generated; copy to bot BOT_TOKEN env.'],
+        );
 
-        return back()->with('success', 'New Bot Token generated and saved to .env successfully!');
-    }
-
-    private function updateEnv($key, $value)
-    {
-        $path = base_path('.env');
-
-        if (file_exists($path)) {
-            $content = file_get_contents($path);
-            
-            if (str_contains($content, "{$key}=")) {
-                // Update existing key
-                $content = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $content);
-            } else {
-                // Add new key
-                $content .= "\n{$key}={$value}";
-            }
-
-            file_put_contents($path, $content);
-        }
+        return redirect()
+            ->route('admin.bots.index')
+            ->with('success', 'New bot token generated. Copy it now — it will not be shown again.')
+            ->with('bot_token_plaintext', $token);
     }
 }
