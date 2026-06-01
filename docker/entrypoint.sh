@@ -23,8 +23,13 @@ fi
 cd "${APP_DIR}"
 
 if ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
-    echo "[key] Generating application key..."
-    php artisan key:generate --force --no-interaction
+    if [ -w .env ]; then
+        echo "[key] Generating application key..."
+        php artisan key:generate --force --no-interaction
+    else
+        echo "[key] ERROR: .env is read-only and APP_KEY is missing. Set APP_KEY=base64:... in .env.docker on the host."
+        exit 1
+    fi
 fi
 
 if [ ! -L public/storage ]; then
