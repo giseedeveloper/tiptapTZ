@@ -15,7 +15,7 @@ LABEL maintainer="TIPTAP Tanzania <dev@tiptapafrica.co.tz>"
 RUN apk add --no-cache \
     git curl libpng-dev libxml2-dev libzip-dev zip unzip \
     oniguruma-dev icu-dev freetype-dev libjpeg-turbo-dev \
-    bash shadow
+    bash shadow docker-cli openssh-client
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \

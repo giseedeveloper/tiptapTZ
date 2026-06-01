@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SystemPaymentGateway;
 use Illuminate\Database\Eloquent\Model;
 
 class Restaurant extends Model
@@ -139,26 +140,21 @@ class Restaurant extends Model
     }
 
     /**
-     * Get Selcom credentials array
+     * System-wide payment gateway credentials (admin → Payment Integration).
+     *
+     * @return array{vendor_id: ?string, api_key: ?string, api_secret: ?string, is_live: bool}
      */
-    public function getSelcomCredentials()
+    public function getSelcomCredentials(): array
     {
-        return [
-            'vendor_id' => $this->selcom_vendor_id,
-            'api_key' => $this->selcom_api_key,
-            'api_secret' => $this->selcom_api_secret,
-            'is_live' => $this->selcom_is_live,
-        ];
+        return app(SystemPaymentGateway::class)->credentials();
     }
 
     /**
-     * Check if Selcom is configured
+     * Whether the platform payment gateway is configured (all restaurants share this).
      */
-    public function hasSelcomConfigured()
+    public function hasSelcomConfigured(): bool
     {
-        return ! empty($this->selcom_vendor_id)
-            && ! empty($this->selcom_api_key)
-            && ! empty($this->selcom_api_secret);
+        return app(SystemPaymentGateway::class)->isConfigured();
     }
 
     public function users()

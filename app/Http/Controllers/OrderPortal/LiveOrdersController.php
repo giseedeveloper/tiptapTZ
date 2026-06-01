@@ -277,7 +277,7 @@ class LiveOrdersController extends Controller
         if (! $restaurant->hasSelcomConfigured()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Selcom haijawekwa. Wasiliana na manager.',
+                'message' => 'System payment gateway not configured. Contact platform admin.',
             ], 400);
         }
 

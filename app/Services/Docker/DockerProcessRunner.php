@@ -31,7 +31,7 @@ class DockerProcessRunner
             $cwd = null;
         } else {
             $command = $inner;
-            $cwd = $stack->workDir !== '' ? $stack->workDir : null;
+            $cwd = $stack->workDir !== '' && is_dir($stack->workDir) ? $stack->workDir : null;
         }
 
         $process = is_array($command)

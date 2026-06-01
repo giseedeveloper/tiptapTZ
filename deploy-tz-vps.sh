@@ -19,6 +19,12 @@ ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "
     test -f .env.docker || cp .env.docker.example .env.docker
     docker compose build --no-cache app queue
     docker compose up -d
+    # app_public volume keeps old Vite assets after rebuild — sync from fresh image
+    CID=\$(docker create tiptap-app)
+    docker cp \"\$CID:/var/www/html/public/build\" /tmp/tiptap_build_sync
+    docker rm \"\$CID\"
+    docker cp /tmp/tiptap_build_sync/. tiptap_tz_app:/var/www/html/public/build/
+    rm -rf /tmp/tiptap_build_sync
     docker exec tiptap_tz_app php artisan migrate --force --no-interaction
     docker exec tiptap_tz_app php artisan config:cache
     docker exec tiptap_tz_app php artisan route:cache

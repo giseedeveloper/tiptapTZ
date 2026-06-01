@@ -59,6 +59,12 @@
     </div>
     <span class="font-medium text-xs">Payments</span>
 </a>
+<a href="{{ route('admin.payment-integration.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.payment-integration.*') ? 'sidebar-link-active' : 'text-white/55' }}">
+    <div class="w-6 h-6 rounded-md bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.payment-integration.*') ? 'text-cyan-400' : 'text-white/50' }}"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+    </div>
+    <span class="font-medium text-xs">Payment Integration</span>
+</a>
 <a href="{{ route('admin.withdrawals.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.withdrawals.*') ? 'sidebar-link-active' : 'text-white/55' }}">
     <div class="w-6 h-6 rounded-md bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.withdrawals.*') ? 'text-teal-400' : 'text-white/50' }}"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>

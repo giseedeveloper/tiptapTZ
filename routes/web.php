@@ -99,6 +99,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('payments/export', [\App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('payments.export');
     Route::get('payments/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
 
+    Route::get('payment-integration', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'index'])->name('payment-integration.index');
+    Route::post('payment-integration', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'update'])->name('payment-integration.update');
+    Route::post('payment-integration/test', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'test'])->name('payment-integration.test');
+
     // Withdrawals
     Route::get('withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('withdrawals.index');
     Route::post('withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('withdrawals.approve');
@@ -164,11 +168,11 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('/payments/export', [\App\Http\Controllers\Manager\PaymentController::class, 'export'])->name('payments.export');
     Route::post('/payments/selcom/initiate', [\App\Http\Controllers\Manager\PaymentController::class, 'initiateSelcom'])->name('payments.selcom.initiate');
     Route::get('/payments/selcom/status/{order}', [\App\Http\Controllers\Manager\PaymentController::class, 'checkSelcomStatus'])->name('payments.selcom.status');
+    Route::get('/wallet', [\App\Http\Controllers\Manager\WalletController::class, 'index'])->name('wallet.index');
+    Route::post('/wallet/withdraw', [\App\Http\Controllers\Manager\WalletController::class, 'store'])->name('wallet.store');
     Route::get('/feedback', [\App\Http\Controllers\Manager\FeedbackController::class, 'index'])->name('feedback.index');
     Route::get('/tips', [\App\Http\Controllers\Manager\TipController::class, 'index'])->name('tips.index');
     Route::get('/api', [\App\Http\Controllers\Manager\ApiController::class, 'index'])->name('api.index');
-    Route::post('/api/selcom', [\App\Http\Controllers\Manager\ApiController::class, 'updateSelcomCredentials'])->name('api.selcom.update');
-    Route::post('/api/selcom/test', [\App\Http\Controllers\Manager\ApiController::class, 'testSelcomConnection'])->name('api.selcom.test');
     Route::post('/api/support-phone', [\App\Http\Controllers\Manager\ApiController::class, 'updateSupportPhone'])->name('api.support-phone.update');
 
     // Menu Image Upload

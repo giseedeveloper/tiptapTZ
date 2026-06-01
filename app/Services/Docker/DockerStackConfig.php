@@ -53,11 +53,24 @@ readonly class DockerStackConfig
                 return 'Set '.($this->id === 'bot' ? 'DOCKER_BOT_SSH_KEY' : 'DOCKER_LARAVEL_SSH_KEY').' to a readable private key path.';
             }
 
+            $keyPerms = fileperms($this->sshKey) & 0777;
+            if ($keyPerms > 0600) {
+                return 'SSH private key permissions too open (chmod 600 required): '.$this->sshKey;
+            }
+
             return null;
         }
 
         if ($this->workDir === '') {
             return 'Set DOCKER_LARAVEL_WORK_DIR to the compose project directory, or use SSH (DOCKER_LARAVEL_SSH_HOST + key).';
+        }
+
+        if (! is_dir($this->workDir)) {
+            return 'Path '.$this->workDir.' does not exist in this container. For Docker Compose deployments use DOCKER_LARAVEL_WORK_DIR=/var/www/html.';
+        }
+
+        if (! is_readable('/var/run/docker.sock')) {
+            return 'Mount /var/run/docker.sock into the app container (see docker-compose.yml).';
         }
 
         return null;

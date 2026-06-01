@@ -73,6 +73,21 @@ php artisan migrate --force --no-interaction
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
+if [ -d storage/docker-ssh ]; then
+    chown -R www-data:www-data storage/docker-ssh
+    chmod 700 storage/docker-ssh
+    [ -f storage/docker-ssh/docker_control ] && chmod 600 storage/docker-ssh/docker_control
+    [ -f storage/docker-ssh/docker_control.pub ] && chmod 644 storage/docker-ssh/docker_control.pub
+fi
+
+if [ -S /var/run/docker.sock ]; then
+    DOCKER_GID=$(stat -c '%g' /var/run/docker.sock)
+    if ! getent group docker >/dev/null 2>&1; then
+        addgroup -g "${DOCKER_GID}" docker 2>/dev/null || addgroup docker
+    fi
+    adduser www-data docker 2>/dev/null || true
+fi
+
 APP_ENV="${APP_ENV:-production}"
 if [ "${APP_ENV}" = "production" ]; then
     php artisan config:cache --no-interaction
