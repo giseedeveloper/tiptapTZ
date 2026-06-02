@@ -18,6 +18,10 @@ Route::get('/bill-image/{orderId}/{signature}', BillImageController::class)
     ->name('bill.image');
 Route::get('/bill-image/{orderId}', BillImageController::class)->where('orderId', '[0-9]+')->name('bill.image.legacy');
 
+Route::get('/qr/whatsapp', [\App\Http\Controllers\QrCodeController::class, 'whatsapp'])
+    ->middleware('throttle:120,1')
+    ->name('qr.whatsapp');
+
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

@@ -25,3 +25,16 @@ if (! function_exists('public_asset')) {
         return '/'.$path;
     }
 }
+
+if (! function_exists('whatsapp_branded_qr_url')) {
+    /**
+     * Branded WhatsApp QR image (center logo) for tables, restaurants, and waiters.
+     */
+    function whatsapp_branded_qr_url(string $waMeUrl, int $size = 200): string
+    {
+        return route('qr.whatsapp', [
+            'data' => $waMeUrl,
+            'size' => $size,
+        ]);
+    }
+}

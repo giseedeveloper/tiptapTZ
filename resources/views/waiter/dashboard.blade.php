@@ -352,7 +352,7 @@
                 
                 <div class="flex items-center gap-4 mb-6">
                     <div class="bg-white p-2 rounded-xl shadow-lg shadow-black/20">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode(Auth::user()->waiter_qr_url) }}" alt="My QR" class="w-20 h-20">
+                        <img src="{{ whatsapp_branded_qr_url(Auth::user()->waiter_qr_url, 150) }}" alt="My QR" class="w-20 h-20">
                     </div>
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Your Tag</p>
@@ -362,7 +362,7 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ urlencode(Auth::user()->waiter_qr_url) }}" download="my-qr-{{ Auth::user()->waiter_code }}.png" target="_blank" class="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-2.5 text-[11px] font-bold uppercase tracking-widest hover:bg-white/20 transition-all">
+                    <a href="{{ whatsapp_branded_qr_url(Auth::user()->waiter_qr_url, 500) }}" download="my-qr-{{ Auth::user()->waiter_code }}.png" target="_blank" class="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-2.5 text-[11px] font-bold uppercase tracking-widest hover:bg-white/20 transition-all">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                         Save QR
                     </a>

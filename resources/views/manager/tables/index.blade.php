@@ -26,7 +26,7 @@
         
         <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
             <div class="bg-white p-4 rounded-[2rem] shadow-2xl shadow-violet-500/20">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ urlencode(Auth::user()->restaurant->whatsapp_qr_url) }}" alt="Official QR" class="w-40 h-40">
+                <img src="{{ whatsapp_branded_qr_url(Auth::user()->restaurant->whatsapp_qr_url, 200) }}" alt="Official QR" class="w-40 h-40">
             </div>
             
             <div class="flex-1 text-center md:text-left">
@@ -37,7 +37,7 @@
                 <p class="text-white/50 max-w-xl mb-8 font-medium">This is your restaurant's official QR code. Place this at the entrance or on marketing materials. When scanned, it opens the WhatsApp bot directly to your restaurant's menu.</p>
                 
                 <div class="flex flex-wrap justify-center md:justify-start gap-4">
-                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode(Auth::user()->restaurant->whatsapp_qr_url) }}" download="official-qr.png" target="_blank" class="px-8 py-4 bg-violet-600 text-white rounded-2xl font-bold shadow-xl shadow-violet-600/20 hover:bg-violet-500 transition-all flex items-center gap-3">
+                    <a href="{{ whatsapp_branded_qr_url(Auth::user()->restaurant->whatsapp_qr_url, 1000) }}" download="official-qr.png" target="_blank" class="px-8 py-4 bg-violet-600 text-white rounded-2xl font-bold shadow-xl shadow-violet-600/20 hover:bg-violet-500 transition-all flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
                         </svg>
@@ -105,10 +105,10 @@
                     @endif
 
                     <div class="bg-white p-2 rounded-xl">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($table->whatsapp_qr_url) }}" alt="QR Code" class="w-28 h-28">
+                        <img src="{{ whatsapp_branded_qr_url($table->whatsapp_qr_url, 150) }}" alt="QR Code" class="w-28 h-28">
                     </div>
                     <div class="flex gap-2 w-full">
-                        <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ urlencode($table->whatsapp_qr_url) }}" download="table-{{ $table->id }}-qr.png" target="_blank" class="flex-1 glass py-2.5 rounded-xl font-semibold text-sm text-white/70 hover:text-white hover:bg-violet-600 transition-all flex items-center justify-center gap-2">
+                        <a href="{{ whatsapp_branded_qr_url($table->whatsapp_qr_url, 500) }}" download="table-{{ $table->id }}-qr.png" target="_blank" class="flex-1 glass py-2.5 rounded-xl font-semibold text-sm text-white/70 hover:text-white hover:bg-violet-600 transition-all flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
                             </svg>

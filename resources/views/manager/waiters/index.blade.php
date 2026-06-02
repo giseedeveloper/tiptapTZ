@@ -167,12 +167,12 @@
                     </div>
                     <div class="p-4 flex items-center gap-4">
                         <div class="bg-white p-2 rounded-lg shrink-0">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($waiter->waiter_qr_url) }}" alt="QR" class="w-16 h-16">
+                            <img src="{{ whatsapp_branded_qr_url($waiter->waiter_qr_url, 150) }}" alt="QR" class="w-16 h-16">
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] text-white/40 mb-2 truncate">Scan to order with {{ explode(' ', $waiter->name)[0] }}</p>
                             <div class="flex gap-2">
-                                <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ urlencode($waiter->waiter_qr_url) }}" download="waiter-{{ $waiter->waiter_code }}-qr.png" target="_blank" class="flex-1 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg text-center transition-colors">Download</a>
+                                <a href="{{ whatsapp_branded_qr_url($waiter->waiter_qr_url, 500) }}" download="waiter-{{ $waiter->waiter_code }}-qr.png" target="_blank" class="flex-1 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg text-center transition-colors">Download</a>
                                 <button onclick="copyToClipboard('{{ $waiter->waiter_qr_url }}', this)" class="px-3 py-2 glass hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Copy Link</button>
                             </div>
                         </div>
