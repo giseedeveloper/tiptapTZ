@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/config.dart';
 import '../models/models.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://tiptapafrica.co.tz/api/order-portal';
+  static const String baseUrl = AppConfig.baseUrl;
   static const String _authDataKey = 'auth_data';
 
   AuthData? _cachedAuth;
