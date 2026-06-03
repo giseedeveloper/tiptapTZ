@@ -180,9 +180,10 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('/api/support-phone', [\App\Http\Controllers\Manager\ApiController::class, 'updateSupportPhone'])->name('api.support-phone.update');
 
     // Menu Image Upload
-    Route::get('/menu-image', [\App\Http\Controllers\Manager\MenuImageController::class, 'index'])->name('menu-image.index');
-    Route::post('/menu-image', [\App\Http\Controllers\Manager\MenuImageController::class, 'store'])->name('menu-image.store');
-    Route::delete('/menu-image', [\App\Http\Controllers\Manager\MenuImageController::class, 'destroy'])->name('menu-image.destroy');
+    Route::get('/menu-pdf', [\App\Http\Controllers\Manager\MenuPdfController::class, 'index'])->name('menu-pdf.index');
+    Route::post('/menu-pdf', [\App\Http\Controllers\Manager\MenuPdfController::class, 'store'])->name('menu-pdf.store');
+    Route::delete('/menu-pdf', [\App\Http\Controllers\Manager\MenuPdfController::class, 'destroy'])->name('menu-pdf.destroy');
+    Route::redirect('/menu-image', '/manager/menu-pdf')->name('menu-image.index');
 
     Route::resource('tables', \App\Http\Controllers\Manager\TableController::class);
     Route::get('/help', [\App\Http\Controllers\Manager\HelpController::class, 'index'])->name('help.index');

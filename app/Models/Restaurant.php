@@ -14,6 +14,7 @@ class Restaurant extends Model
         'support_phone',
         'logo',
         'menu_image',
+        'menu_pdf',
         'is_active',
         'tag_prefix',
         'selcom_vendor_id',
@@ -129,6 +130,29 @@ class Restaurant extends Model
         }
 
         return route('storage.serve', ['path' => $this->menu_image]);
+    }
+
+    /**
+     * WhatsApp menu PDF URL (storage/app/public/menu_pdfs).
+     */
+    public function menuPdfUrl(): ?string
+    {
+        if (! $this->menu_pdf) {
+            return null;
+        }
+
+        return route('storage.serve', ['path' => $this->menu_pdf]);
+    }
+
+    public function menuPdfFilename(): string
+    {
+        if (! $this->menu_pdf) {
+            return 'menu.pdf';
+        }
+
+        $basename = basename($this->menu_pdf);
+
+        return str_ends_with(strtolower($basename), '.pdf') ? $basename : $basename.'.pdf';
     }
 
     /**

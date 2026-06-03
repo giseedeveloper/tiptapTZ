@@ -441,16 +441,16 @@
                             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                         </svg>
                     </div>
-                    <span class="font-medium text-xs">Menu</span>
+                    <span class="font-medium text-xs">Dishes</span>
                 </a>
 
-                <a href="{{ route('manager.menu-image.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.menu-image.index') ? 'sidebar-link-active' : 'text-white/55' }}">
+                <a href="{{ route('manager.menu-pdf.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.menu-pdf.*') ? 'sidebar-link-active' : 'text-white/55' }}">
                     <div class="w-7 h-7 rounded-md bg-gradient-to-br from-rose-500/20 to-orange-500/20 flex items-center justify-center shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.menu-image.index') ? 'text-rose-400' : 'text-white/50' }}">
-                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.menu-pdf.*') ? 'text-rose-400' : 'text-white/50' }}">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 13h-2"/><path d="M10 17H8"/><path d="M16 17h-2"/>
                         </svg>
                     </div>
-                    <span class="font-medium text-xs">Menu Image</span>
+                    <span class="font-medium text-xs">Menu PDF</span>
                 </a>
 
                 <a href="{{ route('manager.waiters.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.waiters.index') ? 'sidebar-link-active' : 'text-white/55' }}">

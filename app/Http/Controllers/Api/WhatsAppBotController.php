@@ -1166,9 +1166,9 @@ class WhatsAppBotController extends Controller
     }
 
     /**
-     * Get Menu Image for a Restaurant
+     * Get Menu PDF for a Restaurant (WhatsApp document).
      */
-    public function getMenuImage($restaurantId)
+    public function getMenuPdf($restaurantId)
     {
         $restaurant = Restaurant::find($restaurantId);
 
@@ -1179,24 +1179,30 @@ class WhatsAppBotController extends Controller
             ], 404);
         }
 
-        if (! $restaurant->menu_image) {
+        if (! $restaurant->menu_pdf) {
             return response()->json([
                 'success' => false,
-                'message' => 'No menu image available for this restaurant',
+                'message' => 'No menu PDF available for this restaurant',
             ], 404);
         }
-
-        // Fetch URL for menu image (path: storage/app/public/menu_images)
-        $imageUrl = $restaurant->menuImageUrl();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'restaurant_id' => $restaurant->id,
                 'restaurant_name' => $restaurant->name,
-                'menu_image_url' => $imageUrl,
+                'menu_pdf_url' => $restaurant->menuPdfUrl(),
+                'filename' => $restaurant->menuPdfFilename(),
             ],
         ]);
+    }
+
+    /**
+     * @deprecated Use getMenuPdf. Kept for older bot builds.
+     */
+    public function getMenuImage($restaurantId)
+    {
+        return $this->getMenuPdf($restaurantId);
     }
 
     /**
