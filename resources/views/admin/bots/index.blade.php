@@ -67,6 +67,44 @@
                     </div>
                 </form>
 
+                <form action="{{ route('admin.bots.update-branding') }}" method="POST" enctype="multipart/form-data" class="space-y-4 pt-4 border-t border-white/5">
+                    @csrf
+                    <input type="hidden" name="bot_id" value="{{ $bot->id }}">
+                    <div>
+                        <p class="text-[9px] font-bold uppercase tracking-wider text-violet-300 mb-3">Welcome card (when customer says hi)</p>
+                        @php
+                            $settings = is_array($bot->settings) ? $bot->settings : [];
+                            $previewImage = $settings['welcome_image_path'] ?? null
+                                ? \Illuminate\Support\Facades\Storage::disk('public')->url($settings['welcome_image_path'])
+                                : ($defaultBranding['image_url'] ?? asset('images/icon-512.png'));
+                        @endphp
+                        <div class="flex items-center gap-4 mb-4">
+                            <img src="{{ $previewImage }}" alt="Welcome logo preview" class="w-16 h-16 rounded-xl bg-white object-contain p-1 border border-white/10">
+                            <p class="text-[10px] text-white/45 leading-relaxed">Shown like a rich WhatsApp card with logo on top — same style as ferry/marketing bots.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-bold uppercase tracking-wider text-white/40 block">Welcome title</label>
+                        <input type="text" name="welcome_title" value="{{ old('welcome_title', $settings['welcome_title'] ?? $defaultBranding['title'] ?? 'TipTap') }}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500" placeholder="TipTap">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-bold uppercase tracking-wider text-white/40 block">Welcome message (optional)</label>
+                        <textarea name="welcome_body" rows="3" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500" placeholder="Leave empty to use bot language (EN/SW) automatically">{{ old('welcome_body', $settings['welcome_body'] ?? '') }}</textarea>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-bold uppercase tracking-wider text-white/40 block">Welcome logo image</label>
+                        <input type="file" name="welcome_image" accept="image/png,image/jpeg,image/webp" class="w-full text-xs text-white/60 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-violet-600 file:text-white file:text-[10px] file:font-bold">
+                        <p class="text-[9px] text-white/35">PNG/JPG, max 2MB. Default: <code class="text-white/50">/images/icon-512.png</code></p>
+                    </div>
+                    <label class="flex items-center gap-2 text-[10px] text-white/50">
+                        <input type="checkbox" name="remove_welcome_image" value="1" class="rounded border-white/20 bg-white/5 text-violet-500">
+                        Reset to default logo
+                    </label>
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:shadow-lg transition-all">
+                        Save welcome card
+                    </button>
+                </form>
+
                 <div class="flex gap-2 pt-2">
                     <button type="button" class="flex-1 py-3 glass text-white/70 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all">Restart Bot</button>
                     <button type="button" class="flex-1 py-3 glass text-white/70 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all">View Logs</button>

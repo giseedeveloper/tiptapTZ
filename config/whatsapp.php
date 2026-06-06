@@ -7,7 +7,7 @@ return [
     | WhatsApp Bot Notification Endpoint
     |--------------------------------------------------------------------------
     |
-    | The URL of the Node.js (Baileys) bot's notify HTTP server. When server-side
+    | The URL of the Node.js bot's notify HTTP server (Cloud API v2). When server-side
     | events occur (e.g. an order reaches the "served" stage), Laravel POSTs here
     | so the bot can deliver the bill image to the customer over WhatsApp.
     |
@@ -36,9 +36,8 @@ return [
     | The WhatsApp bot downloads the PNG from this URL when sending the bill.
     | It must be reachable from your bot VPS (curl/open HTTPS). If your Laravel
     | app lives under /public on shared hosting, set this to that full base, e.g.
-    | https://tiptapafrica.co.tz/public — otherwise route() may generate
-    | https://tiptapafrica.co.tz/bill-image/... which returns 404 and Baileys
-    | reports "Failed to fetch stream".
+    | https://tiptapafrica.co.za — otherwise route() may generate
+    | https://tiptapafrica.co.za/bill-image/... which returns 404
     |
     | Bill URLs use /bill-image/{id}/{signature} (path) so shared-host WAFs that
     | block ?signature=... still allow the bot to download the PNG.
@@ -48,5 +47,21 @@ return [
     */
 
     'bill_image_base_url' => env('WHATSAPP_BILL_IMAGE_BASE_URL', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Global bot welcome card (customer says "hi" before choosing a restaurant)
+    |--------------------------------------------------------------------------
+    |
+    | Override per deployment in Admin → Bots. image_url must be HTTPS and
+    | reachable by Meta when downloading media for WhatsApp.
+    |
+    */
+
+    'welcome_title' => env('WHATSAPP_WELCOME_TITLE', 'TipTap'),
+
+    'welcome_body' => env('WHATSAPP_WELCOME_BODY'),
+
+    'welcome_image_url' => env('WHATSAPP_WELCOME_IMAGE_URL'),
 
 ];

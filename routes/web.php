@@ -135,6 +135,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     // Bots
     Route::get('bots', [\App\Http\Controllers\Admin\BotController::class, 'index'])->name('bots.index');
     Route::post('bots/update-endpoint', [\App\Http\Controllers\Admin\BotController::class, 'updateEndpoint'])->name('bots.update-endpoint');
+    Route::post('bots/update-branding', [\App\Http\Controllers\Admin\BotController::class, 'updateBranding'])->name('bots.update-branding');
     Route::post('bots/generate-token', [\App\Http\Controllers\Admin\BotController::class, 'generateToken'])
         ->middleware('throttle:bot-token')
         ->name('bots.generate-token');

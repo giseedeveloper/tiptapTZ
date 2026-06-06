@@ -15,6 +15,8 @@ use App\Models\Setting;
 use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
+use App\Support\WhatsAppBotBranding;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -1375,6 +1377,14 @@ class WhatsAppBotController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function branding(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => WhatsAppBotBranding::resolve(),
+        ]);
     }
 
     /**
