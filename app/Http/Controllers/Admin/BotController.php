@@ -20,12 +20,23 @@ class BotController extends Controller
 {
     public function index(): View
     {
-        $bots = Bot::all();
+        $brandingBot = Bot::query()->firstOrCreate(
+            ['name' => 'WhatsApp Bot'],
+            ['status' => 'active'],
+        );
+
+        $bots = Bot::query()->orderBy('id')->get();
         $botTokenConfigured = filled(config('services.bot.token'));
         $newBotToken = session('bot_token_plaintext');
         $defaultBranding = WhatsAppBotBranding::resolve();
 
-        return view('admin.bots.index', compact('bots', 'botTokenConfigured', 'newBotToken', 'defaultBranding'));
+        return view('admin.bots.index', compact(
+            'bots',
+            'brandingBot',
+            'botTokenConfigured',
+            'newBotToken',
+            'defaultBranding',
+        ));
     }
 
     public function updateEndpoint(UpdateBotEndpointRequest $request): RedirectResponse

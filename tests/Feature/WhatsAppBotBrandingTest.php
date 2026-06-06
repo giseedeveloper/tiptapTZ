@@ -5,7 +5,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -15,12 +14,12 @@ beforeEach(function (): void {
     $this->botUser = User::factory()->create([
         'email' => 'bot-branding@taptap.test',
     ]);
-
-    if (! Role::where('name', 'bot_service')->exists()) {
-        Role::create(['name' => 'bot_service', 'guard_name' => 'web']);
-    }
-
     $this->botUser->assignRole('bot_service');
+
+    $this->admin = User::factory()->create([
+        'email' => 'admin-branding@taptap.test',
+    ]);
+    $this->admin->assignRole('super_admin');
 
     Sanctum::actingAs($this->botUser);
 });
@@ -57,4 +56,17 @@ test('branding uses bot settings when configured', function (): void {
         ->assertJsonPath('data.body', 'Order, pay, and tip from WhatsApp.');
 
     expect($response->json('data.image_url'))->toContain('bot/welcome/test.png');
+});
+
+test('admin bots page always shows welcome card upload form', function (): void {
+    expect(Bot::query()->count())->toBe(0);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.bots.index'))
+        ->assertOk()
+        ->assertSee('WhatsApp welcome card')
+        ->assertSee('name="welcome_image"', false)
+        ->assertSee('Save welcome card');
+
+    expect(Bot::query()->where('name', 'WhatsApp Bot')->exists())->toBeTrue();
 });
