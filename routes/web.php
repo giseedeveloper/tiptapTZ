@@ -5,8 +5,12 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BillImageController;
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
 use App\Http\Controllers\RestaurantRegistrationController;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 Route::view('/', 'welcome')->name('home');
 
@@ -15,8 +19,24 @@ Route::get('/serve-storage/{path}', \App\Http\Controllers\ServeStorageController
 // Path signature avoids some WAFs that block ?signature=... on shared hosting.
 Route::get('/bill-image/{orderId}/{signature}', BillImageController::class)
     ->where(['orderId' => '[0-9]+', 'signature' => '[a-f0-9]{64}'])
+    ->withoutMiddleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        VerifyCsrfToken::class,
+    ])
     ->name('bill.image');
-Route::get('/bill-image/{orderId}', BillImageController::class)->where('orderId', '[0-9]+')->name('bill.image.legacy');
+Route::get('/bill-image/{orderId}', BillImageController::class)
+    ->where('orderId', '[0-9]+')
+    ->withoutMiddleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        VerifyCsrfToken::class,
+    ])
+    ->name('bill.image.legacy');
 
 Route::get('/qr/whatsapp', [\App\Http\Controllers\QrCodeController::class, 'whatsapp'])
     ->middleware('throttle:120,1')
@@ -141,6 +161,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
 Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [ManagerDashboard::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [ManagerDashboard::class, 'getStats'])->name('dashboard.stats');
+    Route::get('/dashboard/analytics', [ManagerDashboard::class, 'getAnalytics'])->name('dashboard.analytics');
     Route::get('/live-orders', [\App\Http\Controllers\Manager\LiveOrderController::class, 'index'])->name('orders.live');
     Route::get('/orders/history', [\App\Http\Controllers\Manager\OrderHistoryController::class, 'index'])->name('orders.history');
     Route::get('/orders/history/export', [\App\Http\Controllers\Manager\OrderHistoryController::class, 'export'])->name('orders.history.export');
@@ -173,6 +194,9 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('/payments/selcom/initiate', [\App\Http\Controllers\Manager\PaymentController::class, 'initiateSelcom'])->name('payments.selcom.initiate');
     Route::get('/payments/selcom/status/{order}', [\App\Http\Controllers\Manager\PaymentController::class, 'checkSelcomStatus'])->name('payments.selcom.status');
     Route::get('/wallet', [\App\Http\Controllers\Manager\WalletController::class, 'index'])->name('wallet.index');
+    Route::get('/wallet/export', [\App\Http\Controllers\Manager\WalletController::class, 'export'])->name('wallet.export');
+    Route::put('/wallet/payout-profile', [\App\Http\Controllers\Manager\WalletController::class, 'updatePayoutProfile'])->name('wallet.payout-profile.update');
+    Route::post('/wallet/notifications/read', [\App\Http\Controllers\Manager\WalletController::class, 'markNotificationsRead'])->name('wallet.notifications.read');
     Route::post('/wallet/withdraw', [\App\Http\Controllers\Manager\WalletController::class, 'store'])->name('wallet.store');
     Route::get('/feedback', [\App\Http\Controllers\Manager\FeedbackController::class, 'index'])->name('feedback.index');
     Route::get('/tips', [\App\Http\Controllers\Manager\TipController::class, 'index'])->name('tips.index');

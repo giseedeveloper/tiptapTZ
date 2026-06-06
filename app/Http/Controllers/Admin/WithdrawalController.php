@@ -3,13 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminActivityLog;
+use App\Models\Withdrawal;
+use App\Services\WithdrawalManagerNotifier;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class WithdrawalController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly WithdrawalManagerNotifier $notifier,
+    ) {}
+
+    public function index(Request $request): View
     {
-        $query = \App\Models\Withdrawal::with('restaurant')->latest();
+        $query = Withdrawal::with('restaurant')->latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -20,9 +29,9 @@ class WithdrawalController extends Controller
         return view('admin.withdrawals.index', compact('withdrawals'));
     }
 
-    public function approve(Request $request, string $id)
+    public function approve(Request $request, string $id): RedirectResponse
     {
-        $withdrawal = \App\Models\Withdrawal::findOrFail($id);
+        $withdrawal = Withdrawal::findOrFail($id);
         $oldStatus = $withdrawal->status;
 
         $withdrawal->update([
@@ -31,7 +40,7 @@ class WithdrawalController extends Controller
             'admin_note' => $request->admin_note,
         ]);
 
-        \App\Models\AdminActivityLog::log(
+        AdminActivityLog::log(
             'withdrawal.approved',
             'withdrawal',
             (int) $withdrawal->id,
@@ -40,12 +49,14 @@ class WithdrawalController extends Controller
             ['admin_note' => $request->admin_note]
         );
 
+        $this->notifier->notify($withdrawal->fresh(), 'approved');
+
         return back()->with('success', 'Withdrawal request approved.');
     }
 
-    public function reject(Request $request, string $id)
+    public function reject(Request $request, string $id): RedirectResponse
     {
-        $withdrawal = \App\Models\Withdrawal::findOrFail($id);
+        $withdrawal = Withdrawal::findOrFail($id);
         $oldStatus = $withdrawal->status;
 
         $withdrawal->update([
@@ -54,7 +65,7 @@ class WithdrawalController extends Controller
             'admin_note' => $request->admin_note,
         ]);
 
-        \App\Models\AdminActivityLog::log(
+        AdminActivityLog::log(
             'withdrawal.rejected',
             'withdrawal',
             (int) $withdrawal->id,
@@ -62,6 +73,8 @@ class WithdrawalController extends Controller
             ['status' => 'rejected', 'processed_at' => $withdrawal->processed_at?->toIso8601String()],
             ['admin_note' => $request->admin_note]
         );
+
+        $this->notifier->notify($withdrawal->fresh(), 'rejected');
 
         return back()->with('success', 'Withdrawal request rejected.');
     }

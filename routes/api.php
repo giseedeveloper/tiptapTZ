@@ -57,6 +57,13 @@
  *   POST /payroll                        -> Api\Manager\PayrollController@store
  *   GET  /payroll/history                -> Api\Manager\PayrollController@history
  *   GET  /payroll/export                 -> Api\Manager\PayrollController@export
+ *   GET  /wallet                         -> Api\Manager\WalletController@summary
+ *   GET  /wallet/breakdown               -> Api\Manager\WalletController@breakdown
+ *   GET  /wallet/withdrawals             -> Api\Manager\WalletController@withdrawals
+ *   GET  /wallet/payments                -> Api\Manager\WalletController@payments
+ *   POST /wallet/withdrawals             -> Api\Manager\WalletController@storeWithdrawal
+ *   PUT  /wallet/payout-profile          -> Api\Manager\WalletController@updatePayoutProfile
+ *   GET  /wallet/export                  -> Api\Manager\WalletController@export
  *
  * BOT (prefix: /bot, auth:sanctum) -> WhatsAppBotController
  *   verifyRestaurant, verifyTag, parseEntry, searchRestaurant, getFullMenu, getCategories,
@@ -165,6 +172,15 @@ Route::prefix('v1/manager')->middleware(['auth:sanctum', 'role:manager'])->group
     Route::post('/payroll', [\App\Http\Controllers\Api\Manager\PayrollController::class, 'store']);
     Route::get('/payroll/history', [\App\Http\Controllers\Api\Manager\PayrollController::class, 'history']);
     Route::get('/payroll/export', [\App\Http\Controllers\Api\Manager\PayrollController::class, 'export']);
+
+    // Wallet
+    Route::get('/wallet', [\App\Http\Controllers\Api\Manager\WalletController::class, 'summary']);
+    Route::get('/wallet/breakdown', [\App\Http\Controllers\Api\Manager\WalletController::class, 'breakdown']);
+    Route::get('/wallet/withdrawals', [\App\Http\Controllers\Api\Manager\WalletController::class, 'withdrawals']);
+    Route::get('/wallet/payments', [\App\Http\Controllers\Api\Manager\WalletController::class, 'payments']);
+    Route::post('/wallet/withdrawals', [\App\Http\Controllers\Api\Manager\WalletController::class, 'storeWithdrawal']);
+    Route::put('/wallet/payout-profile', [\App\Http\Controllers\Api\Manager\WalletController::class, 'updatePayoutProfile']);
+    Route::get('/wallet/export', [\App\Http\Controllers\Api\Manager\WalletController::class, 'export']);
 });
 
 // WhatsApp Bot Routes
@@ -195,6 +211,7 @@ Route::prefix('bot')->middleware('auth:sanctum')->group(function () {
     Route::post('/payment/quick', [App\Http\Controllers\Api\WhatsAppBotController::class, 'initiateQuickPayment']);
     Route::get('/payment/quick/{paymentId}/status', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getQuickPaymentStatus']);
 
+    // Session storage (replaces in-memory state in the Node bot)
     Route::get('/session', [App\Http\Controllers\Api\BotSessionController::class, 'show']);
     Route::put('/session', [App\Http\Controllers\Api\BotSessionController::class, 'upsert']);
     Route::delete('/session', [App\Http\Controllers\Api\BotSessionController::class, 'destroy']);

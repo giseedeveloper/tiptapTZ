@@ -21,6 +21,8 @@ class Restaurant extends Model
         'selcom_api_key',
         'selcom_api_secret',
         'selcom_is_live',
+        'payout_method',
+        'payout_details',
         'kitchen_token',
         'kitchen_token_generated_at',
     ];
@@ -179,6 +181,11 @@ class Restaurant extends Model
     public function hasSelcomConfigured(): bool
     {
         return app(SystemPaymentGateway::class)->isConfigured();
+    }
+
+    public function hasPayoutProfile(): bool
+    {
+        return filled($this->payout_method) && filled($this->payout_details);
     }
 
     public function users()
