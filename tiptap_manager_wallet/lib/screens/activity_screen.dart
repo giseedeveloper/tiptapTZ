@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_icons.dart';
+import '../widgets/screen_layout.dart';
 import '../widgets/wallet_widgets.dart';
 
 class ActivityScreen extends StatefulWidget {
@@ -40,34 +42,76 @@ class _ActivityScreenState extends State<ActivityScreen>
     final symbol = wallet.snapshot?.currencySymbol ?? 'Tsh';
     final dateFmt = DateFormat('d MMM, HH:mm');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Activity'),
-        bottom: TabBar(
-          controller: _tabs,
-          indicatorColor: AppTheme.primary,
-          labelColor: AppTheme.primary,
-          unselectedLabelColor: AppTheme.textMuted,
-          tabs: const [
-            Tab(text: 'Payments'),
-            Tab(text: 'Withdrawals'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabs,
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RefreshIndicator(
-            onRefresh: () => wallet.loadPayments(refresh: true),
-            color: AppTheme.primary,
-            child: _buildPaymentsList(wallet, symbol, dateFmt),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              WalletLayout.horizontalPadding(context),
+              8,
+              WalletLayout.horizontalPadding(context),
+              0,
+            ),
+            child: Text(
+              'Activity',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
+            ),
           ),
-          RefreshIndicator(
-            onRefresh: () => wallet.loadWithdrawals(refresh: true),
-            color: AppTheme.primary,
-            child: _buildWithdrawalsList(wallet, symbol, dateFmt),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            WalletLayout.horizontalPadding(context),
+            16,
+            WalletLayout.horizontalPadding(context),
+            0,
           ),
-        ],
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceOf(context).withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.glassBorderOf(context)),
+            ),
+            child: TabBar(
+              controller: _tabs,
+              indicator: BoxDecoration(
+                gradient: AppTheme.brandGradient,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: AppTheme.navUnselectedOf(context),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              tabs: const [
+                Tab(text: 'Payments'),
+                Tab(text: 'Withdrawals'),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabs,
+            children: [
+              RefreshIndicator(
+                onRefresh: () => wallet.loadPayments(refresh: true),
+                color: AppTheme.primary,
+                child: _buildPaymentsList(wallet, symbol, dateFmt),
+              ),
+              RefreshIndicator(
+                onRefresh: () => wallet.loadWithdrawals(refresh: true),
+                color: AppTheme.primary,
+                child: _buildWithdrawalsList(wallet, symbol, dateFmt),
+              ),
+            ],
+          ),
+        ),
+      ],
       ),
     );
   }
@@ -90,62 +134,57 @@ class _ActivityScreenState extends State<ActivityScreen>
     if (wallet.payments.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 120),
-          Center(child: Text('No payments yet', style: TextStyle(color: AppTheme.textMuted))),
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 80),
+          GlassCard(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              children: [
+                const BrandIconBadge(kind: TransactionIconKind.emptyPayments, size: 56),
+                const SizedBox(height: 12),
+                Text(
+                  'No payments yet',
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryOf(context),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Customer payments will show up here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTheme.textMutedOf(context)),
+                ),
+              ],
+            ),
+          ),
         ],
       );
     }
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        WalletLayout.horizontalPadding(context),
+        16,
+        WalletLayout.horizontalPadding(context),
+        WalletLayout.bottomScrollPadding(context),
+      ),
       itemCount: wallet.payments.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final payment = wallet.payments[index];
-        return GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.arrow_downward_rounded, color: AppTheme.success),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      payment.paymentType,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      [
-                        if (payment.method != null) payment.method,
-                        if (payment.createdAt != null) dateFmt.format(payment.createdAt!.toLocal()),
-                      ].whereType<String>().join(' · '),
-                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              MoneyText(
-                amount: payment.amount,
-                symbol: symbol,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.success,
-                    ),
-              ),
-            ],
-          ),
+        return ActivityListTile(
+          title: payment.paymentType,
+          subtitle: [
+            if (payment.method != null) payment.method,
+            if (payment.createdAt != null) dateFmt.format(payment.createdAt!.toLocal()),
+          ].whereType<String>().join(' · '),
+          amount: payment.amount,
+          symbol: symbol,
+          kind: TransactionIconKind.incoming,
         );
       },
     );
@@ -169,16 +208,38 @@ class _ActivityScreenState extends State<ActivityScreen>
     if (wallet.withdrawals.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 120),
-          Center(child: Text('No withdrawals yet', style: TextStyle(color: AppTheme.textMuted))),
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 80),
+          GlassCard(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              children: [
+                const BrandIconBadge(kind: TransactionIconKind.emptyWithdrawals, size: 56),
+                const SizedBox(height: 12),
+                Text(
+                  'No withdrawals yet',
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryOf(context),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       );
     }
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        WalletLayout.horizontalPadding(context),
+        16,
+        WalletLayout.horizontalPadding(context),
+        WalletLayout.bottomScrollPadding(context),
+      ),
       itemCount: wallet.withdrawals.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
@@ -192,19 +253,41 @@ class _ActivityScreenState extends State<ActivityScreen>
             children: [
               Row(
                 children: [
+                  BrandIconBadge(
+                    kind: TransactionIconKind.outgoing,
+                    accent: statusColor,
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
-                    child: MoneyText(
-                      amount: item.amount,
-                      symbol: symbol,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        MoneyText(
+                          amount: item.amount,
+                          symbol: symbol,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          [
+                            item.paymentMethod,
+                            if (item.createdAt != null)
+                              dateFmt.format(item.createdAt!.toLocal()),
+                          ].whereType<String>().join(' · '),
+                          style: TextStyle(
+                            color: AppTheme.textMutedOf(context),
+                            fontSize: 12,
                           ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.15),
+                      color: statusColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: statusColor.withValues(alpha: 0.35)),
                     ),
@@ -219,19 +302,20 @@ class _ActivityScreenState extends State<ActivityScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                [
-                  item.paymentMethod,
-                  if (item.createdAt != null) dateFmt.format(item.createdAt!.toLocal()),
-                ].whereType<String>().join(' · '),
-                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-              ),
               if (item.adminNote != null && item.adminNote!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  item.adminNote!,
-                  style: const TextStyle(color: AppTheme.rose, fontSize: 12),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.rose.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.rose.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    item.adminNote!,
+                    style: const TextStyle(color: AppTheme.rose, fontSize: 12, height: 1.4),
+                  ),
                 ),
               ],
             ],

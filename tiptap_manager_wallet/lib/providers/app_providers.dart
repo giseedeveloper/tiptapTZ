@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/wallet_models.dart';
@@ -31,7 +32,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _session = await _api.login(email: email, password: password);
-      notifyListeners();
+      _scheduleNotify();
       return true;
     } on ApiException catch (e) {
       _error = e.message;
@@ -47,7 +48,13 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     await _api.logout();
     _session = null;
-    notifyListeners();
+    _scheduleNotify();
+  }
+
+  void _scheduleNotify() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_providers.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/wallet_widgets.dart';
 
 class WithdrawScreen extends StatefulWidget {
   const WithdrawScreen({super.key});
@@ -24,11 +25,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   void initState() {
     super.initState();
     final snapshot = context.read<WalletProvider>().snapshot;
-    if (snapshot?.payoutProfile.isComplete == true) {
-      _useSaved = true;
-    } else {
-      _useSaved = false;
-    }
+    _useSaved = snapshot?.payoutProfile.isComplete ?? false;
   }
 
   @override
@@ -83,101 +80,137 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   Widget build(BuildContext context) {
     final snapshot = context.watch<WalletProvider>().snapshot;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Request withdrawal')),
-      body: snapshot == null
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Available: ${snapshot.currencySymbol} ${snapshot.summary.availableBalance.toStringAsFixed(0)}',
-                      style: const TextStyle(color: AppTheme.textSecondary),
-                    ),
-                    Text(
-                      'Minimum: ${snapshot.currencySymbol} ${snapshot.minWithdrawal.toStringAsFixed(0)}',
-                      style: const TextStyle(color: AppTheme.textMuted),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Amount (${snapshot.currencySymbol})',
+    return PortalBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Withdraw'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: snapshot == null
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      BalanceHeroCard(
+                        amount: snapshot.summary.availableBalance,
+                        symbol: snapshot.currencySymbol,
+                        commissionRate: snapshot.summary.commissionRate,
                       ),
-                      validator: (value) {
-                        final parsed = double.tryParse(value ?? '');
-                        if (parsed == null || parsed <= 0) {
-                          return 'Enter a valid amount';
-                        }
-                        if (parsed < snapshot.minWithdrawal) {
-                          return 'Minimum is ${snapshot.minWithdrawal.toStringAsFixed(0)}';
-                        }
-                        if (parsed > snapshot.summary.availableBalance) {
-                          return 'Exceeds available balance';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    if (snapshot.payoutProfile.isComplete) ...[
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _useSaved,
-                        onChanged: (value) => setState(() => _useSaved = value),
-                        title: const Text('Use saved payout profile'),
-                        subtitle: Text(
-                          '${snapshot.payoutProfile.payoutMethod} · ${snapshot.payoutProfile.payoutDetails}',
-                          style: const TextStyle(color: AppTheme.textMuted),
+                      const SizedBox(height: 20),
+                      GlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Minimum withdrawal: ${snapshot.currencySymbol} ${snapshot.minWithdrawal.toStringAsFixed(0)}',
+                              style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _amountController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: 'Amount (${snapshot.currencySymbol})',
+                              ),
+                              validator: (value) {
+                                final parsed = double.tryParse(value ?? '');
+                                if (parsed == null || parsed <= 0) {
+                                  return 'Enter a valid amount';
+                                }
+                                if (parsed < snapshot.minWithdrawal) {
+                                  return 'Minimum is ${snapshot.minWithdrawal.toStringAsFixed(0)}';
+                                }
+                                if (parsed > snapshot.summary.availableBalance) {
+                                  return 'Exceeds available balance';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            if (snapshot.payoutProfile.isComplete) ...[
+                              SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                value: _useSaved,
+                                activeTrackColor: AppTheme.primary.withValues(alpha: 0.5),
+                                activeThumbColor: AppTheme.primary,
+                                onChanged: (value) => setState(() => _useSaved = value),
+                                title: const Text('Use saved payout profile'),
+                                subtitle: Text(
+                                  '${snapshot.payoutProfile.payoutMethod} · ${snapshot.payoutProfile.payoutDetails}',
+                                  style: const TextStyle(color: AppTheme.textMuted),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            if (!_useSaved || !snapshot.payoutProfile.isComplete) ...[
+                              DropdownButtonFormField<String>(
+                                value: _method,
+                                decoration: const InputDecoration(labelText: 'Payout method'),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'Mobile Money',
+                                    child: Text('Mobile Money'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Bank Transfer',
+                                    child: Text('Bank Transfer'),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  if (value != null) setState(() => _method = value);
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _detailsController,
+                                maxLines: 3,
+                                decoration: const InputDecoration(
+                                  labelText: 'Account / phone details',
+                                ),
+                                validator: (value) =>
+                                    (value == null || value.trim().isEmpty) ? 'Required' : null,
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.brandGradient,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                ),
+                                onPressed: _submitting ? null : _submit,
+                                child: _submitting
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('Submit request'),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
                     ],
-                    if (!_useSaved || !snapshot.payoutProfile.isComplete) ...[
-                      DropdownButtonFormField<String>(
-                        value: _method,
-                        decoration: const InputDecoration(labelText: 'Payout method'),
-                        items: const [
-                          DropdownMenuItem(value: 'Mobile Money', child: Text('Mobile Money')),
-                          DropdownMenuItem(value: 'Bank Transfer', child: Text('Bank Transfer')),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) setState(() => _method = value);
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _detailsController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Account / phone details',
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty) ? 'Required' : null,
-                      ),
-                    ],
-                    const SizedBox(height: 28),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _submitting ? null : _submit,
-                        child: _submitting
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Submit request'),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

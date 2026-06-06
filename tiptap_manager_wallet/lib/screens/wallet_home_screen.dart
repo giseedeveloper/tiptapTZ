@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_providers.dart';
+import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_icons.dart';
+import '../widgets/screen_layout.dart';
 import '../widgets/wallet_widgets.dart';
-import 'login_screen.dart';
 import 'withdraw_screen.dart';
 
 class WalletHomeScreen extends StatefulWidget {
-  const WalletHomeScreen({super.key});
+  const WalletHomeScreen({super.key, this.onOpenActivity});
+
+  final VoidCallback? onOpenActivity;
 
   @override
   State<WalletHomeScreen> createState() => _WalletHomeScreenState();
@@ -18,8 +23,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<WalletProvider>().loadSummary();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final wallet = context.read<WalletProvider>();
+      await wallet.loadSummary();
+      await wallet.loadPayments(refresh: true);
     });
   }
 
@@ -31,145 +38,192 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Widget build(BuildContext context) {
     final wallet = context.watch<WalletProvider>();
     final auth = context.watch<AuthProvider>();
+    final s = context.watch<SettingsProvider>().strings;
     final snapshot = wallet.snapshot;
+    final dateFmt = DateFormat('d MMM, HH:mm');
+    final firstName = auth.session?.user.name.split(' ').first ?? s.managerRole;
+    final horizontal = WalletLayout.horizontalPadding(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Wallet'),
-            if (auth.session?.user.restaurantName != null)
-              Text(
-                auth.session!.user.restaurantName!,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppTheme.textMuted,
-                    ),
-              ),
-          ],
+    return SafeArea(
+      bottom: false,
+      child: RefreshIndicator(
+      onRefresh: _refresh,
+      color: AppTheme.primary,
+      edgeOffset: 72,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              await auth.logout();
-              if (!context.mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
-            },
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        color: AppTheme.primary,
-        child: wallet.loadingSummary && snapshot == null
-            ? ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 180),
-                  Center(child: CircularProgressIndicator(color: AppTheme.primary)),
-                ],
-              )
-            : ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (wallet.summaryError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Text(
-                        wallet.summaryError!,
-                        style: const TextStyle(color: AppTheme.rose),
-                      ),
+                  Text(
+                    s.hi(firstName),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    s.venueWallet,
+                    style: TextStyle(
+                      color: AppTheme.textMutedOf(context),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                     ),
-                  if (snapshot != null) ...[
-                    GlassCard(
-                      borderColor: AppTheme.primary.withValues(alpha: 0.35),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AVAILABLE BALANCE',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: AppTheme.primary,
-                                  letterSpacing: 1.2,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          MoneyText(
-                            amount: snapshot.summary.availableBalance,
-                            symbol: snapshot.currencySymbol,
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: AppTheme.success,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Net after ${snapshot.summary.commissionRate.toStringAsFixed(0)}% platform fee',
-                            style: const TextStyle(color: AppTheme.textSecondary),
-                          ),
-                        ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (wallet.loadingSummary && snapshot == null)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: CircularProgressIndicator(color: AppTheme.primary),
+              ),
+            )
+          else if (snapshot != null) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (wallet.summaryError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          wallet.summaryError!,
+                          style: const TextStyle(color: AppTheme.rose),
+                        ),
                       ),
+                    BalanceHeroCard(
+                      amount: snapshot.summary.availableBalance,
+                      symbol: snapshot.currencySymbol,
+                      commissionRate: snapshot.summary.commissionRate,
+                      restaurantName: auth.session?.user.restaurantName,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: snapshot.summary.availableBalance <= 0
-                                ? null
-                                : () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const WithdrawScreen(),
-                                      ),
-                                    );
-                                  },
-                            icon: const Icon(Icons.arrow_upward_rounded),
-                            label: const Text('Withdraw'),
-                          ),
-                        ),
-                      ],
+                    QuickActionButton(
+                      icon: Icons.north_east_rounded,
+                      label: s.withdrawFunds,
+                      enabled: snapshot.summary.availableBalance > 0,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const WithdrawScreen()),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 20),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.35,
-                      children: [
-                        SummaryStatTile(
-                          label: 'Gross received',
-                          amount: snapshot.summary.totalEarned,
-                          symbol: snapshot.currencySymbol,
-                        ),
-                        SummaryStatTile(
-                          label: 'Platform fee',
-                          amount: snapshot.summary.platformCommission,
-                          symbol: snapshot.currencySymbol,
-                          accent: AppTheme.rose,
-                        ),
-                        SummaryStatTile(
-                          label: 'Net earnings',
-                          amount: snapshot.summary.netEarned,
-                          symbol: snapshot.currencySymbol,
-                        ),
-                        SummaryStatTile(
-                          label: 'Pending',
-                          amount: snapshot.summary.pendingWithdrawals,
-                          symbol: snapshot.currencySymbol,
-                          accent: AppTheme.amber,
-                        ),
-                      ],
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 24, left: 20),
+                child: SectionHeader(title: s.overview),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 118,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    StatPill(
+                      label: 'Gross received',
+                      amount: snapshot.summary.totalEarned,
+                      symbol: snapshot.currencySymbol,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(width: 12),
+                    StatPill(
+                      label: 'Platform fee',
+                      amount: snapshot.summary.platformCommission,
+                      symbol: snapshot.currencySymbol,
+                      accent: AppTheme.rose,
+                    ),
+                    const SizedBox(width: 12),
+                    StatPill(
+                      label: 'Net earnings',
+                      amount: snapshot.summary.netEarned,
+                      symbol: snapshot.currencySymbol,
+                      accent: AppTheme.lavender,
+                    ),
+                    const SizedBox(width: 12),
+                    StatPill(
+                      label: 'Pending',
+                      amount: snapshot.summary.pendingWithdrawals,
+                      symbol: snapshot.currencySymbol,
+                      accent: AppTheme.amber,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                child: SectionHeader(
+                  title: s.recentPayments,
+                  actionLabel: wallet.payments.isNotEmpty ? s.seeAll : null,
+                  onAction: wallet.payments.isNotEmpty ? widget.onOpenActivity : null,
+                ),
+              ),
+            ),
+            if (wallet.payments.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        'No payments yet — earnings appear here when customers pay.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppTheme.textMutedOf(context),
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverList.separated(
+                itemCount: wallet.payments.take(4).length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final payment = wallet.payments[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ActivityListTile(
+                      title: payment.paymentType,
+                      subtitle: [
+                        if (payment.method != null) payment.method,
+                        if (payment.createdAt != null)
+                          dateFmt.format(payment.createdAt!.toLocal()),
+                      ].whereType<String>().join(' · '),
+                      amount: payment.amount,
+                      symbol: snapshot.currencySymbol,
+                      kind: TransactionIconKind.incoming,
+                    ),
+                  );
+                },
+              ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                child: Column(
+                  children: [
                     BreakdownTable(
                       title: 'Earnings by type',
                       rows: snapshot.breakdown.byType,
@@ -182,8 +236,13 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                       symbol: snapshot.currencySymbol,
                     ),
                   ],
-                ],
+                ),
               ),
+            ),
+          ],
+          const SliverToBoxAdapter(child: SizedBox(height: 96)),
+        ],
+      ),
       ),
     );
   }

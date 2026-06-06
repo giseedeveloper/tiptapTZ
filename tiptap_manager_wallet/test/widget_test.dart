@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:tiptap_manager_wallet/main.dart';
 import 'package:tiptap_manager_wallet/providers/app_providers.dart';
+import 'package:tiptap_manager_wallet/providers/settings_provider.dart';
 import 'package:tiptap_manager_wallet/services/api_service.dart';
 import 'package:tiptap_manager_wallet/services/storage_service.dart';
 
@@ -15,6 +16,7 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider(create: (_) => SettingsProvider(storage)),
           ChangeNotifierProvider(create: (_) => AuthProvider(api, storage)),
           ChangeNotifierProvider(create: (_) => WalletProvider(api)),
         ],
@@ -22,6 +24,13 @@ void main() {
       ),
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Manager wallet'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 2000));
+    await tester.pump();
   });
 }
