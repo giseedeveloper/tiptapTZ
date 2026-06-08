@@ -48,7 +48,8 @@ class SendBillImageToCustomer implements ShouldQueue
         }
 
         $jid = Order::normalizeWhatsAppJid($order->whatsapp_jid, $order->customer_phone);
-        if ($jid === null || $jid === '') {
+        $recipientId = Order::whatsAppRecipientId($order->whatsapp_jid, $order->customer_phone);
+        if ($recipientId === null || $recipientId === '') {
             Log::warning('Bill image skipped: no WhatsApp JID and no usable customer phone.', [
                 'order_id' => $order->id,
             ]);
@@ -59,7 +60,7 @@ class SendBillImageToCustomer implements ShouldQueue
             return;
         }
 
-        if (! filled($order->whatsapp_jid)) {
+        if (! filled($order->whatsapp_jid) && filled($jid)) {
             $order->forceFill(['whatsapp_jid' => $jid])->saveQuietly();
         }
 
@@ -84,7 +85,8 @@ class SendBillImageToCustomer implements ShouldQueue
         $payload = [
             'event' => 'bill_image',
             'order_id' => $order->id,
-            'jid' => $jid,
+            'jid' => $recipientId,
+            'force' => $this->force,
             'bill_image_url' => $order->billImageUrl(),
             'restaurant_name' => $order->restaurant?->name,
             'total_amount' => (float) $order->total_amount,
@@ -109,6 +111,26 @@ class SendBillImageToCustomer implements ShouldQueue
 
             $response->throw();
         }
+
+        $body = $response->json();
+        if (is_array($body) && ($body['deduped'] ?? false) === true && ! $this->force) {
+            Log::info('Bill image push skipped by bot dedupe.', [
+                'order_id' => $order->id,
+                'recipient' => $body['recipient'] ?? $recipientId,
+            ]);
+
+            return;
+        }
+
+        if (is_array($body) && ($body['deduped'] ?? false) === true && $this->force) {
+            throw new RuntimeException('WhatsApp bot skipped resending the bill (deduped). Restart the bot or retry shortly.');
+        }
+
+        Log::info('Bill image push accepted by WhatsApp bot.', [
+            'order_id' => $order->id,
+            'recipient' => is_array($body) ? ($body['recipient'] ?? $recipientId) : $recipientId,
+            'message_id' => is_array($body) ? ($body['message_id'] ?? null) : null,
+        ]);
 
         $order->markBillImagePushed();
     }

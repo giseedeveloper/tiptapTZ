@@ -97,6 +97,22 @@ class Order extends Model
      * Normalize JID for storage / bill push. Preserves full addresses from the bot
      * (e.g. LID suffix) when provided; otherwise builds digits plus @s.whatsapp.net from customer_phone.
      */
+    /**
+     * Digits-only WhatsApp id for Cloud API outbound (from stored jid or phone).
+     */
+    public static function whatsAppRecipientId(?string $providedJid, ?string $customerPhone): ?string
+    {
+        $normalized = self::normalizeWhatsAppJid($providedJid, $customerPhone);
+        if ($normalized === null || $normalized === '') {
+            return null;
+        }
+
+        $local = explode('@', $normalized)[0];
+        $digits = preg_replace('/\D+/', '', $local);
+
+        return $digits !== '' ? $digits : null;
+    }
+
     public static function normalizeWhatsAppJid(?string $providedJid, ?string $customerPhone): ?string
     {
         $provided = $providedJid !== null ? trim($providedJid) : '';
@@ -119,12 +135,18 @@ class Order extends Model
     }
 
     /**
-     * Build {msisdn}@s.whatsapp.net from digits. Maps common Tanzania local form (0 + 9 digits) to 255…
+     * Build {msisdn}@s.whatsapp.net from digits. Maps local 0 + 9 digits to country code.
      */
     protected static function whatsappJidFromDigits(string $digits): string
     {
+        $countryCode = (string) config('tiptap.country_code', '255');
+
         if (preg_match('/^0(\d{9})$/', $digits, $matches) === 1) {
-            return '255'.$matches[1].'@s.whatsapp.net';
+            return $countryCode.$matches[1].'@s.whatsapp.net';
+        }
+
+        if (str_starts_with($digits, $countryCode) && strlen($digits) >= 11) {
+            return $digits.'@s.whatsapp.net';
         }
 
         return $digits.'@s.whatsapp.net';

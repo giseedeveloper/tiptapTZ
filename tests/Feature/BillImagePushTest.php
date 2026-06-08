@@ -60,7 +60,8 @@ it('posts the bill image payload to the bot notify endpoint', function () {
             && $request->header('X-Bot-Secret')[0] === 'test-secret'
             && $request['event'] === 'bill_image'
             && $request['order_id'] === $order->id
-            && $request['jid'] === '255700000020@s.whatsapp.net'
+            && $request['jid'] === '255700000020'
+            && $request['force'] === false
             && preg_match('#/bill-image/'.$order->id.'/([a-f0-9]{64})$#', (string) $request['bill_image_url']);
     });
 
@@ -218,7 +219,8 @@ it('manager send bill derives whatsapp jid from customer phone when missing', fu
 
     Http::assertSent(function ($request) {
         return $request->url() === 'http://bot.test/notify'
-            && $request['jid'] === '255711222333@s.whatsapp.net';
+            && $request['jid'] === '255711222333'
+            && $request['force'] === true;
     });
 
     expect($order->fresh()->whatsapp_jid)->toBe('255711222333@s.whatsapp.net');

@@ -77,6 +77,7 @@
  *   GET  /order-portal/orders             -> OrderPortal\LiveOrdersController@index (order.portal)
  *   POST /order-portal/orders             -> OrderPortal\LiveOrdersController@store (order.portal)
  *   PUT  /order-portal/orders/{order}     -> OrderPortal\LiveOrdersController@update (order.portal)
+ *   POST /order-portal/orders/{order}/whatsapp-bill -> OrderPortal\LiveOrdersController@sendWhatsAppBill (order.portal)
  *   DELETE /order-portal/orders/{order}   -> OrderPortal\LiveOrdersController@destroy (order.portal)
  *   POST /order-portal/payments/selcom/initiate -> OrderPortal\LiveOrdersController@paymentInitiate (order.portal)
  *   GET  /order-portal/payments/selcom/status/{order} -> OrderPortal\LiveOrdersController@paymentStatus (order.portal)
@@ -232,6 +233,7 @@ Route::prefix('order-portal')->middleware('web')->group(function () {
         Route::get('/orders', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'index']);
         Route::post('/orders', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'store']);
         Route::put('/orders/{order}', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'update']);
+        Route::post('/orders/{order}/whatsapp-bill', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'sendWhatsAppBill']);
         Route::delete('/orders/{order}', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'destroy']);
         Route::post('/payments/selcom/initiate', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'paymentInitiate']);
         Route::get('/payments/selcom/status/{order}', [\App\Http\Controllers\OrderPortal\LiveOrdersController::class, 'paymentStatus']);
