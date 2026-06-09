@@ -9,6 +9,8 @@ use RuntimeException;
 
 class WhatsAppBrandedQrService
 {
+    private const CACHE_VERSION = 'v2';
+
     public function generate(string $waMeUrl, int $size = 400): string
     {
         $this->assertValidWaMeUrl($waMeUrl);
@@ -40,7 +42,7 @@ class WhatsAppBrandedQrService
 
     private function cachePath(string $waMeUrl, int $size): string
     {
-        return 'qr-cache/'.hash('sha256', $waMeUrl.'|'.$size).'.png';
+        return 'qr-cache/'.self::CACHE_VERSION.'/'.hash('sha256', $waMeUrl.'|'.$size).'.png';
     }
 
     private function buildPng(string $waMeUrl, int $size): string
@@ -60,6 +62,10 @@ class WhatsAppBrandedQrService
 
         if ($qr === false) {
             throw new RuntimeException('Invalid QR image data.');
+        }
+
+        if (! imageistruecolor($qr)) {
+            imagepalettetotruecolor($qr);
         }
 
         $this->applyCenterLogo($qr, $size);
@@ -92,8 +98,79 @@ class WhatsAppBrandedQrService
             return;
         }
 
-        $logoSize = (int) round($size * 0.22);
-        $plateSize = (int) round($size * 0.26);
+        $this->assertCenterLogoAsset($logo);
+
+        $plateSize = (int) round($size * 0.28);
+        $logoSize = (int) round($size * 0.20);
+
+        $cx = (int) (($size - $plateSize) / 2);
+        $cy = (int) (($size - $plateSize) / 2);
+        $this->drawWhiteCircle($qr, $cx, $cy, $plateSize);
+
+        $logoResized = $this->resizeLogoWithAlpha($logo, $logoSize);
+        $lx = (int) (($size - $logoSize) / 2);
+        $ly = (int) (($size - $logoSize) / 2);
+        $this->copyWithAlpha($qr, $logoResized, $lx, $ly);
+    }
+
+    /**
+     * Reject assets that look like QR codes (prevents nested-QR branding bug).
+     *
+     * @param  \GdImage  $logo
+     */
+    private function assertCenterLogoAsset($logo): void
+    {
+        $width = imagesx($logo);
+        $height = imagesy($logo);
+        $darkPixels = 0;
+        $samples = 0;
+
+        for ($x = 0; $x < $width; $x++) {
+            for ($y = 0; $y < $height; $y++) {
+                $rgba = imagecolorat($logo, $x, $y);
+                $alpha = ($rgba >> 24) & 0x7F;
+
+                if ($alpha >= 100) {
+                    continue;
+                }
+
+                $samples++;
+                $red = ($rgba >> 16) & 0xFF;
+                $green = ($rgba >> 8) & 0xFF;
+                $blue = $rgba & 0xFF;
+
+                if ($red < 48 && $green < 48 && $blue < 48) {
+                    $darkPixels++;
+                }
+            }
+        }
+
+        if ($samples === 0) {
+            throw new RuntimeException('WhatsApp center logo asset is empty.');
+        }
+
+        if (($darkPixels / $samples) > 0.34) {
+            throw new RuntimeException('WhatsApp center logo asset looks like a QR code, not an icon.');
+        }
+    }
+
+    /**
+     * @param  \GdImage  $qr
+     */
+    private function drawWhiteCircle($qr, int $x, int $y, int $diameter): void
+    {
+        $plate = imagecreatetruecolor($diameter, $diameter);
+        $white = imagecolorallocate($plate, 255, 255, 255);
+        imagefilledellipse($plate, (int) ($diameter / 2), (int) ($diameter / 2), $diameter, $diameter, $white);
+        imagecopy($qr, $plate, $x, $y, 0, 0, $diameter, $diameter);
+    }
+
+    /**
+     * @param  \GdImage  $logo
+     * @return \GdImage
+     */
+    private function resizeLogoWithAlpha($logo, int $logoSize)
+    {
         $logoResized = imagecreatetruecolor($logoSize, $logoSize);
         imagealphablending($logoResized, false);
         imagesavealpha($logoResized, true);
@@ -112,16 +189,26 @@ class WhatsAppBrandedQrService
             imagesy($logo)
         );
 
-        $plate = imagecreatetruecolor($plateSize, $plateSize);
-        $white = imagecolorallocate($plate, 255, 255, 255);
-        imagefilledellipse($plate, (int) ($plateSize / 2), (int) ($plateSize / 2), $plateSize, $plateSize, $white);
+        return $logoResized;
+    }
 
-        $cx = (int) (($size - $plateSize) / 2);
-        $cy = (int) (($size - $plateSize) / 2);
-        imagecopy($qr, $plate, $cx, $cy, 0, 0, $plateSize, $plateSize);
+    /**
+     * @param  \GdImage  $destination
+     * @param  \GdImage  $source
+     */
+    private function copyWithAlpha($destination, $source, int $dstX, int $dstY): void
+    {
+        imagealphablending($destination, true);
 
-        $lx = (int) (($size - $logoSize) / 2);
-        $ly = (int) (($size - $logoSize) / 2);
-        imagecopy($qr, $logoResized, $lx, $ly, 0, 0, $logoSize, $logoSize);
+        imagecopy(
+            $destination,
+            $source,
+            $dstX,
+            $dstY,
+            0,
+            0,
+            imagesx($source),
+            imagesy($source)
+        );
     }
 }
