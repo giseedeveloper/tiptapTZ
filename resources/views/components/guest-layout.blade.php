@@ -1,5 +1,6 @@
 @props([
     'title' => 'TIPTAP |  ',
+    'wide' => false,
 ])
 
 <!DOCTYPE html>
@@ -117,7 +118,11 @@
                 <span class="text-xl sm:text-2xl font-black text-[#12141C] tracking-tight">TIP<span class="gradient-text">TAP</span></span>
             </a>
 
-            <div class="w-full sm:max-w-md glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl shadow-[#6D52E8]/10 relative overflow-hidden">
+            <div @class([
+                'w-full glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl shadow-[#6D52E8]/10 relative overflow-hidden',
+                'sm:max-w-2xl' => $wide,
+                'sm:max-w-md' => ! $wide,
+            ])>
                 <div class="absolute -top-10 -right-10 w-32 h-32 sm:w-40 sm:h-40 bg-[#8C71F6]/10 rounded-full blur-2xl sm:blur-3xl"></div>
                 <div class="absolute -bottom-10 -left-10 w-32 h-32 sm:w-40 sm:h-40 bg-[#DDD7FE]/60 rounded-full blur-2xl sm:blur-3xl"></div>
 
