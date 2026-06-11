@@ -28,11 +28,32 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   final _api = ApiService();
   late Order _order;
   bool _isUpdating = false;
+  bool _isSendingBill = false;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+  }
+
+  bool get _showPaymentActions =>
+      _order.status == 'served' &&
+      (!_order.isWhatsAppOrder || _order.billAlreadySent);
+
+  List<String> get _nextStatuses {
+    switch (_order.status) {
+      case 'pending':
+        return ['preparing'];
+      case 'preparing':
+        return ['served'];
+      case 'served':
+        if (_order.isWhatsAppOrder && !_order.billAlreadySent) {
+          return [];
+        }
+        return ['paid'];
+      default:
+        return [];
+    }
   }
 
   Future<void> _updateStatus(String newStatus) async {
@@ -48,6 +69,63 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       _showSnack('Status imebadilishwa → $newStatus ✓', AppTheme.success);
     } catch (e) {
       setState(() => _isUpdating = false);
+      _showSnack(e.toString(), AppTheme.error);
+    }
+  }
+
+  Future<void> _sendWhatsAppBill({required bool force}) async {
+    final confirmMessage = force && _order.billAlreadySent
+        ? 'Tuma tena picha ya bili kwa WhatsApp ya mteja?'
+        : 'Thibitisha order na kutuma picha ya bili kwa WhatsApp ya mteja?';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          force && _order.billAlreadySent ? 'Tuma tena Bili' : 'Thibitisha Order',
+          style: GoogleFonts.poppins(
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          confirmMessage,
+          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hapana'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(force && _order.billAlreadySent ? 'Tuma tena' : 'Tuma Bili'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isSendingBill = true);
+    HapticFeedback.mediumImpact();
+    try {
+      final updated = await _api.sendWhatsAppBill(_order.id, force: force);
+      setState(() {
+        _order = updated;
+        _isSendingBill = false;
+      });
+      widget.onUpdate();
+      _showSnack(
+        force && updated.billAlreadySent
+            ? 'Bili imetumwa WhatsApp ✓'
+            : 'Order imethibitishwa, bili imetumwa ✓',
+        AppTheme.success,
+      );
+    } catch (e) {
+      setState(() => _isSendingBill = false);
       _showSnack(e.toString(), AppTheme.error);
     }
   }
@@ -112,19 +190,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
       ),
     );
-  }
-
-  List<String> get _nextStatuses {
-    switch (_order.status) {
-      case 'pending':
-        return ['preparing'];
-      case 'preparing':
-        return ['served'];
-      case 'served':
-        return ['paid'];
-      default:
-        return [];
-    }
   }
 
   @override
@@ -258,15 +323,38 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 _buildTotalCard(currency).animate().fadeIn(delay: 300.ms),
                 const SizedBox(height: 16),
 
+                if (_order.status == 'served' && _order.isWhatsAppOrder)
+                  _buildBillStatusCard(dateFormat)
+                      .animate()
+                      .fadeIn(delay: 350.ms),
+                if (_order.status == 'served' && _order.isWhatsAppOrder)
+                  const SizedBox(height: 12),
+
                 // Status actions
-                if (_isUpdating)
+                if (_isUpdating || _isSendingBill)
                   const Center(
                       child: CircularProgressIndicator(color: AppTheme.primary))
                 else ...[
-                  if (_nextStatuses.isNotEmpty)
+                  if (_order.canSendWhatsAppBill && !_order.billAlreadySent)
+                    _buildWhatsAppBillButton(
+                      label: 'Thibitisha Order',
+                      icon: Icons.chat_rounded,
+                      color: AppTheme.statusServed,
+                      force: true,
+                    ).animate().fadeIn(delay: 380.ms),
+                  if (_order.canResendWhatsAppBill)
+                    _buildWhatsAppBillButton(
+                      label: 'Tuma tena Bili',
+                      icon: Icons.refresh_rounded,
+                      color: Colors.amber,
+                      force: true,
+                    ).animate().fadeIn(delay: 390.ms),
+                  if (_nextStatuses.isNotEmpty) ...[
+                    const SizedBox(height: 8),
                     _buildStatusActions().animate().fadeIn(delay: 400.ms),
+                  ],
                   const SizedBox(height: 12),
-                  if (_order.status == 'served')
+                  if (_showPaymentActions)
                     _buildPaymentButton().animate().fadeIn(delay: 450.ms),
                 ],
 
@@ -286,6 +374,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         (Icons.person_outline_rounded, 'Mteja', _order.customerName!),
       if (_order.customerPhone != null && _order.customerPhone!.isNotEmpty)
         (Icons.phone_outlined, 'Simu', _order.customerPhone!),
+      if (_order.isWhatsAppOrder)
+        (
+          Icons.chat_rounded,
+          'WhatsApp',
+          _order.billAlreadySent ? 'Bili imetumwa' : 'Bili inasubiri kutumwa'
+        ),
     ];
 
     return Wrap(
@@ -458,6 +552,86 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBillStatusCard(DateFormat dateFormat) {
+    final sent = _order.billAlreadySent;
+    final color = sent ? AppTheme.success : Colors.amber;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            sent ? Icons.check_circle_rounded : Icons.schedule_send_rounded,
+            color: color,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sent ? 'Bili imetumwa WhatsApp' : 'Bili haijatumwa bado',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  sent
+                      ? 'Imetumwa ${_order.billImagePushedAt != null ? dateFormat.format(_order.billImagePushedAt!.toLocal()) : 'hivi karibuni'}'
+                      : 'Bonyeza Thibitisha Order kutuma picha ya bili kwa mteja.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppTheme.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWhatsAppBillButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required bool force,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color.withOpacity(0.15),
+            foregroundColor: color,
+            side: BorderSide(color: color.withOpacity(0.35)),
+            elevation: 0,
+          ),
+          onPressed: () => _sendWhatsAppBill(force: force),
+          icon: Icon(icon, size: 20),
+          label: Text(
+            label,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/order_card.dart';
 import '../widgets/stat_chip.dart';
+import '../widgets/tiptap_logo.dart';
 import 'login_screen.dart';
 import 'new_order_screen.dart';
 import 'order_detail_screen.dart';
@@ -121,6 +122,56 @@ class _OrdersScreenState extends State<OrdersScreen>
     try {
       await _api.updateOrderStatus(order.id, newStatus);
       _showSnack('Order #${order.id} → $newStatus ✓', AppTheme.success);
+      await _loadData(showLoading: false);
+    } catch (e) {
+      _showSnack(e.toString(), AppTheme.error);
+    }
+  }
+
+  Future<void> _sendWhatsAppBill(Order order, {required bool force}) async {
+    final isResend = force && order.billAlreadySent;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isResend ? 'Tuma tena Bili' : 'Thibitisha Order',
+          style: GoogleFonts.poppins(
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          isResend
+              ? 'Tuma tena picha ya bili kwa WhatsApp ya mteja?'
+              : 'Thibitisha order na kutuma picha ya bili kwa WhatsApp ya mteja?',
+          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hapana'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(isResend ? 'Tuma tena' : 'Tuma Bili'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    HapticFeedback.mediumImpact();
+    try {
+      await _api.sendWhatsAppBill(order.id, force: force);
+      _showSnack(
+        isResend
+            ? 'Order #${order.id} bili imetumwa tena ✓'
+            : 'Order #${order.id} imethibitishwa, bili imetumwa ✓',
+        AppTheme.success,
+      );
       await _loadData(showLoading: false);
     } catch (e) {
       _showSnack(e.toString(), AppTheme.error);
@@ -296,31 +347,7 @@ class _OrdersScreenState extends State<OrdersScreen>
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+              const TiptapLogo(size: 44, onDark: true),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -567,6 +594,8 @@ class _OrdersScreenState extends State<OrdersScreen>
           onTap: () => _openOrderDetail(orders[i]),
           onUpdateStatus: (s) => _updateStatus(orders[i], s),
           onDelete: () => _deleteOrder(orders[i]),
+          onSendWhatsAppBill: ({required bool force}) =>
+              _sendWhatsAppBill(orders[i], force: force),
         )
             .animate()
             .fadeIn(delay: (i * 60).ms, duration: 400.ms)
@@ -587,6 +616,8 @@ class _OrdersScreenState extends State<OrdersScreen>
           onTap: () => _openOrderDetail(orders[i]),
           onUpdateStatus: (s) => _updateStatus(orders[i], s),
           onDelete: () => _deleteOrder(orders[i]),
+          onSendWhatsAppBill: ({required bool force}) =>
+              _sendWhatsAppBill(orders[i], force: force),
         )
             .animate()
             .fadeIn(delay: (i * 60).ms, duration: 400.ms)

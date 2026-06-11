@@ -30,6 +30,12 @@ class Order {
   final String tableNumber;
   final String? customerPhone;
   final String? customerName;
+  final String? whatsappJid;
+  final bool isWhatsAppOrder;
+  final DateTime? billImagePushedAt;
+  final bool billAlreadySent;
+  final bool canSendWhatsAppBill;
+  final bool canResendWhatsAppBill;
   final double totalAmount;
   final String status;
   final DateTime createdAt;
@@ -40,6 +46,12 @@ class Order {
     required this.tableNumber,
     this.customerPhone,
     this.customerName,
+    this.whatsappJid,
+    this.isWhatsAppOrder = false,
+    this.billImagePushedAt,
+    this.billAlreadySent = false,
+    this.canSendWhatsAppBill = false,
+    this.canResendWhatsAppBill = false,
     required this.totalAmount,
     required this.status,
     required this.createdAt,
@@ -51,6 +63,14 @@ class Order {
         tableNumber: json['table_number'] ?? '',
         customerPhone: json['customer_phone'],
         customerName: json['customer_name'],
+        whatsappJid: json['whatsapp_jid'],
+        isWhatsAppOrder: json['is_whatsapp_order'] == true,
+        billImagePushedAt: json['bill_image_pushed_at'] != null
+            ? DateTime.tryParse(json['bill_image_pushed_at'].toString())
+            : null,
+        billAlreadySent: json['bill_already_sent'] == true,
+        canSendWhatsAppBill: json['can_send_whatsapp_bill'] == true,
+        canResendWhatsAppBill: json['can_resend_whatsapp_bill'] == true,
         totalAmount: double.tryParse(json['total_amount'].toString()) ?? 0,
         status: json['status'] ?? 'pending',
         createdAt:
@@ -60,11 +80,27 @@ class Order {
             .toList(),
       );
 
-  Order copyWith({String? status}) => Order(
+  Order copyWith({
+    String? status,
+    String? whatsappJid,
+    bool? isWhatsAppOrder,
+    DateTime? billImagePushedAt,
+    bool? billAlreadySent,
+    bool? canSendWhatsAppBill,
+    bool? canResendWhatsAppBill,
+  }) =>
+      Order(
         id: id,
         tableNumber: tableNumber,
         customerPhone: customerPhone,
         customerName: customerName,
+        whatsappJid: whatsappJid ?? this.whatsappJid,
+        isWhatsAppOrder: isWhatsAppOrder ?? this.isWhatsAppOrder,
+        billImagePushedAt: billImagePushedAt ?? this.billImagePushedAt,
+        billAlreadySent: billAlreadySent ?? this.billAlreadySent,
+        canSendWhatsAppBill: canSendWhatsAppBill ?? this.canSendWhatsAppBill,
+        canResendWhatsAppBill:
+            canResendWhatsAppBill ?? this.canResendWhatsAppBill,
         totalAmount: totalAmount,
         status: status ?? this.status,
         createdAt: createdAt,

@@ -32,6 +32,14 @@ flutter_launcher_icons:
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: assets/images/logo.png
   remove_alpha_ios: true
+  android_rounded_icon: true
+  ios_rounded_icon: true
+  web:
+    generate: true
+    image_path: assets/images/logo.png
+    background_color: "#FFFFFF"
+    theme_color: "#06B6D4"
+    rounded_icon: true
 
 flutter:
   uses-material-design: true

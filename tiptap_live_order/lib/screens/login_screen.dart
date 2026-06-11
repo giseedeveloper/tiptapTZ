@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/tiptap_logo.dart';
 import 'orders_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -125,31 +126,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       Center(
                         child: Column(
                           children: [
-                            Container(
-                              width: isTablet ? 140 : 120,
-                              height: isTablet ? 140 : 120,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        AppTheme.primary.withValues(alpha: 0.3),
-                                    blurRadius: 30,
-                                    spreadRadius: 5,
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: Image.asset(
-                                  'assets/images/logo.png',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ).animate().scale(
+                            TiptapLogo(size: isTablet ? 104 : 96)
+                                .animate()
+                                .scale(
                                   delay: 200.ms,
                                   duration: 600.ms,
                                   curve: Curves.elasticOut,

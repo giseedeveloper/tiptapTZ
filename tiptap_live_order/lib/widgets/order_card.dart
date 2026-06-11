@@ -10,6 +10,7 @@ class OrderCard extends StatelessWidget {
   final VoidCallback onTap;
   final void Function(String) onUpdateStatus;
   final VoidCallback onDelete;
+  final Future<void> Function({required bool force})? onSendWhatsAppBill;
 
   const OrderCard({
     super.key,
@@ -17,6 +18,7 @@ class OrderCard extends StatelessWidget {
     required this.onTap,
     required this.onUpdateStatus,
     required this.onDelete,
+    this.onSendWhatsAppBill,
   });
 
   @override
@@ -99,6 +101,48 @@ class OrderCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            if (order.status == 'served' &&
+                                order.isWhatsAppOrder) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: (order.billAlreadySent
+                                          ? AppTheme.success
+                                          : Colors.amber)
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      order.billAlreadySent
+                                          ? Icons.check_rounded
+                                          : Icons.chat_rounded,
+                                      size: 10,
+                                      color: order.billAlreadySent
+                                          ? AppTheme.success
+                                          : Colors.amber,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      order.billAlreadySent
+                                          ? 'Bili sent'
+                                          : 'Bill pending',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w700,
+                                        color: order.billAlreadySent
+                                            ? AppTheme.success
+                                            : Colors.amber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         Row(
@@ -163,11 +207,29 @@ class OrderCard extends StatelessWidget {
                               child: _menuItem(Icons.room_service_rounded,
                                   'Mhudumie', AppTheme.statusServed),
                             ),
-                          if (order.status == 'served')
+                          if (order.status == 'served' &&
+                              (!order.isWhatsAppOrder || order.billAlreadySent))
                             PopupMenuItem(
                               value: 'paid',
                               child: _menuItem(Icons.payments_rounded,
                                   'Thibitisha Malipo', AppTheme.statusPaid),
+                            ),
+                          if (order.status == 'served' &&
+                              order.isWhatsAppOrder &&
+                              !order.billAlreadySent &&
+                              onSendWhatsAppBill != null)
+                            PopupMenuItem(
+                              value: 'whatsapp_bill',
+                              child: _menuItem(Icons.chat_rounded,
+                                  'Thibitisha Order', AppTheme.statusServed),
+                            ),
+                          if (order.status == 'served' &&
+                              order.canResendWhatsAppBill &&
+                              onSendWhatsAppBill != null)
+                            PopupMenuItem(
+                              value: 'whatsapp_bill_resend',
+                              child: _menuItem(Icons.refresh_rounded,
+                                  'Tuma tena Bili', Colors.amber),
                             ),
                           const PopupMenuDivider(),
                           PopupMenuItem(
@@ -176,10 +238,14 @@ class OrderCard extends StatelessWidget {
                                 'Futa Order', AppTheme.error),
                           ),
                         ],
-                        onSelected: (v) {
+                        onSelected: (v) async {
                           HapticFeedback.selectionClick();
                           if (v == 'delete') {
                             onDelete();
+                          } else if (v == 'whatsapp_bill') {
+                            await onSendWhatsAppBill?.call(force: true);
+                          } else if (v == 'whatsapp_bill_resend') {
+                            await onSendWhatsAppBill?.call(force: true);
                           } else {
                             onUpdateStatus(v);
                           }

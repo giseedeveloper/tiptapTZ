@@ -191,6 +191,26 @@ class ApiService {
     }
   }
 
+  Future<Order> sendWhatsAppBill(int orderId, {bool force = true}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders/$orderId/whatsapp-bill'),
+      headers: await _headers(withAuth: true),
+      body: jsonEncode({'force': force}),
+    );
+
+    if (response.statusCode == 401) throw UnauthorizedException();
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200 && responseBody['success'] == true) {
+      return Order.fromJson(responseBody['data'] as Map<String, dynamic>);
+    }
+
+    throw ApiException(
+      responseBody['message']?.toString() ?? 'Imeshindikana kutuma bili WhatsApp',
+    );
+  }
+
   // ─── Payments ────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> initiatePayment({
