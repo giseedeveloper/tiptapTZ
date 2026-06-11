@@ -20,11 +20,17 @@ beforeEach(function (): void {
         'is_active' => true,
     ]);
 
-    $this->waiter = User::factory()->create([
+    $this->busyWaiter = User::factory()->create([
         'restaurant_id' => $this->restaurant->id,
         'is_online' => true,
     ]);
-    $this->waiter->assignRole('waiter');
+    $this->busyWaiter->assignRole('waiter');
+
+    $this->freeWaiter = User::factory()->create([
+        'restaurant_id' => $this->restaurant->id,
+        'is_online' => true,
+    ]);
+    $this->freeWaiter->assignRole('waiter');
 
     $this->botUser = User::factory()->create([
         'email' => 'bot-table-call@taptap.test',
@@ -39,18 +45,18 @@ beforeEach(function (): void {
     Sanctum::actingAs($this->botUser);
 });
 
-test('call waiter from table uses waiter on active order', function (): void {
+test('call waiter from table assigns a free waiter not busy on another order', function (): void {
     Order::create([
         'restaurant_id' => $this->restaurant->id,
         'table_number' => 'T5',
-        'waiter_id' => $this->waiter->id,
+        'waiter_id' => $this->busyWaiter->id,
         'status' => 'preparing',
         'total_amount' => 12000,
     ]);
 
     $response = $this->postJson('/api/bot/call-waiter', [
         'restaurant_id' => $this->restaurant->id,
-        'table_number' => 'T5',
+        'table_number' => 'T9',
         'type' => 'call_waiter',
     ]);
 
@@ -58,11 +64,27 @@ test('call waiter from table uses waiter on active order', function (): void {
         ->assertJsonPath('success', true);
 
     $request = CustomerRequest::withoutGlobalScopes()->first();
-    expect($request->waiter_id)->toBe($this->waiter->id);
-    expect($request->table_number)->toBe('T5');
+    expect($request->waiter_id)->toBe($this->freeWaiter->id);
+    expect($request->table_number)->toBe('T9');
 });
 
-test('call waiter from table without active order returns 422', function (): void {
+test('call waiter from table returns 422 when every online waiter is busy', function (): void {
+    Order::create([
+        'restaurant_id' => $this->restaurant->id,
+        'table_number' => 'T1',
+        'waiter_id' => $this->busyWaiter->id,
+        'status' => 'preparing',
+        'total_amount' => 5000,
+    ]);
+
+    Order::create([
+        'restaurant_id' => $this->restaurant->id,
+        'table_number' => 'T2',
+        'waiter_id' => $this->freeWaiter->id,
+        'status' => 'served',
+        'total_amount' => 7000,
+    ]);
+
     $response = $this->postJson('/api/bot/call-waiter', [
         'restaurant_id' => $this->restaurant->id,
         'table_number' => 'T9',
@@ -75,11 +97,32 @@ test('call waiter from table without active order returns 422', function (): voi
     expect(CustomerRequest::withoutGlobalScopes()->count())->toBe(0);
 });
 
+test('explicit waiter id from waiter qr is still used directly', function (): void {
+    Order::create([
+        'restaurant_id' => $this->restaurant->id,
+        'table_number' => 'T5',
+        'waiter_id' => $this->busyWaiter->id,
+        'status' => 'preparing',
+        'total_amount' => 12000,
+    ]);
+
+    $response = $this->postJson('/api/bot/call-waiter', [
+        'restaurant_id' => $this->restaurant->id,
+        'table_number' => 'T5',
+        'waiter_id' => $this->busyWaiter->id,
+        'type' => 'call_waiter',
+    ]);
+
+    $response->assertSuccessful();
+
+    expect(CustomerRequest::withoutGlobalScopes()->first()->waiter_id)->toBe($this->busyWaiter->id);
+});
+
 test('active order endpoint returns waiter on table order', function (): void {
     Order::create([
         'restaurant_id' => $this->restaurant->id,
         'table_number' => 'T3',
-        'waiter_id' => $this->waiter->id,
+        'waiter_id' => $this->busyWaiter->id,
         'status' => 'served',
         'total_amount' => 8000,
     ]);
@@ -91,5 +134,5 @@ test('active order endpoint returns waiter on table order', function (): void {
 
     $response->assertSuccessful()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('order.waiter_id', $this->waiter->id);
+        ->assertJsonPath('order.waiter_id', $this->busyWaiter->id);
 });

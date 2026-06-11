@@ -17,6 +17,7 @@ use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
 use App\Services\BotFeedbackService;
+use App\Services\FreeWaiterService;
 use App\Services\TableActiveOrderService;
 use App\Support\WhatsAppBotBranding;
 use Illuminate\Http\JsonResponse;
@@ -1017,7 +1018,7 @@ class WhatsAppBotController extends Controller
     /**
      * Call Waiter from Bot
      */
-    public function callWaiter(Request $request, TableActiveOrderService $tableActiveOrderService)
+    public function callWaiter(Request $request, FreeWaiterService $freeWaiterService)
     {
         // Handle both 'type' and 'request_type' (from bot)
         $type = $request->input('type') ?? $request->input('request_type');
@@ -1047,27 +1048,21 @@ class WhatsAppBotController extends Controller
             $tableNumber = $table->name;
         }
 
-        // Waiter: explicit from request, or from active order on this table (table QR flow).
+        // Table QR: assign a free online waiter (not busy with another open order).
         $waiterId = $request->waiter_id;
         $hasTableContext = ! empty($tableNumber) || $request->table_id;
 
         if (! $waiterId && $hasTableContext) {
-            $activeOrder = $tableActiveOrderService->findForTable(
-                (int) $request->restaurant_id,
-                $tableNumber,
-                $request->table_id ? (int) $request->table_id : null,
-            );
+            $freeWaiter = $freeWaiterService->findAvailable((int) $request->restaurant_id);
 
-            if ($activeOrder?->waiter_id) {
-                $waiterId = $activeOrder->waiter_id;
-            } else {
+            if ($freeWaiter === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => $activeOrder
-                        ? 'No waiter assigned to the active order on this table.'
-                        : 'No active order found for this table.',
+                    'message' => 'No free waiter available right now.',
                 ], 422);
             }
+
+            $waiterId = $freeWaiter->id;
         }
 
         if ($waiterId) {
