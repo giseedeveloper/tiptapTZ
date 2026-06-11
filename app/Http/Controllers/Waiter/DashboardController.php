@@ -56,7 +56,7 @@ class DashboardController extends Controller
             : collect();
 
         // Recent Feedback
-        $recentFeedback = Feedback::where(function ($query) use ($waiter) {
+        $recentFeedback = Feedback::query()->forWaiter()->where(function ($query) use ($waiter) {
             $query->where('waiter_id', $waiter->id)
                 ->orWhereHas('order', function ($q) use ($waiter) {
                     $q->where('waiter_id', $waiter->id);
@@ -149,7 +149,7 @@ class DashboardController extends Controller
     public function ratings()
     {
         $waiter = Auth::user();
-        $feedbacks = Feedback::where(function ($query) use ($waiter) {
+        $feedbacks = Feedback::query()->forWaiter()->where(function ($query) use ($waiter) {
             $query->where('waiter_id', $waiter->id)
                 ->orWhereHas('order', function ($q) use ($waiter) {
                     $q->where('waiter_id', $waiter->id);

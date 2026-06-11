@@ -6,37 +6,42 @@ use App\Http\Controllers\Controller;
 use App\Models\Feedback;
 use Illuminate\Support\Facades\DB;
 
-class FeedbackController extends Controller
+class FoodRatingController extends Controller
 {
     public function index()
     {
         $restaurantId = auth()->user()->restaurant_id;
 
         $feedbacks = Feedback::query()
-            ->forService()
-            ->with(['order', 'waiter'])
+            ->forFood()
+            ->with(['order.items'])
             ->where('restaurant_id', $restaurantId)
             ->latest()
             ->paginate(10);
 
         $avgRating = Feedback::query()
-            ->forService()
+            ->forFood()
             ->where('restaurant_id', $restaurantId)
             ->avg('rating') ?? 0;
 
         $totalReviews = Feedback::query()
-            ->forService()
+            ->forFood()
             ->where('restaurant_id', $restaurantId)
             ->count();
 
         $ratingBreakdown = Feedback::query()
-            ->forService()
+            ->forFood()
             ->where('restaurant_id', $restaurantId)
             ->select('rating', DB::raw('count(*) as count'))
             ->groupBy('rating')
             ->pluck('count', 'rating')
             ->all();
 
-        return view('manager.feedback.index', compact('feedbacks', 'avgRating', 'totalReviews', 'ratingBreakdown'));
+        return view('manager.food-ratings.index', compact(
+            'feedbacks',
+            'avgRating',
+            'totalReviews',
+            'ratingBreakdown',
+        ));
     }
 }

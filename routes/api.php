@@ -200,6 +200,7 @@ Route::prefix('bot')->middleware('auth:sanctum')->group(function () {
     Route::get('/order/{orderId}/status', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getOrderStatus']);
     Route::post('/payment/ussd', [App\Http\Controllers\Api\WhatsAppBotController::class, 'initiatePayment']);
     Route::post('/feedback', [App\Http\Controllers\Api\WhatsAppBotController::class, 'submitFeedback']);
+    Route::get('/latest-order', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getLatestCustomerOrder']);
     Route::post('/tip', [App\Http\Controllers\Api\WhatsAppBotController::class, 'submitTip']);
     Route::get('/restaurant/{restaurantId}/tables', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getTables']);
     Route::get('/waiter/{waiterId}/status', [App\Http\Controllers\Api\WhatsAppBotController::class, 'waiterStatus']);

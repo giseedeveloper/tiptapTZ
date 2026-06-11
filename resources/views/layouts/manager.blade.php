@@ -524,6 +524,15 @@
                     <span class="font-medium text-xs">Customer Feedback</span>
                 </a>
 
+                <a href="{{ route('manager.food-ratings.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.food-ratings.index') ? 'sidebar-link-active' : 'text-white/55' }}">
+                    <div class="w-7 h-7 rounded-md bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.food-ratings.index') ? 'text-amber-400' : 'text-white/50' }}">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-xs">Food Ratings</span>
+                </a>
+
                 <a href="{{ route('manager.api.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg {{ request()->routeIs('manager.api.index') ? 'sidebar-link-active' : 'text-white/55' }}">
                     <div class="w-7 h-7 rounded-md bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ request()->routeIs('manager.api.index') ? 'text-violet-400' : 'text-white/50' }}">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubmitBotFeedbackRequest;
 use App\Models\Activity;
 use App\Models\Category;
 use App\Models\CustomerRequest;
@@ -15,6 +16,7 @@ use App\Models\Setting;
 use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
+use App\Services\BotFeedbackService;
 use App\Support\WhatsAppBotBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -587,27 +589,22 @@ class WhatsAppBotController extends Controller
     /**
      * Submit Feedback from Bot
      */
-    public function submitFeedback(Request $request)
+    public function submitFeedback(SubmitBotFeedbackRequest $request, BotFeedbackService $botFeedbackService): JsonResponse
     {
-        $request->validate([
-            'restaurant_id' => 'required|exists:restaurants,id',
-            'order_id' => 'nullable|exists:orders,id',
-            'waiter_id' => 'nullable|exists:users,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string',
-        ]);
-
-        $data = $request->all();
-
-        // If waiter_id is not provided but order_id is, try to get waiter_id from order
-        if (empty($data['waiter_id']) && ! empty($data['order_id'])) {
-            $order = Order::withoutGlobalScopes()->find($data['order_id']);
-            if ($order && $order->waiter_id) {
-                $data['waiter_id'] = $order->waiter_id;
+        try {
+            $payload = $botFeedbackService->buildPayload($request->validated());
+        } catch (\InvalidArgumentException $exception) {
+            if ($exception->getMessage() === 'no_order_for_food_rating') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Place an order first before rating food.',
+                ], 422);
             }
+
+            throw $exception;
         }
 
-        $feedback = Feedback::withoutGlobalScopes()->create($data);
+        Feedback::withoutGlobalScopes()->create($payload);
 
         return response()->json([
             'success' => true,
@@ -1163,6 +1160,48 @@ class WhatsAppBotController extends Controller
                         'subtotal' => $item->total,
                     ];
                 }),
+            ],
+        ]);
+    }
+
+    /**
+     * Latest order for a customer (used before food rating).
+     */
+    public function getLatestCustomerOrder(Request $request, BotFeedbackService $botFeedbackService): JsonResponse
+    {
+        $validated = $request->validate([
+            'restaurant_id' => 'required|exists:restaurants,id',
+            'customer_phone' => 'required|string|max:30',
+            'order_id' => 'nullable|exists:orders,id',
+        ]);
+
+        $orderId = $botFeedbackService->resolveLatestOrderId(
+            (int) $validated['restaurant_id'],
+            $validated['customer_phone'],
+            isset($validated['order_id']) ? (int) $validated['order_id'] : null,
+        );
+
+        if ($orderId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No order found for this customer.',
+            ], 404);
+        }
+
+        $order = Order::withoutGlobalScopes()
+            ->with(['items'])
+            ->find($orderId);
+
+        return response()->json([
+            'success' => true,
+            'order' => [
+                'id' => $order->id,
+                'table_number' => $order->table_number,
+                'customer_name' => $order->customer_name,
+                'items' => $order->items->map(fn ($item) => [
+                    'name' => $item->name,
+                    'quantity' => $item->quantity,
+                ])->values(),
             ],
         ]);
     }

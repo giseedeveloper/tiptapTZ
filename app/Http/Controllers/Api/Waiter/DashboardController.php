@@ -66,7 +66,7 @@ class DashboardController extends Controller
             : collect();
 
         $feedbackVisibleAt = Carbon::now()->subMinutes(config('services.feedback.visible_after_minutes', 60));
-        $recentFeedback = Feedback::where(function ($query) use ($waiter) {
+        $recentFeedback = Feedback::query()->forWaiter()->where(function ($query) use ($waiter) {
             $query->where('waiter_id', $waiter->id)
                 ->orWhereHas('order', fn ($q) => $q->where('waiter_id', $waiter->id));
         })->where('created_at', '<=', $feedbackVisibleAt)->latest()->take(5)->get()->map(fn ($f) => [
@@ -287,7 +287,7 @@ class DashboardController extends Controller
         $waiter = Auth::user();
         $feedbackVisibleAt = Carbon::now()->subMinutes(config('services.feedback.visible_after_minutes', 60));
 
-        $feedbacks = Feedback::where(function ($query) use ($waiter) {
+        $feedbacks = Feedback::query()->forWaiter()->where(function ($query) use ($waiter) {
             $query->where('waiter_id', $waiter->id)
                 ->orWhereHas('order', fn ($q) => $q->where('waiter_id', $waiter->id));
         })->where('created_at', '<=', $feedbackVisibleAt)->latest()->paginate(15);

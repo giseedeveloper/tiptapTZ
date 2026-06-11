@@ -200,6 +200,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('/wallet/notifications/read', [\App\Http\Controllers\Manager\WalletController::class, 'markNotificationsRead'])->name('wallet.notifications.read');
     Route::post('/wallet/withdraw', [\App\Http\Controllers\Manager\WalletController::class, 'store'])->name('wallet.store');
     Route::get('/feedback', [\App\Http\Controllers\Manager\FeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('/food-ratings', [\App\Http\Controllers\Manager\FoodRatingController::class, 'index'])->name('food-ratings.index');
     Route::get('/tips', [\App\Http\Controllers\Manager\TipController::class, 'index'])->name('tips.index');
     Route::get('/api', [\App\Http\Controllers\Manager\ApiController::class, 'index'])->name('api.index');
     Route::post('/api/support-phone', [\App\Http\Controllers\Manager\ApiController::class, 'updateSupportPhone'])->name('api.support-phone.update');
