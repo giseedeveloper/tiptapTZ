@@ -17,6 +17,7 @@ use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
 use App\Services\BotFeedbackService;
+use App\Services\TableActiveOrderService;
 use App\Support\WhatsAppBotBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -1016,7 +1017,7 @@ class WhatsAppBotController extends Controller
     /**
      * Call Waiter from Bot
      */
-    public function callWaiter(Request $request)
+    public function callWaiter(Request $request, TableActiveOrderService $tableActiveOrderService)
     {
         // Handle both 'type' and 'request_type' (from bot)
         $type = $request->input('type') ?? $request->input('request_type');
@@ -1046,14 +1047,29 @@ class WhatsAppBotController extends Controller
             $tableNumber = $table->name;
         }
 
-        // Waiter: from request or from table's linked waiter (only if that waiter is online)
+        // Waiter: explicit from request, or from active order on this table (table QR flow).
         $waiterId = $request->waiter_id;
-        if (! $waiterId && $table && $table->waiter_id) {
-            $tableWaiter = User::find($table->waiter_id);
-            if ($tableWaiter && $tableWaiter->is_online) {
-                $waiterId = $table->waiter_id;
+        $hasTableContext = ! empty($tableNumber) || $request->table_id;
+
+        if (! $waiterId && $hasTableContext) {
+            $activeOrder = $tableActiveOrderService->findForTable(
+                (int) $request->restaurant_id,
+                $tableNumber,
+                $request->table_id ? (int) $request->table_id : null,
+            );
+
+            if ($activeOrder?->waiter_id) {
+                $waiterId = $activeOrder->waiter_id;
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $activeOrder
+                        ? 'No waiter assigned to the active order on this table.'
+                        : 'No active order found for this table.',
+                ], 422);
             }
         }
+
         if ($waiterId) {
             $waiterForRequest = User::find($waiterId);
             if (! $waiterForRequest || ! $waiterForRequest->is_online) {
@@ -1117,22 +1133,26 @@ class WhatsAppBotController extends Controller
     /**
      * Get Active Order (Bill) for a Table
      */
-    public function getActiveOrder(Request $request)
+    public function getActiveOrder(Request $request, TableActiveOrderService $tableActiveOrderService)
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'table_number' => 'required',
+            'table_number' => 'nullable|string',
+            'table_id' => 'nullable|exists:tables,id',
         ]);
 
-        $order = Order::withoutGlobalScopes()
-            ->where('restaurant_id', $request->restaurant_id)
-            ->where('table_number', $request->table_number)
-            ->whereIn('status', ['pending', 'preparing', 'ready', 'served'])
-            ->with(['items.menuItem' => function ($query) {
-                $query->withoutGlobalScopes();
-            }, 'payments'])
-            ->latest()
-            ->first();
+        if (empty($request->table_number) && empty($request->table_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Table number or table id is required.',
+            ], 422);
+        }
+
+        $order = $tableActiveOrderService->findForTable(
+            (int) $request->restaurant_id,
+            $request->table_number,
+            $request->table_id ? (int) $request->table_id : null,
+        );
 
         if (! $order) {
             return response()->json([
@@ -1140,6 +1160,10 @@ class WhatsAppBotController extends Controller
                 'message' => 'No active order found for this table',
             ], 404);
         }
+
+        $order->load(['items.menuItem' => function ($query) {
+            $query->withoutGlobalScopes();
+        }, 'payments', 'waiter']);
 
         $latestPayment = $order->payments()->latest()->first();
 
@@ -1149,6 +1173,8 @@ class WhatsAppBotController extends Controller
                 'id' => $order->id,
                 'total' => $order->total_amount,
                 'status' => $order->status,
+                'waiter_id' => $order->waiter_id,
+                'waiter_name' => $order->waiter?->name,
                 'payment_status' => $latestPayment?->status ?? 'unpaid',
                 'bill_image_url' => $order->isBillStage() ? $order->billImageUrl() : null,
                 'is_bill_ready' => $order->isBillStage(),
