@@ -33,6 +33,22 @@ class BotSessionController extends Controller
             ]);
         }
 
+        if ($session->isIdleExpired()) {
+            $restaurantName = $session->restaurantNameFromData();
+            $lang = $session->lang ?? 'en';
+            $session->delete();
+
+            return response()->json([
+                'success' => true,
+                'exists' => false,
+                'expired' => true,
+                'expired_restaurant_name' => $restaurantName,
+                'lang' => $lang,
+                'idle_hours' => BotSession::idleTimeoutHours(),
+                'data' => $this->defaultPayload($waId),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'exists' => true,

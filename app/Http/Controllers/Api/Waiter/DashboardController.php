@@ -54,13 +54,14 @@ class DashboardController extends Controller
             : collect();
 
         $pendingRequests = $isLinked && $waiter->is_online
-            ? CustomerRequest::where('status', 'pending')
+            ? CustomerRequest::with('table')
+                ->where('status', 'pending')
                 ->where('restaurant_id', $waiter->restaurant_id)
                 ->where(fn ($q) => $q->whereNull('waiter_id')->orWhere('waiter_id', $waiter->id))
                 ->latest()->get()->map(fn ($req) => [
                     'id' => $req->id,
                     'type' => $req->type,
-                    'table_number' => $req->table_number,
+                    'table_number' => $req->resolvedTableLabel(),
                     'created_at' => $req->created_at->toIso8601String(),
                 ])
             : collect();
@@ -316,7 +317,7 @@ class DashboardController extends Controller
         if (! $waiter->is_online) {
             return response()->json(['success' => true, 'data' => []]);
         }
-        $requests = CustomerRequest::with('waiter')
+        $requests = CustomerRequest::with(['waiter', 'table'])
             ->where('status', 'pending')
             ->where(fn ($q) => $q->whereNull('waiter_id')->orWhere('waiter_id', $waiter->id))
             ->latest()->get()->map(function ($req) {
@@ -326,7 +327,7 @@ class DashboardController extends Controller
                     'id' => $req->id,
                     'type' => $req->type,
                     'type_label' => $typeLabel,
-                    'table_number' => $req->table_number ?? '-',
+                    'table_number' => $req->resolvedTableLabel(),
                     'waiter_id' => $req->waiter_id,
                     'waiter_name' => $req->waiter?->name,
                     'created_at' => $req->created_at->toIso8601String(),

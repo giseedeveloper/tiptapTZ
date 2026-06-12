@@ -1041,10 +1041,9 @@ class WhatsAppBotController extends Controller
             'type' => 'required|in:call_waiter,request_bill',
         ]);
 
-        // Get table info if table_id is provided but table_number is not
-        $tableNumber = $request->table_number;
         $table = $request->table_id ? Table::withoutGlobalScopes()->find($request->table_id) : null;
-        if (empty($tableNumber) && $table) {
+        $tableNumber = CustomerRequest::sanitizeTableNumber($request->table_number);
+        if (($tableNumber === null || $tableNumber === '') && $table) {
             $tableNumber = $table->name;
         }
 

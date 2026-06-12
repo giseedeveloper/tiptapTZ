@@ -143,3 +143,68 @@ test('endpoints reject unauthenticated requests', function (): void {
         ->get('/api/bot/session?wa_id=255712345678')
         ->assertUnauthorized();
 });
+
+test('show expires idle restaurant sessions and returns expiry metadata', function (): void {
+    BotSession::create([
+        'wa_id' => '255712345678',
+        'state' => 'HOME',
+        'lang' => 'en',
+        'data' => [
+            'restaurant_id' => 9,
+            'restaurant_name' => 'Samaki Samaki',
+            'table_number' => '5',
+        ],
+        'last_message_at' => now()->subHours(13),
+    ]);
+
+    $response = $this->getJson('/api/bot/session?wa_id=255712345678');
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('expired', true)
+        ->assertJsonPath('exists', false)
+        ->assertJsonPath('expired_restaurant_name', 'Samaki Samaki')
+        ->assertJsonPath('lang', 'en')
+        ->assertJsonPath('idle_hours', 12);
+
+    expect(BotSession::query()->where('wa_id', '255712345678')->exists())->toBeFalse();
+});
+
+test('show keeps active restaurant sessions within idle window', function (): void {
+    BotSession::create([
+        'wa_id' => '255712345678',
+        'state' => 'HOME',
+        'lang' => 'sw',
+        'data' => [
+            'restaurant_id' => 9,
+            'restaurant_name' => 'Samaki Samaki',
+        ],
+        'last_message_at' => now()->subHours(2),
+    ]);
+
+    $this->getJson('/api/bot/session?wa_id=255712345678')
+        ->assertOk()
+        ->assertJsonPath('exists', true)
+        ->assertJsonMissingPath('expired')
+        ->assertJsonPath('data.state', 'HOME')
+        ->assertJsonPath('data.data.restaurant_name', 'Samaki Samaki');
+
+    expect(BotSession::query()->where('wa_id', '255712345678')->exists())->toBeTrue();
+});
+
+test('show does not expire sessions without restaurant context', function (): void {
+    BotSession::create([
+        'wa_id' => '255712345678',
+        'state' => 'SEARCH_RESTAURANT',
+        'lang' => 'en',
+        'data' => [],
+        'last_message_at' => now()->subHours(20),
+    ]);
+
+    $this->getJson('/api/bot/session?wa_id=255712345678')
+        ->assertOk()
+        ->assertJsonPath('exists', true)
+        ->assertJsonMissingPath('expired');
+
+    expect(BotSession::query()->where('wa_id', '255712345678')->exists())->toBeTrue();
+});

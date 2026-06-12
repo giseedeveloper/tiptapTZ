@@ -3,6 +3,7 @@
 use App\Models\CustomerRequest;
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Models\Table;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -135,4 +136,41 @@ test('active order endpoint returns waiter on table order', function (): void {
     $response->assertSuccessful()
         ->assertJsonPath('success', true)
         ->assertJsonPath('order.waiter_id', $this->busyWaiter->id);
+});
+
+test('call waiter ignores bot menu ids sent as table number and resolves table name from table id', function (): void {
+    $table = Table::withoutGlobalScopes()->create([
+        'restaurant_id' => $this->restaurant->id,
+        'name' => 'T12',
+        'is_active' => true,
+    ]);
+
+    $response = $this->postJson('/api/bot/call-waiter', [
+        'restaurant_id' => $this->restaurant->id,
+        'table_number' => 'change_language',
+        'table_id' => $table->id,
+        'type' => 'call_waiter',
+    ]);
+
+    $response->assertSuccessful();
+
+    $request = CustomerRequest::withoutGlobalScopes()->first();
+    expect($request->table_number)->toBe('T12');
+});
+
+test('waiter pending requests api returns resolved table label', function (): void {
+    Sanctum::actingAs($this->freeWaiter);
+
+    CustomerRequest::withoutGlobalScopes()->create([
+        'restaurant_id' => $this->restaurant->id,
+        'table_number' => 'change_language',
+        'waiter_id' => $this->freeWaiter->id,
+        'type' => 'call_waiter',
+        'status' => 'pending',
+    ]);
+
+    $response = $this->getJson('/api/waiter/requests');
+
+    $response->assertSuccessful()
+        ->assertJsonPath('data.0.table_number', null);
 });
