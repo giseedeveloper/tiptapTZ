@@ -102,6 +102,7 @@
                 <a href="#features" class="hover:text-fin-primary-dark transition-colors">Features</a>
                 <a href="#how-it-works" class="hover:text-fin-primary-dark transition-colors">How it works</a>
                 <a href="#pricing" class="hover:text-fin-primary-dark transition-colors">Pricing</a>
+                <a href="#contact" class="hover:text-fin-primary-dark transition-colors">Contact</a>
                 <a href="#faq" class="hover:text-fin-primary-dark transition-colors">FAQ</a>
             </nav>
             <div class="hidden lg:flex items-center gap-3">
@@ -152,6 +153,7 @@
             <a href="#features" class="hover:text-fin-primary">Features</a>
             <a href="#how-it-works">How it works</a>
             <a href="#pricing">Pricing</a>
+            <a href="#contact">Contact</a>
             <a href="#faq">FAQ</a>
             <hr class="border-fin-ink/10 my-2">
             <a href="{{ route('login') }}">Log in</a>
@@ -169,24 +171,24 @@
             <div class="flex flex-col lg:flex-row items-center gap-14 lg:gap-10">
                 <div class="flex-1 text-center lg:text-left max-w-xl mx-auto lg:mx-0">
                     <div class="inline-flex items-center gap-2 rounded-full pl-1 pr-4 py-1 mb-8 bg-white/70 backdrop-blur-md border border-white shadow-sm">
-                        <span class="rounded-full bg-gradient-to-r from-fin-primary to-fin-primary-dark px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">Live</span>
-                        <span class="text-xs font-medium text-fin-muted">TipTap Rafiki &middot; WhatsApp &middot; QR &middot; M-Pesa</span>
+                        <span class="rounded-full bg-gradient-to-r from-fin-primary to-fin-primary-dark px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">{{ $landing['hero']['live_badge'] }}</span>
+                        <span class="text-xs font-medium text-fin-muted">{{ $landing['hero']['badge_text'] }}</span>
                     </div>
                     <h1 class="text-[2rem] sm:text-[2.75rem] lg:text-[3rem] font-light leading-[1.08] tracking-tight text-fin-ink mb-6">
-                        <span class="text-hero-gradient font-normal">Review, pay and tip</span><br>
-                        <span class="text-hero-accent font-medium">in one platform</span>
+                        <span class="text-hero-gradient font-normal">{{ $landing['hero']['title_line1'] }}</span><br>
+                        <span class="text-hero-accent font-medium">{{ $landing['hero']['title_line2'] }}</span>
                     </h1>
                     <p class="text-base sm:text-lg text-fin-muted leading-relaxed font-normal max-w-lg mx-auto lg:mx-0 mb-8">
-                        Guests scan a QR code, chat with <strong class="text-fin-ink font-semibold">TipTap Rafiki</strong>, place orders, leave reviews, and pay with <strong class="text-fin-ink font-semibold">mobile payment or bank</strong> &mdash; no app, no queues, no hassle.
+                        {{ $landing['hero']['description'] }}
                     </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-8">
                         <a href="{{ route('restaurant.register') }}" class="btn-glow w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white">
-                            Start free trial
+                            {{ $landing['hero']['cta_primary'] }}
                             <i data-lucide="arrow-right" class="w-4 h-4"></i>
                         </a>
                         <a href="#demo" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-white border border-fin-ink/8 px-8 py-4 text-sm font-semibold text-fin-ink shadow-sm hover:shadow-md hover:border-fin-primary/30 transition-all">
                             <i data-lucide="play" class="w-4 h-4 text-fin-primary"></i>
-                            See the conversation
+                            {{ $landing['hero']['cta_secondary'] }}
                         </a>
                     </div>
                     <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2">
@@ -401,16 +403,18 @@
         </div>
     </section>
 
+    @include('partials.landing-contact')
+
     {{-- CTA --}}
     <section class="py-16 lg:py-24 px-5">
         <div class="max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden relative reveal">
             <div class="absolute inset-0 bg-gradient-to-br from-[#8C71F6] via-[#6D52E8] to-[#5B3FD6]"></div>
             <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 30% 20%, white, transparent 45%), radial-gradient(circle at 80% 80%, #C6BDFA, transparent 40%);"></div>
             <div class="relative px-8 py-16 lg:py-20 text-center">
-                <h2 class="text-3xl lg:text-4xl font-light text-white mb-4 tracking-tight">Upgrade your restaurant today</h2>
-                <p class="text-white/85 font-normal mb-10 max-w-md mx-auto text-base leading-relaxed">Join venues already using TipTap Rafiki, QR ordering, and instant mobile payments.</p>
+                <h2 class="text-3xl lg:text-4xl font-light text-white mb-4 tracking-tight">{{ $landing['cta']['title'] }}</h2>
+                <p class="text-white/85 font-normal mb-10 max-w-md mx-auto text-base leading-relaxed">{{ $landing['cta']['description'] }}</p>
                 <a href="{{ route('restaurant.register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-10 py-4 text-sm font-bold text-fin-primary-dark shadow-2xl hover:scale-[1.03] transition-transform">
-                    Create free account
+                    {{ $landing['cta']['button'] }}
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </a>
             </div>
@@ -419,13 +423,28 @@
 
     <footer class="footer-dark pt-16 pb-10">
         <div class="max-w-6xl mx-auto px-5">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-10 mb-14">
                 <div class="col-span-2">
                     <a href="/" class="flex items-center gap-2.5 mb-5">
                         <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="h-9 w-9 rounded-lg bg-white p-1 object-contain">
                         <span class="text-lg font-bold text-white">TIPTAP</span>
                     </a>
-                    <p class="text-sm text-slate-400 max-w-xs leading-relaxed">The operating system for modern dining. Built with care in Tanzania.</p>
+                    <p class="text-sm text-slate-400 max-w-xs leading-relaxed mb-4">{{ $landing['footer_tagline'] }}</p>
+                    <a href="#contact" class="text-sm text-fin-lavender hover:text-white transition-colors">Our offices &rarr;</a>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-white mb-4">Offices</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        @foreach ($landing['offices'] as $office)
+                            <li>
+                                <p class="font-semibold text-slate-300">{{ $office['name'] }}</p>
+                                <p>{{ $office['city'] }}</p>
+                                @foreach ($office['lines'] as $line)
+                                    <p>{{ $line }}</p>
+                                @endforeach
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
                 <div>
                     <h4 class="text-sm font-semibold text-white mb-4">Product</h4>
@@ -440,21 +459,18 @@
                     <ul class="space-y-2.5 text-sm text-slate-400">
                         <li><a href="{{ route('restaurant.register') }}" class="hover:text-fin-lavender transition-colors">Register restaurant</a></li>
                         <li><a href="{{ route('waiter.register') }}" class="hover:text-fin-lavender transition-colors">Register waiter</a></li>
-                        <li><a href="https://wa.me/255620366103" class="hover:text-fin-lavender transition-colors">WhatsApp</a></li>
+                        <li><a href="{{ $landing['whatsapp_url'] }}" class="hover:text-fin-lavender transition-colors">WhatsApp</a></li>
                     </ul>
                 </div>
             </div>
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 border-t border-white/10 text-sm text-slate-500">
                 <p>&copy; {{ date('Y') }} TIPTAP. All rights reserved.</p>
-                <div class="flex gap-5">
-                    <a href="#" class="hover:text-white transition-colors" aria-label="Twitter"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                    <a href="#" class="hover:text-white transition-colors" aria-label="Instagram"><i data-lucide="instagram" class="w-5 h-5"></i></a>
-                </div>
+                @include('partials.social-links', ['onDark' => true])
             </div>
         </div>
     </footer>
 
-    <a href="https://wa.me/255620366103" class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-2xl bg-whatsapp text-white shadow-[0_8px_30px_rgba(37,211,102,0.45)] hover:scale-110 transition-transform" aria-label="WhatsApp">
+    <a href="{{ $landing['whatsapp_url'] }}" class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-2xl bg-whatsapp text-white shadow-[0_8px_30px_rgba(37,211,102,0.45)] hover:scale-110 transition-transform" aria-label="WhatsApp">
         <i data-lucide="message-circle" class="w-6 h-6"></i>
     </a>
 

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\DockerControlContract;
 use App\Notifications\SalaryPaymentConfirmed;
 use App\Services\Docker\DockerControlService;
+use App\Support\LandingPageContent;
 use App\Support\Money;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -48,6 +49,10 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view): void {
             $view->with('currencySymbol', Money::symbol());
+        });
+
+        View::composer(['welcome', 'partials.landing-contact', 'partials.social-links'], function ($view): void {
+            $view->with('landing', LandingPageContent::viewData());
         });
     }
 }

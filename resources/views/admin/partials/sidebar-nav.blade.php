@@ -91,6 +91,12 @@
 </a>
 
 <div class="mt-5 mb-3 px-4 sidebar-label"><p class="text-[9px] font-bold text-white/25 uppercase tracking-[0.25em]">Content</p></div>
+<a href="{{ route('admin.landing-page.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.landing-page.*') ? 'sidebar-link-active' : 'text-white/55' }}">
+    <div class="w-6 h-6 rounded-md bg-gradient-to-br from-fuchsia-500/20 to-violet-500/20 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.landing-page.*') ? 'text-fuchsia-400' : 'text-white/50' }}"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13H8"/><path d="M16 13h-2"/><path d="M10 17H8"/><path d="M16 17h-2"/></svg>
+    </div>
+    <span class="font-medium text-xs">Landing Page</span>
+</a>
 <a href="{{ route('admin.feedback.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.feedback.*') ? 'sidebar-link-active' : 'text-white/55' }}">
     <div class="w-6 h-6 rounded-md bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.feedback.*') ? 'text-orange-400' : 'text-white/50' }}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
