@@ -9,7 +9,7 @@
     <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.tiptap-analysis.*') ? 'text-fuchsia-400' : 'text-white/50' }}"><path d="M3 3v18h18"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-4"/></svg>
     </div>
-    <span class="font-medium text-xs">TipTap Analysis</span>
+    <span class="font-medium text-xs">TipTap Analytics</span>
 </a>
 <a href="{{ route('admin.search.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.search.*') ? 'sidebar-link-active' : 'text-white/55' }}">
     <div class="w-6 h-6 rounded-md bg-gradient-to-br from-sky-500/20 to-blue-500/20 flex items-center justify-center shrink-0">

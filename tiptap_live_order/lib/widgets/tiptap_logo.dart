@@ -1,66 +1,76 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-
-/// Official TIPTAP mark from `public/images/logo.png`.
+/// Official tap. brand mark on purple (`assets/images/logo.png`).
 class TiptapLogo extends StatelessWidget {
   const TiptapLogo({
     super.key,
     this.size = 120,
     this.fit = BoxFit.contain,
     this.onDark = false,
-    this.showPlate = true,
+    this.showPlate = false,
   });
 
   final double size;
   final BoxFit fit;
   final bool onDark;
+  /// Logo is already a full square icon — plate off by default.
   final bool showPlate;
 
   static const String assetPath = 'assets/images/logo.png';
+  static const Color brandPurple = Color(0xFF4B2C7F);
 
   @override
   Widget build(BuildContext context) {
     final isDark = onDark || Theme.of(context).brightness == Brightness.dark;
-    final image = Image.asset(
-      assetPath,
-      width: size,
-      height: size,
-      fit: fit,
-      filterQuality: FilterQuality.high,
+    final image = ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.22),
+      child: Image.asset(
+        assetPath,
+        width: size,
+        height: size,
+        fit: fit,
+        filterQuality: FilterQuality.high,
+      ),
     );
 
     if (!showPlate) {
-      return SizedBox(width: size, height: size, child: image);
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(size * 0.22),
+          boxShadow: [
+            BoxShadow(
+              color: brandPurple.withValues(alpha: isDark ? 0.55 : 0.35),
+              blurRadius: isDark ? 32 : 24,
+              offset: Offset(0, isDark ? 14 : 10),
+            ),
+            if (isDark)
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.06),
+                blurRadius: 12,
+                spreadRadius: -2,
+              ),
+          ],
+        ),
+        child: image,
+      );
     }
 
     return Container(
       width: size,
       height: size,
-      padding: EdgeInsets.all(size * 0.12),
+      padding: EdgeInsets.all(size * 0.04),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: brandPurple,
         borderRadius: BorderRadius.circular(size * 0.22),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.35)
-                : AppTheme.primaryDark.withValues(alpha: 0.12),
-            blurRadius: isDark ? 28 : 20,
-            offset: Offset(0, isDark ? 12 : 8),
+            color: brandPurple.withValues(alpha: 0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
-          if (!isDark)
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              blurRadius: 32,
-              spreadRadius: 2,
-            ),
         ],
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : AppTheme.primary.withValues(alpha: 0.06),
-        ),
       ),
       child: image,
     );

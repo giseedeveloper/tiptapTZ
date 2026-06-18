@@ -210,7 +210,7 @@ class BalanceHeroCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    BrandIconBadge(
+                    const BrandIconBadge(
                       kind: TransactionIconKind.wallet,
                       size: 36,
                       onGradient: true,

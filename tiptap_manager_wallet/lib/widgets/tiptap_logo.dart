@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-
-/// Official TIPTAP mark from `public/images/logo.png`.
+/// Official tap. brand mark (`assets/images/logo.png`).
 class TiptapLogo extends StatelessWidget {
   const TiptapLogo({
     super.key,
@@ -37,32 +35,29 @@ class TiptapLogo extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      padding: EdgeInsets.all(size * 0.12),
+      padding: EdgeInsets.all(size * 0.06),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(size * 0.22),
+        borderRadius: BorderRadius.circular(size * 0.2),
         boxShadow: [
           BoxShadow(
             color: isDark
                 ? Colors.black.withValues(alpha: 0.35)
-                : AppTheme.primaryDark.withValues(alpha: 0.12),
+                : const Color(0xFF4B2C7F).withValues(alpha: 0.14),
             blurRadius: isDark ? 28 : 20,
             offset: Offset(0, isDark ? 12 : 8),
           ),
-          if (!isDark)
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              blurRadius: 32,
-              spreadRadius: 2,
-            ),
         ],
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : AppTheme.primary.withValues(alpha: 0.06),
+              : const Color(0xFF4B2C7F).withValues(alpha: 0.08),
         ),
       ),
-      child: image,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.14),
+        child: image,
+      ),
     );
   }
 }

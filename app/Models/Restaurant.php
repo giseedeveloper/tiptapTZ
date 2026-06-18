@@ -230,7 +230,7 @@ class Restaurant extends Model
 
     public function getWhatsappQrUrlAttribute()
     {
-        $botNumber = \App\Models\Setting::get('whatsapp_bot_number', '255794321510');
+        $botNumber = \App\Models\Setting::get('whatsapp_bot_number', config('tiptap.default_whatsapp_bot_number'));
         // Strip non-numeric characters
         $cleanNumber = preg_replace('/[^0-9]/', '', $botNumber);
 

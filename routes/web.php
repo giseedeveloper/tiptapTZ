@@ -95,6 +95,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/tiptap-analysis/language', [TiptapAnalysisController::class, 'language'])->name('tiptap-analysis.language');
     Route::get('/tiptap-analysis/venues', [TiptapAnalysisController::class, 'venues'])->name('tiptap-analysis.venues');
 
+    Route::get('/tiptap-analysis/platform-pulse', [TiptapAnalysisController::class, 'platformPulse'])->name('tiptap-analysis.platform-pulse');
     Route::get('/tiptap-analysis/snapshot', [TiptapAnalysisController::class, 'snapshot'])->name('tiptap-analysis.snapshot');
     Route::get('/tiptap-analysis/whatsapp-engagement', [TiptapAnalysisController::class, 'whatsappEngagement'])->name('tiptap-analysis.whatsapp-engagement');
     Route::get('/tiptap-analysis/qr-entry-points', [TiptapAnalysisController::class, 'qrEntryPoints'])->name('tiptap-analysis.qr-entry-points');
@@ -176,7 +177,6 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings/update', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
 
-    // Landing page (public home)
     Route::get('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'index'])->name('landing-page.index');
     Route::post('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'update'])->name('landing-page.update');
 });

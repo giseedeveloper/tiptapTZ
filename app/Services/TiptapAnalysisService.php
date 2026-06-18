@@ -23,20 +23,28 @@ class TiptapAnalysisService
     /**
      * @return array<string, mixed>
      */
-    public function platformSnapshot(?int $restaurantId = null, int $trendDays = 30): array
+    public function platformSnapshot(?int $restaurantId = null, int $trendDays = 30, bool $overviewOnly = false): array
     {
         $trendDays = max(7, min($trendDays, 90));
 
-        return [
+        if ($overviewOnly) {
+            $restaurantId = null;
+        }
+
+        $payload = [
             'restaurants' => $this->restaurantSplit(),
             'orders' => $this->orderPeriodCounts($restaurantId),
             'revenue_trend' => $this->dailyRevenueTrend($trendDays, $restaurantId),
-            'top_restaurants' => $this->topRestaurants(5),
+            'top_restaurants' => $overviewOnly ? [] : $this->topRestaurants(5),
+            'overview_only' => $overviewOnly,
             'filters' => [
                 'restaurant_id' => $restaurantId,
                 'trend_days' => $trendDays,
+                'overview_only' => $overviewOnly,
             ],
         ];
+
+        return $payload;
     }
 
     /**
@@ -87,10 +95,14 @@ class TiptapAnalysisService
     /**
      * @return array<string, mixed>
      */
-    public function qrEntryPoints(?int $restaurantId = null, int $days = 30): array
+    public function qrEntryPoints(?int $restaurantId = null, int $days = 30, bool $overviewOnly = false): array
     {
         $days = max(7, min($days, 90));
         $start = now()->subDays($days - 1)->startOfDay();
+
+        if ($overviewOnly) {
+            $restaurantId = null;
+        }
 
         $query = BotEvent::query()
             ->where('occurred_at', '>=', $start)
@@ -121,10 +133,13 @@ class TiptapAnalysisService
         return [
             'split' => $split,
             'total_scans' => $total,
-            'per_restaurant' => $this->qrEntryPerRestaurant($start, $restaurantId),
+            'daily_trend' => $this->dailyQrScanTrend($days, $overviewOnly ? null : $restaurantId),
+            'per_restaurant' => $overviewOnly ? [] : $this->qrEntryPerRestaurant($start, $restaurantId),
+            'overview_only' => $overviewOnly,
             'filters' => [
                 'restaurant_id' => $restaurantId,
                 'days' => $days,
+                'overview_only' => $overviewOnly,
             ],
         ];
     }
@@ -195,11 +210,15 @@ class TiptapAnalysisService
     /**
      * @return array<string, mixed>
      */
-    public function feedbackOverview(?int $restaurantId = null, int $days = 30, int $recentLimit = 10): array
+    public function feedbackOverview(?int $restaurantId = null, int $days = 30, int $recentLimit = 10, bool $overviewOnly = false): array
     {
         $days = max(7, min($days, 90));
         $start = now()->subDays($days - 1)->startOfDay();
         $recentLimit = max(5, min($recentLimit, 25));
+
+        if ($overviewOnly) {
+            $restaurantId = null;
+        }
 
         $base = Feedback::withoutGlobalScope(RestaurantScope::class)
             ->where('created_at', '>=', $start);
@@ -234,6 +253,27 @@ class TiptapAnalysisService
             })
             ->values()
             ->all();
+
+        $summary = [
+            'total_reviews' => (int) (clone $base)->count(),
+            'avg_rating' => round((float) (clone $base)->avg('rating'), 1),
+            'customers_with_feedback' => (int) (clone $base)->distinct('id')->count('id'),
+            'low_ratings_count' => (int) (clone $base)->where('rating', '<=', 2)->count(),
+        ];
+
+        if ($overviewOnly) {
+            return [
+                'rating_distribution' => $ratingDistribution,
+                'by_type' => $byType,
+                'summary' => $summary,
+                'overview_only' => true,
+                'filters' => [
+                    'restaurant_id' => null,
+                    'days' => $days,
+                    'overview_only' => true,
+                ],
+            ];
+        }
 
         $recentComments = (clone $base)
             ->with('restaurant:id,name')
@@ -295,14 +335,13 @@ class TiptapAnalysisService
             'recent_comments' => $recentComments,
             'avg_rating_by_restaurant' => $avgByRestaurant,
             'low_rating_alerts' => $lowRatingAlerts,
-            'summary' => [
-                'total_reviews' => (int) (clone $base)->count(),
-                'avg_rating' => round((float) (clone $base)->avg('rating'), 1),
-            ],
+            'summary' => $summary,
+            'overview_only' => false,
             'filters' => [
                 'restaurant_id' => $restaurantId,
                 'days' => $days,
                 'recent_limit' => $recentLimit,
+                'overview_only' => false,
             ],
         ];
     }
@@ -310,10 +349,14 @@ class TiptapAnalysisService
     /**
      * @return array<string, mixed>
      */
-    public function tipsAndPayments(?int $restaurantId = null, int $days = 30): array
+    public function tipsAndPayments(?int $restaurantId = null, int $days = 30, bool $overviewOnly = false): array
     {
         $days = max(7, min($days, 90));
         $start = $this->periodStart($days);
+
+        if ($overviewOnly) {
+            $restaurantId = null;
+        }
 
         $tipsQuery = Tip::withoutGlobalScope(RestaurantScope::class)
             ->where('created_at', '>=', $start);
@@ -324,6 +367,7 @@ class TiptapAnalysisService
 
         $tipCount = (int) (clone $tipsQuery)->count();
         $totalTips = (float) (clone $tipsQuery)->sum('amount');
+        $uniqueWaitersTipped = (int) (clone $tipsQuery)->whereNotNull('waiter_id')->distinct('waiter_id')->count('waiter_id');
 
         $paymentsQuery = Payment::query()
             ->whereIn('status', ['paid', 'completed'])
@@ -333,6 +377,7 @@ class TiptapAnalysisService
             $paymentsQuery->where('restaurant_id', $restaurantId);
         }
 
+        $paymentCount = (int) (clone $paymentsQuery)->count();
         $paymentMethods = $this->paymentMethodBreakdown(clone $paymentsQuery);
         $paymentPurpose = $this->paymentPurposeSplit(clone $paymentsQuery);
 
@@ -341,13 +386,20 @@ class TiptapAnalysisService
                 'total_amount' => $totalTips,
                 'avg_amount' => $tipCount > 0 ? round($totalTips / $tipCount, 2) : 0.0,
                 'count' => $tipCount,
+                'unique_waiters_tipped' => $uniqueWaitersTipped,
             ],
-            'top_tipped_waiters' => $this->topTippedWaiters($start, $restaurantId),
+            'payments' => [
+                'count' => $paymentCount,
+                'total_amount' => (float) (clone $paymentsQuery)->sum('amount'),
+            ],
+            'top_tipped_waiters' => $overviewOnly ? [] : $this->topTippedWaiters($start, $restaurantId),
             'payment_methods' => $paymentMethods,
             'payment_purpose' => $paymentPurpose,
+            'overview_only' => $overviewOnly,
             'filters' => [
                 'restaurant_id' => $restaurantId,
                 'days' => $days,
+                'overview_only' => $overviewOnly,
             ],
         ];
     }
@@ -355,22 +407,69 @@ class TiptapAnalysisService
     /**
      * @return array<string, mixed>
      */
-    public function languageAndBehavior(?int $restaurantId = null, int $days = 30): array
+    public function languageAndBehavior(?int $restaurantId = null, int $days = 30, bool $overviewOnly = false): array
     {
         $days = max(7, min($days, 90));
         $start = $this->periodStart($days);
 
+        if ($overviewOnly) {
+            $restaurantId = null;
+        }
+
         $languageSplit = $this->languageSplitFromSessions($start, $restaurantId);
-        $perRestaurant = $this->languagePreferencePerRestaurant($start, $restaurantId);
+        $perRestaurant = $overviewOnly ? [] : $this->languagePreferencePerRestaurant($start, $restaurantId);
         $peakHours = $this->peakHours($start, $restaurantId);
 
         return [
             'language_split' => $languageSplit,
             'per_restaurant' => $perRestaurant,
             'peak_hours' => $peakHours,
+            'overview_only' => $overviewOnly,
             'filters' => [
                 'restaurant_id' => $restaurantId,
                 'days' => $days,
+                'overview_only' => $overviewOnly,
+            ],
+        ];
+    }
+
+    /**
+     * Anonymous platform-wide pulse — counts only, no venue or customer identity.
+     *
+     * @return array<string, mixed>
+     */
+    public function platformPulse(int $days = 30): array
+    {
+        $days = max(7, min($days, 90));
+        $start = $this->periodStart($days);
+
+        $restaurants = $this->restaurantSplit();
+        $orders = $this->orderPeriodCounts(null);
+        $feedbackBase = Feedback::withoutGlobalScopes()->where('created_at', '>=', $start);
+        $qrTotal = (int) BotEvent::query()
+            ->where('occurred_at', '>=', $start)
+            ->whereIn('event_type', BotQrEntryType::values())
+            ->count();
+        $botEvents = (int) BotEvent::query()->where('occurred_at', '>=', $start)->count();
+        $payments = Payment::query()
+            ->whereIn('status', ['paid', 'completed'])
+            ->where('created_at', '>=', $start);
+
+        return [
+            'active_venues' => (int) ($restaurants['active'] ?? 0),
+            'total_venues' => (int) ($restaurants['total'] ?? 0),
+            'orders_today' => (int) ($orders['today'] ?? 0),
+            'orders_month' => (int) ($orders['month'] ?? 0),
+            'feedback_count' => (int) (clone $feedbackBase)->count(),
+            'avg_rating' => round((float) (clone $feedbackBase)->avg('rating'), 1),
+            'qr_scans' => $qrTotal,
+            'payments_count' => (int) (clone $payments)->count(),
+            'payments_total' => (float) (clone $payments)->sum('amount'),
+            'bot_events' => $botEvents,
+            'overview_only' => true,
+            'filters' => [
+                'days' => $days,
+                'overview_only' => true,
             ],
         ];
     }
@@ -929,6 +1028,29 @@ class TiptapAnalysisService
         $query = BotEvent::query()
             ->where('occurred_at', '>=', $start)
             ->whereIn('event_type', BotEngagementEvent::values());
+
+        if ($restaurantId !== null) {
+            $query->where('restaurant_id', $restaurantId);
+        }
+
+        $rows = $query
+            ->selectRaw('DATE(occurred_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        return $this->fillDailySeries($days, $rows, 'count');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function dailyQrScanTrend(int $days, ?int $restaurantId): array
+    {
+        $start = now()->subDays($days - 1)->startOfDay();
+
+        $query = BotEvent::query()
+            ->where('occurred_at', '>=', $start)
+            ->whereIn('event_type', BotQrEntryType::values());
 
         if ($restaurantId !== null) {
             $query->where('restaurant_id', $restaurantId);

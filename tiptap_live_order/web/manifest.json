@@ -1,11 +1,11 @@
 {
-    "name": "tiptap_live_order",
-    "short_name": "tiptap_live_order",
+    "name": "TIPTAP Live Order",
+    "short_name": "Live Order",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFFFFF",
-    "theme_color": "#06B6D4",
-    "description": "A new Flutter project.",
+    "background_color": "#4B2C7F",
+    "theme_color": "#4B2C7F",
+    "description": "TIPTAP Live Order — waiter order portal for restaurants.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

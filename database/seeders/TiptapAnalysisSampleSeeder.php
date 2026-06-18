@@ -42,7 +42,7 @@ class TiptapAnalysisSampleSeeder extends Seeder
         }
 
         $this->command?->info('TipTap analysis sample data seeded for '.count($venues).' restaurants (last 30 days).');
-        $this->command?->info('Open /admin/tiptap-analysis and explore each section.');
+        $this->command?->info('Open /admin/tiptap-analysis (TipTap Analytics) and explore each section.');
     }
 
     /**

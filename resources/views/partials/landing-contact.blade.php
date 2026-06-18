@@ -26,7 +26,7 @@
                     >
                         <div class="flex items-start gap-4 mb-5">
                             <img
-                                src="{{ asset('images/flags/'.$office['flag'].'.svg') }}"
+                                src="{{ public_asset('images/flags/'.$office['flag'].'.svg') }}"
                                 alt="{{ $office['name'] }}"
                                 width="40"
                                 height="28"
@@ -34,7 +34,7 @@
                             >
                             <div>
                                 <p class="text-xs font-bold uppercase tracking-widest text-fin-primary mb-1">
-                                    {{ $officeKey === $market ? 'This site' : 'Regional office' }}
+                                    Office
                                 </p>
                                 <h3 class="text-xl font-semibold text-fin-ink">{{ $office['name'] }}</h3>
                                 <p class="text-sm text-fin-muted mt-1">{{ $office['city'] }}</p>

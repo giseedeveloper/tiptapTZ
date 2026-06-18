@@ -22,9 +22,11 @@ ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "
     # app_public volume keeps old Vite assets after rebuild — sync from fresh image
     CID=\$(docker create tiptap-app)
     docker cp \"\$CID:/var/www/html/public/build\" /tmp/tiptap_build_sync
+    docker cp \"\$CID:/var/www/html/public/images/flags\" /tmp/tiptap_flags_sync
     docker rm \"\$CID\"
     docker cp /tmp/tiptap_build_sync/. tiptap_tz_app:/var/www/html/public/build/
-    rm -rf /tmp/tiptap_build_sync
+    docker cp /tmp/tiptap_flags_sync/. tiptap_tz_app:/var/www/html/public/images/flags/
+    rm -rf /tmp/tiptap_build_sync /tmp/tiptap_flags_sync
     docker exec tiptap_tz_app php artisan migrate --force --no-interaction
     docker exec tiptap_tz_app php artisan config:cache
     docker exec tiptap_tz_app php artisan route:cache

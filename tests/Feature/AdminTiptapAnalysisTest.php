@@ -223,6 +223,8 @@ test('super admin can fetch qr entry point analytics', function (): void {
     $response->assertOk()
         ->assertJsonPath('qr_entry_points.total_scans', 3);
 
+    expect($response->json('qr_entry_points.daily_trend'))->toHaveCount(30);
+
     $split = collect($response->json('qr_entry_points.split'));
     expect($split->firstWhere('key', 'qr_waiter')['value'])->toBe(1);
     expect($split->firstWhere('key', 'qr_table')['value'])->toBe(1);
@@ -489,9 +491,12 @@ test('super admin can view tiptap analysis page', function (): void {
     $this->actingAs($this->admin)
         ->get(route('admin.tiptap-analysis.index'))
         ->assertOk()
-        ->assertSee('TipTap Analysis')
+        ->assertSee('TipTap Analytics')
+        ->assertSee('Intelligence hub')
+        ->assertSee('Analytics reports')
         ->assertSee('Platform')
-        ->assertSee('Open report');
+        ->assertSee('Open report')
+        ->assertSee('Overview tu');
 });
 
 test('super admin can view tiptap analysis platform section page', function (): void {
@@ -499,8 +504,103 @@ test('super admin can view tiptap analysis platform section page', function (): 
         ->get(route('admin.tiptap-analysis.platform'))
         ->assertOk()
         ->assertSee('Platform snapshot')
-        ->assertSee('Back to TipTap Analysis')
-        ->assertSee('Revenue trend');
+        ->assertSee('Back to TipTap Analytics')
+        ->assertSee('Revenue pulse')
+        ->assertSee('Smart signals')
+        ->assertSee('Live platform snapshot')
+        ->assertSee('Overview tu')
+        ->assertDontSee('Top restaurants by revenue');
+});
+
+test('super admin can view tiptap analysis whatsapp section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.whatsapp'))
+        ->assertOk()
+        ->assertSee('WhatsApp bot engagement')
+        ->assertSee('WhatsApp bot intelligence')
+        ->assertSee('Daily bot activity')
+        ->assertSee('Menu option breakdown')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu');
+});
+
+test('super admin can view tiptap analysis qr entry section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.qr-entry'))
+        ->assertOk()
+        ->assertSee('QR & entry points')
+        ->assertSee('QR entry intelligence')
+        ->assertSee('Daily scan activity')
+        ->assertSee('Entry point share')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu');
+});
+
+test('super admin can view tiptap analysis journey section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.journey'))
+        ->assertOk()
+        ->assertSee('Customer journey funnel')
+        ->assertSee('Customer journey intelligence')
+        ->assertSee('Conversion pipeline')
+        ->assertSee('Funnel shape')
+        ->assertSee('Retention at each step')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu');
+});
+
+test('super admin can view tiptap analysis feedback section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.feedback'))
+        ->assertOk()
+        ->assertSee('Feedback overview')
+        ->assertSee('Customer satisfaction intelligence')
+        ->assertSee('Star distribution')
+        ->assertSee('Satisfaction score')
+        ->assertSee('Feedback by category')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu')
+        ->assertDontSee('recent_comments');
+});
+
+test('super admin can view tiptap analysis tips payments section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.tips-payments'))
+        ->assertOk()
+        ->assertSee('Tips & payments')
+        ->assertSee('payments intelligence')
+        ->assertSee('Money flow split')
+        ->assertSee('Payment methods')
+        ->assertSee('Payment purpose')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu')
+        ->assertDontSee('top_tipped_waiters');
+});
+
+test('super admin can view tiptap analysis language section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.language'))
+        ->assertOk()
+        ->assertSee('Language & peak hours')
+        ->assertSee('Language and behavior intelligence')
+        ->assertSee('Language preference')
+        ->assertSee('Peak activity hours')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu')
+        ->assertDontSee('per_restaurant');
+});
+
+test('super admin can view tiptap analysis venues pulse section page', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.tiptap-analysis.venues'))
+        ->assertOk()
+        ->assertSee('Platform pulse')
+        ->assertSee('Platform pulse intelligence')
+        ->assertSee('Venue health')
+        ->assertSee('Order momentum')
+        ->assertSee('Platform activity mix')
+        ->assertSee('Smart signals')
+        ->assertSee('Overview tu');
 });
 
 test('manager cannot view tiptap analysis page', function (): void {
@@ -526,4 +626,68 @@ test('tiptap analysis sample seeder populates dashboard data', function (): void
     $response->assertOk();
     expect($response->json('snapshot.orders.month'))->toBeGreaterThan(0);
     expect($response->json('snapshot.top_restaurants'))->not->toBeEmpty();
+
+    $overview = $this->actingAs($this->admin)->getJson(route('admin.tiptap-analysis.snapshot', [
+        'trend_days' => 30,
+        'overview' => 1,
+    ]));
+
+    $overview->assertOk()
+        ->assertJsonPath('snapshot.overview_only', true)
+        ->assertJsonPath('snapshot.top_restaurants', []);
+});
+
+test('anonymous overview mode hides identifying feedback and payment details', function (): void {
+    \App\Models\Feedback::withoutGlobalScopes()->create([
+        'restaurant_id' => $this->restaurantA->id,
+        'type' => 'food',
+        'rating' => 2,
+        'comment' => 'Secret comment',
+    ]);
+
+    $feedback = $this->actingAs($this->admin)->getJson(route('admin.tiptap-analysis.feedback-overview', [
+        'days' => 30,
+        'overview' => 1,
+    ]));
+
+    $feedback->assertOk()
+        ->assertJsonPath('feedback_overview.overview_only', true)
+        ->assertJsonMissingPath('feedback_overview.recent_comments')
+        ->assertJsonMissingPath('feedback_overview.avg_rating_by_restaurant')
+        ->assertJsonMissingPath('feedback_overview.low_rating_alerts');
+
+    $payments = $this->actingAs($this->admin)->getJson(route('admin.tiptap-analysis.tips-and-payments', [
+        'days' => 30,
+        'overview' => 1,
+    ]));
+
+    $payments->assertOk()
+        ->assertJsonPath('tips_and_payments.overview_only', true)
+        ->assertJsonPath('tips_and_payments.top_tipped_waiters', []);
+
+    $qr = $this->actingAs($this->admin)->getJson(route('admin.tiptap-analysis.qr-entry-points', [
+        'days' => 30,
+        'overview' => 1,
+    ]));
+
+    $qr->assertOk()
+        ->assertJsonPath('qr_entry_points.overview_only', true)
+        ->assertJsonPath('qr_entry_points.per_restaurant', []);
+});
+
+test('super admin can fetch anonymous platform pulse', function (): void {
+    $response = $this->actingAs($this->admin)->getJson(route('admin.tiptap-analysis.platform-pulse', [
+        'days' => 30,
+    ]));
+
+    $response->assertOk()
+        ->assertJsonPath('platform_pulse.overview_only', true)
+        ->assertJsonStructure([
+            'platform_pulse' => [
+                'active_venues',
+                'feedback_count',
+                'qr_scans',
+                'payments_count',
+            ],
+        ]);
 });

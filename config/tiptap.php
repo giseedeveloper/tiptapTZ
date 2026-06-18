@@ -11,6 +11,8 @@ return [
 
     'payment_gateway' => env('TIPTAP_PAYMENT_GATEWAY', 'Selcom'),
 
+    'default_whatsapp_bot_number' => env('TIPTAP_WHATSAPP_BOT_NUMBER', '255791070771'),
+
     'admin_live_poll_seconds' => (int) env('ADMIN_LIVE_POLL_SECONDS', 30),
 
     /*
@@ -54,7 +56,7 @@ return [
                 ],
             ],
         ],
-        'whatsapp_url' => env('TIPTAP_WHATSAPP_URL', 'https://wa.me/255620366103'),
+        'whatsapp_url' => env('TIPTAP_WHATSAPP_URL', 'https://wa.me/255791070771'),
         'social' => [
             'facebook' => env('TIPTAP_SOCIAL_FACEBOOK'),
             'instagram' => env('TIPTAP_SOCIAL_INSTAGRAM'),
@@ -138,7 +140,7 @@ return [
             'social_linkedin' => env('TIPTAP_SOCIAL_LINKEDIN', ''),
             'social_tiktok' => env('TIPTAP_SOCIAL_TIKTOK', ''),
             'social_youtube' => env('TIPTAP_SOCIAL_YOUTUBE', ''),
-            'whatsapp_url' => env('TIPTAP_WHATSAPP_URL', 'https://wa.me/255620366103'),
+            'whatsapp_url' => env('TIPTAP_WHATSAPP_URL', 'https://wa.me/255791070771'),
             'cta_title' => 'Upgrade your restaurant today',
             'cta_description' => 'Join venues already using TipTap Rafiki, QR ordering, and instant mobile payments.',
             'cta_button' => 'Create free account',

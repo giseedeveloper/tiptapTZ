@@ -8,13 +8,9 @@
             <option value="60">Last 60 days</option>
             <option value="90">Last 90 days</option>
         </select>
-        <label class="text-[10px] font-bold text-white/40 uppercase tracking-wider ml-2">Restaurant</label>
-        <select id="filter-restaurant" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-w-[200px] focus:ring-2 focus:ring-fin-primary/50">
-            <option value="">All restaurants</option>
-            @foreach ($restaurants as $restaurant)
-                <option value="{{ $restaurant->id }}">{{ $restaurant->name }}{{ $restaurant->is_active ? '' : ' (inactive)' }}</option>
-            @endforeach
-        </select>
+        <p class="text-[10px] text-emerald-400/80 font-semibold max-w-md leading-relaxed">
+            Overview tu — hakuna majina ya restaurant, maoni, au maelezo ya chakula.
+        </p>
     </div>
     <div class="flex items-center gap-3">
         <span id="analysis-last-updated" class="text-[10px] text-white/35 tabular-nums"></span>

@@ -1,11 +1,11 @@
 {
-    "name": "tiptap_manager_wallet",
-    "short_name": "tiptap_manager_wallet",
+    "name": "TIPTAP Manager",
+    "short_name": "TIPTAP",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
-    "theme_color": "#06B6D4",
-    "description": "A new Flutter project.",
+    "theme_color": "#4B2C7F",
+    "description": "TIPTAP Manager Wallet — balance and withdrawals for restaurant managers.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

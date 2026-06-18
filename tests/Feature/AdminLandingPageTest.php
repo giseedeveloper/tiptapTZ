@@ -42,7 +42,7 @@ function validLandingPagePayload(): array
         'social_linkedin' => '',
         'social_tiktok' => '',
         'social_youtube' => '',
-        'whatsapp_url' => 'https://wa.me/255620366103',
+        'whatsapp_url' => 'https://wa.me/255791070771',
         'cta_title' => 'Upgrade today',
         'cta_description' => 'CTA description.',
         'cta_button' => 'Register now',
@@ -90,4 +90,14 @@ test('homepage reflects landing page manager updates', function () {
     $response->assertOk();
     $response->assertSee('20th Floor', false);
     $response->assertSee('Custom headline', false);
+});
+
+test('homepage whatsapp links use the configured bot number', function () {
+    Setting::set('whatsapp_bot_number', '255791070771', 'api');
+    Setting::set('landing_whatsapp_url', 'https://wa.me/255620366103', 'landing');
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('https://wa.me/255791070771', false)
+        ->assertDontSee('https://wa.me/255620366103', false);
 });

@@ -199,7 +199,7 @@ class SettingsScreen extends StatelessWidget {
                           value: _marketLabel(s),
                         ),
                         Divider(height: 24, color: AppTheme.glassBorderOf(context)),
-                        _InfoTile(
+                        const _InfoTile(
                           icon: Icons.info_outline_rounded,
                           label: 'Version',
                           value: '1.0.0',

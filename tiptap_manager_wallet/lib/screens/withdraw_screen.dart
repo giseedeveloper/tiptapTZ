@@ -152,7 +152,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                             ],
                             if (!_useSaved || !snapshot.payoutProfile.isComplete) ...[
                               DropdownButtonFormField<String>(
-                                value: _method,
+                                initialValue: _method,
                                 decoration: const InputDecoration(labelText: 'Payout method'),
                                 items: const [
                                   DropdownMenuItem(

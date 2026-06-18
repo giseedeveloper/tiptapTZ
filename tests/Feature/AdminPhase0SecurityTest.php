@@ -22,7 +22,7 @@ function validAdminSettingsPayload(): array
         'commission_rate' => '5',
         'min_withdrawal' => '50000',
         'demo_push' => '0',
-        'whatsapp_bot_number' => '255794321510',
+        'whatsapp_bot_number' => '255791070771',
         'webhook_secret' => 'whsec_test',
     ];
 }

@@ -126,7 +126,24 @@ class LandingPageContent
 
     public static function whatsappUrl(): string
     {
-        return self::value('whatsapp_url');
+        $botNumber = Setting::get('whatsapp_bot_number');
+        if (filled($botNumber)) {
+            $clean = preg_replace('/[^0-9]/', '', (string) $botNumber);
+
+            if (strlen($clean) >= 9) {
+                return 'https://wa.me/'.$clean;
+            }
+        }
+
+        $stored = self::value('whatsapp_url');
+        if (filled($stored)) {
+            return $stored;
+        }
+
+        $defaultNumber = (string) config('tiptap.default_whatsapp_bot_number', '255791070771');
+        $cleanDefault = preg_replace('/[^0-9]/', '', $defaultNumber);
+
+        return 'https://wa.me/'.$cleanDefault;
     }
 
     public static function storageKey(string $key): string

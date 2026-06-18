@@ -371,7 +371,7 @@
                             <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full bg-fin-mist flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 text-fin-primary"></i></span>{{ $f }}</li>
                         @endforeach
                     </ul>
-                    <a href="https://wa.me/255620366103" class="mt-8 block text-center rounded-xl border-2 border-fin-ink/8 py-3.5 text-sm font-bold text-fin-ink hover:bg-fin-surface transition-colors">Contact sales</a>
+                    <a href="{{ $landing['whatsapp_url'] }}" class="mt-8 block text-center rounded-xl border-2 border-fin-ink/8 py-3.5 text-sm font-bold text-fin-ink hover:bg-fin-surface transition-colors">Contact sales</a>
                 </div>
             </div>
         </div>
