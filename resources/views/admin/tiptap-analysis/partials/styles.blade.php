@@ -2,6 +2,13 @@
     /* ── Analytics layout safety (empty / sparse data) ── */
     .tiptap-analysis-content .grid > [class*="col-span"] {
         min-width: 0;
+        width: 100%;
+    }
+    @media (min-width: 1280px) {
+        .tiptap-analysis-content .grid.xl\:grid-cols-12 {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
     }
     .platform-panel, .wa-panel, .qr-panel, .fb-panel, .tp-panel, .lg-panel, .pl-panel, .jn-panel {
         min-width: 0;
@@ -25,12 +32,50 @@
         align-items: center;
         justify-content: center;
         gap: 0.65rem;
+        width: 100%;
         min-height: 10rem;
         padding: 2rem 1.25rem;
         border-radius: 1rem;
         border: 1px dashed rgba(255, 255, 255, 0.12);
         background: rgba(255, 255, 255, 0.02);
         text-align: center;
+    }
+    .chart-zero-hint {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.28);
+        pointer-events: none;
+        white-space: nowrap;
+    }
+    .wa-trend-chart__plot.is-zero-data svg path:first-of-type,
+    .wa-trend-chart__plot.is-zero-data .wa-area-line,
+    .wa-trend-chart__plot.is-zero-data .qr-area-line {
+        opacity: 0.35;
+    }
+    .spotlight-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 8rem;
+        padding: 1.25rem 1rem;
+        border-radius: 1rem;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .spotlight-placeholder__icon {
+        font-size: 2rem;
+        opacity: 0.35;
+        line-height: 1;
+        margin-bottom: 0.5rem;
     }
     .chart-empty-state__icon {
         font-size: 1.75rem;
