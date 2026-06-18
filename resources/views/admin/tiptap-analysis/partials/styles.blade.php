@@ -1,4 +1,66 @@
 <style>
+    /* ── Analytics layout safety (empty / sparse data) ── */
+    .tiptap-analysis-content .grid > [class*="col-span"] {
+        min-width: 0;
+    }
+    .platform-panel, .wa-panel, .qr-panel, .fb-panel, .tp-panel, .lg-panel, .pl-panel, .jn-panel {
+        min-width: 0;
+    }
+    .wa-area-chart-wrap, .qr-area-chart-wrap, .lg-peak-chart-wrap {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .wa-trend-chart, .lg-hour-chart {
+        width: 100%;
+        min-width: 0;
+    }
+    .platform-revenue-chart {
+        width: 100%;
+        min-width: 0;
+    }
+    .chart-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.65rem;
+        min-height: 10rem;
+        padding: 2rem 1.25rem;
+        border-radius: 1rem;
+        border: 1px dashed rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+        text-align: center;
+    }
+    .chart-empty-state__icon {
+        font-size: 1.75rem;
+        opacity: 0.55;
+        line-height: 1;
+    }
+    .chart-empty-state__text {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.45);
+        max-width: 18rem;
+        line-height: 1.45;
+    }
+    .wa-top-action-card, .qr-top-entry-card, .lg-top-card, .tp-top-card {
+        min-height: 7rem;
+        overflow: hidden;
+    }
+    .wa-panel--spotlight #chart-wa-options,
+    .qr-panel--spotlight #chart-qr-split,
+    .lg-panel--spotlight #chart-language,
+    .tp-panel--spotlight #chart-payment-methods {
+        width: 100%;
+        margin-top: auto;
+        padding-top: 0.75rem;
+    }
+    .fb-rating-gauge-ring {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     /* ── Analytics hub (index) ── */
     .hub-hero {
         background: linear-gradient(135deg, rgba(91, 63, 214, 0.24) 0%, rgba(236, 72, 153, 0.1) 35%, rgba(6, 182, 212, 0.06) 60%, rgba(10, 8, 20, 0.98) 100%);

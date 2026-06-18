@@ -45,6 +45,19 @@
         return Math.max((value / max) * 100, value > 0 ? minPos : minZero);
     };
 
+    const seriesTotal = (items, key = 'count') => (items || []).reduce((s, d) => s + (d[key] || 0), 0);
+    const seriesMax = (items, key = 'count') => Math.max(...(items || []).map(d => d[key] || 0), 0);
+
+    const chartEmptyState = (message, icon = '📊') =>
+        '<div class="chart-empty-state">' +
+        '<span class="chart-empty-state__icon" aria-hidden="true">' + icon + '</span>' +
+        '<p class="chart-empty-state__text">' + esc(message) + '</p></div>';
+
+    const buildYTicks = (max) => {
+        const ticks = [1, 0.75, 0.5, 0.25, 0].map(pct => fmtCompact(Math.round(max * pct)));
+        return ticks.filter((tick, index, all) => index === 0 || tick !== all[index - 1]);
+    };
+
     const buildDonut = (containerId, segments, centerLabel, centerSub) => {
         const root = document.getElementById(containerId);
         if (!root) return;
@@ -63,7 +76,7 @@
             : 'conic-gradient(from -90deg, rgba(255,255,255,0.08) 0% 100%)';
 
         if (filtered.length === 0) {
-            root.innerHTML = '<p class="text-sm text-white/40 text-center py-8">No data yet for this period</p>';
+            root.innerHTML = chartEmptyState('No data yet for this period');
             return;
         }
 
@@ -90,8 +103,8 @@
         const root = document.getElementById(containerId);
         if (!root) return;
         const data = items || [];
-        if (data.length === 0) {
-            root.innerHTML = '<p class="text-sm text-white/40 text-center py-8 w-full">No data yet</p>';
+        if (data.length === 0 || seriesTotal(data, valueKey) === 0) {
+            root.innerHTML = chartEmptyState('No data yet for this period');
             return;
         }
         const max = Math.max(...data.map(d => d[valueKey] || 0), 1);
@@ -190,11 +203,12 @@
         const root = document.getElementById(containerId);
         if (!root) return { total: 0, peak: null, avg: 0 };
         const data = trend || [];
-        if (data.length === 0) {
-            root.innerHTML = '<p class="text-sm text-white/40 text-center py-12 w-full">No revenue data yet — payments will appear here</p>';
+        const totalRevenue = seriesTotal(data, 'revenue');
+        if (data.length === 0 || totalRevenue === 0) {
+            root.innerHTML = chartEmptyState('No revenue in this period — payments will appear here', '💰');
             return { total: 0, peak: null, avg: 0 };
         }
-        const max = Math.max(...data.map(d => d.revenue || 0), 1);
+        const max = Math.max(seriesMax(data, 'revenue'), 1);
         const total = data.reduce((s, d) => s + (d.revenue || 0), 0);
         const peak = data.reduce((best, d) => ((d.revenue || 0) > (best?.revenue || 0) ? d : best), data[0]);
         const avg = total / data.length;
@@ -378,17 +392,18 @@
         if (!root) return emptyResult;
 
         const data = hours || [];
-        if (data.length === 0) {
-            root.innerHTML = config.emptyHtml || '<p class="text-sm text-white/40 text-center py-8">No hourly data yet</p>';
+        const hourTotal = seriesTotal(data, 'count');
+        if (data.length === 0 || hourTotal === 0) {
+            root.innerHTML = config.emptyHtml || chartEmptyState('No hourly activity yet for this period', '⏰');
             return emptyResult;
         }
 
-        const max = Math.max(...data.map(d => d.count || 0), 1);
+        const max = Math.max(seriesMax(data, 'count'), 1);
         const total = data.reduce((s, d) => s + (d.count || 0), 0);
         const peakItem = data.find(d => d.hour === peakHour) ||
             data.reduce((best, d) => ((d.count || 0) > (best?.count || 0) ? d : best), data[0]);
         const fillClass = config.theme === 'emerald' ? 'lg-hour-bar__fill lg-hour-bar__fill--emerald' : 'lg-hour-bar__fill lg-hour-bar__fill--indigo';
-        const yTicks = [1, 0.75, 0.5, 0.25, 0].map(pct => fmtCompact(Math.round(max * pct)));
+        const yTicks = buildYTicks(max);
 
         const barsHtml = data.map(d => {
             const h = pctHeight(d.count || 0, max, 10, 3);
@@ -458,12 +473,13 @@
         if (!root) return emptyResult;
 
         const data = trend || [];
-        if (data.length === 0) {
-            root.innerHTML = config.emptyHtml;
+        const trendTotal = seriesTotal(data, 'count');
+        if (data.length === 0 || trendTotal === 0) {
+            root.innerHTML = config.emptyHtml || chartEmptyState('No activity in this period yet');
             return emptyResult;
         }
 
-        const max = Math.max(...data.map(d => d.count || 0), 1);
+        const max = Math.max(seriesMax(data, 'count'), 1);
         const total = data.reduce((s, d) => s + (d.count || 0), 0);
         const peak = data.reduce((best, d) => ((d.count || 0) > (best?.count || 0) ? d : best), data[0]);
         const avg = total / data.length;
@@ -493,7 +509,7 @@
             return '<line x1="0" y1="' + y.toFixed(2) + '" x2="100" y2="' + y.toFixed(2) + '" class="wa-area-grid-line"/>';
         }).join('');
 
-        const yTicks = [1, 0.75, 0.5, 0.25, 0].map(pct => fmtCompact(Math.round(max * pct)));
+        const yTicks = buildYTicks(max);
         const labelMax = typeof window !== 'undefined' && window.innerWidth < 640 ? 5 : 7;
         const labelIndices = waTrendLabelIndices(data.length, labelMax);
         const dotClass = 'wa-trend-dot' + (config.dotClass ? ' ' + config.dotClass : '');
@@ -534,7 +550,7 @@
     };
 
     const buildWaAreaChart = (containerId, trend) => buildDailyTrendChart(containerId, trend, {
-        emptyHtml: '<p class="text-sm text-white/40 text-center py-14">No bot activity yet — events appear as customers use WhatsApp</p>',
+        emptyHtml: chartEmptyState('No bot activity yet — events appear as customers use WhatsApp', '💬'),
         unit: 'events',
         gradId: 'waAreaGrad',
         gradTop: 'rgba(16,185,129,0.42)',
@@ -548,7 +564,7 @@
         if (!root) return;
         const sorted = [...(options || [])].sort((a, b) => (b.value || 0) - (a.value || 0));
         if (sorted.length === 0 || total === 0) {
-            root.innerHTML = '<p class="text-sm text-white/40">No menu option data yet</p>';
+            root.innerHTML = chartEmptyState('No menu option data yet', '💬');
             return;
         }
         const max = Math.max(...sorted.map(o => o.value || 0), 1);
@@ -568,8 +584,8 @@
         const root = document.getElementById(containerId);
         if (!root) return;
         const sorted = [...(options || [])].sort((a, b) => (b.value || 0) - (a.value || 0));
-        if (sorted.length === 0) {
-            root.innerHTML = '<p class="text-sm text-white/40">Waiting for bot interactions</p>';
+        if (sorted.length === 0 || total === 0) {
+            root.innerHTML = chartEmptyState('Waiting for bot interactions', '💬');
             return;
         }
         root.innerHTML =
@@ -691,7 +707,7 @@
         const topActionEl = document.getElementById('wa-top-action');
         if (topActionEl) {
             if (!topOption || !(topOption.value > 0)) {
-                topActionEl.innerHTML = '<p class="text-sm text-white/40 text-center py-6">No top action yet</p>';
+                topActionEl.innerHTML = chartEmptyState('No top action yet — bot usage will appear here', '🏆');
             } else {
                 topActionEl.innerHTML =
                     '<div class="flex items-center gap-3 mb-3">' +
@@ -746,7 +762,7 @@
         }[key] || 'QR entry point');
 
         const buildQrAreaChart = (containerId, trend) => buildDailyTrendChart(containerId, trend, {
-            emptyHtml: '<p class="text-sm text-white/40 text-center py-14">No QR scans yet — activity appears when customers scan codes</p>',
+            emptyHtml: chartEmptyState('No QR scans yet — activity appears when customers scan codes', '📱'),
             unit: 'scans',
             gradId: 'qrAreaGrad',
             gradTop: 'rgba(6,182,212,0.42)',
@@ -800,7 +816,7 @@
         const topEl = document.getElementById('qr-top-entry');
         if (topEl) {
             if (!topEntry || !(topEntry.value > 0)) {
-                topEl.innerHTML = '<p class="text-sm text-white/40 text-center py-6">No scans recorded yet</p>';
+                topEl.innerHTML = chartEmptyState('No scans recorded yet', '📱');
             } else {
                 topEl.innerHTML =
                     '<div class="flex items-center gap-3 mb-3">' +
@@ -1242,6 +1258,16 @@
     const buildFbRatingGauge = (containerId, avg, total) => {
         const root = document.getElementById(containerId);
         if (!root) return;
+
+        if (total === 0) {
+            root.innerHTML = chartEmptyState('No ratings yet for this period', '⭐');
+            const labelEl = document.getElementById('fb-satisfaction-label');
+            if (labelEl) {
+                labelEl.innerHTML = '<span class="text-white/40">Ratings appear when customers submit feedback</span>';
+            }
+            return;
+        }
+
         const pct = (avg / 5) * 100;
         const circumference = 2 * Math.PI * 42;
         const dash = (pct / 100) * circumference;
@@ -1375,8 +1401,8 @@
 
         const ratingBars = document.getElementById('chart-rating-bars');
         if (ratingBars) {
-            ratingBars.innerHTML = dist.length === 0
-                ? '<p class="text-sm text-white/40 py-6">No star ratings yet</p>'
+            ratingBars.innerHTML = total === 0 || dist.length === 0
+                ? chartEmptyState('No star ratings yet for this period', '⭐')
                 : dist.map((d, i) => {
                     const w = pctHeight(d.count || 0, maxStars, 8, 2);
                     const color = fbStarColor(d.stars);
@@ -1552,7 +1578,7 @@
         const topMethodEl = document.getElementById('tp-top-method');
         if (topMethodEl) {
             if (!topMethod || !(topMethod.value > 0)) {
-                topMethodEl.innerHTML = '<p class="text-sm text-white/40 text-center py-6">No payment methods used yet</p>';
+                topMethodEl.innerHTML = chartEmptyState('No payment methods used yet', '💳');
             } else {
                 topMethodEl.innerHTML =
                     '<div class="flex items-center gap-3 mb-3">' +
@@ -1815,7 +1841,7 @@
         const topLangEl = document.getElementById('lg-top-lang');
         if (topLangEl) {
             if (!topLang || !(topLang.value > 0)) {
-                topLangEl.innerHTML = '<p class="text-sm text-white/40 text-center py-6">No language selections yet</p>';
+                topLangEl.innerHTML = chartEmptyState('No language selections yet', '🌐');
             } else {
                 topLangEl.innerHTML =
                     '<div class="flex items-center gap-3 mb-3">' +
@@ -1871,13 +1897,22 @@
                     '<td class="tabular-nums font-bold text-white">' + fmt(x.value || 0) + '</td>' +
                     '<td class="tabular-nums text-indigo-400 font-bold">' + fmtPct(x.value || 0, totalLang) + '</td></tr>'
                 ).join('') + '</tbody></table>' : '<p class="text-sm text-white/40">No language data yet</p>') +
-                (eventHours.length ? '<h5 class="text-sm font-bold text-white mt-8 mb-4">Peak hours (bot events)</h5>' +
-                '<table class="lg-data-table min-w-[480px]"><thead><tr><th>Hour</th><th>Events</th><th>Share</th></tr></thead><tbody>' +
-                [...eventHours].sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 6).map(h =>
-                    '<tr class="lg-animate-in"><td class="font-semibold">' + esc(h.label || fmtHourLabel(h.hour)) + '</td>' +
-                    '<td class="tabular-nums font-bold text-white">' + fmt(h.count || 0) + '</td>' +
-                    '<td class="tabular-nums text-white/60">' + fmtPct(h.count || 0, eventTotal) + '</td></tr>'
-                ).join('') + '</tbody></table>' : '');
+                (() => {
+                    const activeEventHours = [...eventHours]
+                        .filter(h => (h.count || 0) > 0)
+                        .sort((a, b) => (b.count || 0) - (a.count || 0))
+                        .slice(0, 8);
+                    if (activeEventHours.length === 0) {
+                        return '';
+                    }
+                    return '<h5 class="text-sm font-bold text-white mt-8 mb-4">Peak hours (bot events)</h5>' +
+                        '<table class="lg-data-table min-w-[480px]"><thead><tr><th>Hour</th><th>Events</th><th>Share</th></tr></thead><tbody>' +
+                        activeEventHours.map(h =>
+                            '<tr class="lg-animate-in"><td class="font-semibold">' + esc(h.label || fmtHourLabel(h.hour)) + '</td>' +
+                            '<td class="tabular-nums font-bold text-white">' + fmt(h.count || 0) + '</td>' +
+                            '<td class="tabular-nums text-white/60">' + fmtPct(h.count || 0, eventTotal) + '</td></tr>'
+                        ).join('') + '</tbody></table>';
+                })();
         }
 
         const insightsEl = document.getElementById('lg-insights');

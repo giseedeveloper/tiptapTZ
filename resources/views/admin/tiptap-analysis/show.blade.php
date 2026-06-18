@@ -15,7 +15,9 @@
 
     @include('admin.tiptap-analysis.partials.filters')
 
-    @include('admin.tiptap-analysis.sections.'.$activeSection)
+    <div class="tiptap-analysis-content">
+        @include('admin.tiptap-analysis.sections.'.$activeSection)
+    </div>
 
     @include('admin.tiptap-analysis.partials.analysis-engine', ['activeSection' => $activeSection])
 </x-admin-layout>
