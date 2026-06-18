@@ -123,6 +123,18 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
     Route::post('restaurants/{restaurant}/toggle-status', [\App\Http\Controllers\Admin\RestaurantController::class, 'toggleStatus'])->name('restaurants.toggle-status');
 
+    // Restaurant join requests (approval queue)
+    Route::get('restaurant-requests', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'index'])->name('restaurant-requests.index');
+    Route::get('restaurant-requests/{restaurant}', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'show'])->name('restaurant-requests.show');
+    Route::post('restaurant-requests/{restaurant}/approve', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'approve'])->name('restaurant-requests.approve');
+    Route::post('restaurant-requests/{restaurant}/reject', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'reject'])->name('restaurant-requests.reject');
+    Route::post('restaurant-requests/bulk-approve', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'bulkApprove'])->name('restaurant-requests.bulk-approve');
+
+    // Subscription plans (pricing packages)
+    Route::resource('plans', \App\Http\Controllers\Admin\SubscriptionPackageController::class)
+        ->parameters(['plans' => 'plan'])
+        ->except(['show']);
+
     Route::post('impersonate/{user}', [\App\Http\Controllers\Admin\ImpersonationController::class, 'start'])->name('impersonate.start');
 
     // Users
@@ -181,8 +193,16 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::post('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'update'])->name('landing-page.update');
 });
 
+// Manager onboarding (waiting + plan selection) — NOT gated by approval, else redirect loop
+Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.onboarding.')->group(function () {
+    Route::get('/waiting', [\App\Http\Controllers\Manager\OnboardingController::class, 'waiting'])->name('waiting');
+    Route::get('/waiting/status', [\App\Http\Controllers\Manager\OnboardingController::class, 'status'])->name('status');
+    Route::get('/select-plan', [\App\Http\Controllers\Manager\OnboardingController::class, 'plan'])->name('plan');
+    Route::post('/select-plan', [\App\Http\Controllers\Manager\OnboardingController::class, 'selectPlan'])->name('plan.store');
+});
+
 // Manager Portal
-Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+Route::middleware(['auth', 'role:manager', 'restaurant.approved'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [ManagerDashboard::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [ManagerDashboard::class, 'getStats'])->name('dashboard.stats');
     Route::get('/dashboard/analytics', [ManagerDashboard::class, 'getAnalytics'])->name('dashboard.analytics');
@@ -277,7 +297,7 @@ Route::prefix('kitchen')->name('kitchen.')->group(function () {
 });
 
 // Manager KDS Token Management
-Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+Route::middleware(['auth', 'role:manager', 'restaurant.approved'])->prefix('manager')->name('manager.')->group(function () {
     Route::post('/kitchen/generate-token', [\App\Http\Controllers\KitchenController::class, 'generateToken'])->name('kitchen.generate');
     Route::post('/kitchen/revoke-token', [\App\Http\Controllers\KitchenController::class, 'revokeToken'])->name('kitchen.revoke');
 });

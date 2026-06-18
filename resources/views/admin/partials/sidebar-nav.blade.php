@@ -25,6 +25,22 @@
     </div>
     <span class="font-medium text-xs">Restaurants</span>
 </a>
+@php($pendingRestaurantsCount = \App\Models\Restaurant::query()->pending()->count())
+<a href="{{ route('admin.restaurant-requests.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.restaurant-requests.*') ? 'sidebar-link-active' : 'text-white/55' }}">
+    <div class="w-6 h-6 rounded-md bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.restaurant-requests.*') ? 'text-amber-400' : 'text-white/50' }}"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </div>
+    <span class="font-medium text-xs">Restaurant Requests</span>
+    @if($pendingRestaurantsCount > 0)
+        <span class="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-white tabular-nums">{{ $pendingRestaurantsCount > 99 ? '99+' : $pendingRestaurantsCount }}</span>
+    @endif
+</a>
+<a href="{{ route('admin.plans.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.plans.*') ? 'sidebar-link-active' : 'text-white/55' }}">
+    <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.plans.*') ? 'text-violet-400' : 'text-white/50' }}"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    </div>
+    <span class="font-medium text-xs">Plans &amp; Pricing</span>
+</a>
 <a href="{{ route('admin.users.index') }}" onclick="closeSidebar()" class="sidebar-link flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg {{ request()->routeIs('admin.users.*') ? 'sidebar-link-active' : 'text-white/55' }}">
     <div class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="{{ request()->routeIs('admin.users.*') ? 'text-blue-400' : 'text-white/50' }}"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>

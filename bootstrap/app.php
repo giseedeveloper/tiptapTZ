@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'waiter.linked' => \App\Http\Middleware\EnsureWaiterIsLinked::class,
             'order.portal' => \App\Http\Middleware\EnsureOrderPortalAuthenticated::class,
+            'restaurant.approved' => \App\Http\Middleware\EnsureRestaurantApproved::class,
         ]);
 
         // Order Portal API (app nje ya browser) haitumii CSRF token

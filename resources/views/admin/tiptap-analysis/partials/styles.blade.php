@@ -1,13 +1,30 @@
 <style>
-    /* ── Analytics layout safety (empty / sparse data) ── */
-    .tiptap-analysis-content .grid > [class*="col-span"] {
-        min-width: 0;
+    /* ── Analytics grid (self-contained — production CSS may lack Tailwind xl: utilities) ── */
+    .tiptap-analysis-content .grid {
+        display: grid;
         width: 100%;
     }
+    .tiptap-analysis-content .grid > [class*="col-span"] {
+        min-width: 0;
+    }
     @media (min-width: 1280px) {
-        .tiptap-analysis-content .grid.xl\:grid-cols-12 {
-            display: grid;
+        .tiptap-analysis-content .grid[class*="xl:grid-cols-12"] {
             grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
+        .tiptap-analysis-content .grid[class*="xl:grid-cols-4"]:not([class*="xl:grid-cols-12"]) {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .tiptap-analysis-content .grid > [class*="xl:col-span-8"] {
+            grid-column: span 8 / span 8;
+        }
+        .tiptap-analysis-content .grid > [class*="xl:col-span-7"] {
+            grid-column: span 7 / span 7;
+        }
+        .tiptap-analysis-content .grid > [class*="xl:col-span-5"] {
+            grid-column: span 5 / span 5;
+        }
+        .tiptap-analysis-content .grid > [class*="xl:col-span-4"] {
+            grid-column: span 4 / span 4;
         }
     }
     .platform-panel, .wa-panel, .qr-panel, .fb-panel, .tp-panel, .lg-panel, .pl-panel, .jn-panel {

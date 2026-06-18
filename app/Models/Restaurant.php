@@ -3,10 +3,20 @@
 namespace App\Models;
 
 use App\Services\SystemPaymentGateway;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Restaurant extends Model
 {
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_ACTIVE = 'active';
+
     protected $fillable = [
         'name',
         'location',
@@ -25,7 +35,31 @@ class Restaurant extends Model
         'payout_details',
         'kitchen_token',
         'kitchen_token_generated_at',
+        'approval_status',
+        'approved_at',
+        'approved_by',
+        'rejection_reason',
+        'rejected_at',
+        'subscription_package_id',
+        'plan_selected_at',
+        'trial_ends_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'selcom_is_live' => 'boolean',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
+            'plan_selected_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
+            'kitchen_token_generated_at' => 'datetime',
+        ];
+    }
 
     /**
      * Boot method - auto-generate tag_prefix on create
@@ -35,6 +69,12 @@ class Restaurant extends Model
         static::creating(function ($restaurant) {
             if (empty($restaurant->tag_prefix)) {
                 $restaurant->tag_prefix = $restaurant->generateUniqueTagPrefix();
+            }
+
+            // Restaurants created directly in code (admin panel, seeders, tests) are
+            // considered live. Public self-registration explicitly sets PENDING.
+            if (blank($restaurant->approval_status)) {
+                $restaurant->approval_status = self::STATUS_ACTIVE;
             }
         });
     }
@@ -186,6 +226,78 @@ class Restaurant extends Model
     public function hasPayoutProfile(): bool
     {
         return filled($this->payout_method) && filled($this->payout_details);
+    }
+
+    public function subscriptionPackage(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPackage::class);
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function isPending(): bool
+    {
+        return $this->approval_status === self::STATUS_PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approval_status === self::STATUS_APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->approval_status === self::STATUS_REJECTED;
+    }
+
+    public function isLiveActive(): bool
+    {
+        return $this->approval_status === self::STATUS_ACTIVE;
+    }
+
+    public function needsPlanSelection(): bool
+    {
+        return $this->isApproved() && $this->subscription_package_id === null;
+    }
+
+    public function isFullyOnboarded(): bool
+    {
+        return $this->isLiveActive() && $this->subscription_package_id !== null;
+    }
+
+    public function markApproved(?int $adminId = null): void
+    {
+        $this->forceFill([
+            'approval_status' => self::STATUS_APPROVED,
+            'approved_at' => now(),
+            'approved_by' => $adminId,
+            'rejection_reason' => null,
+            'rejected_at' => null,
+            'is_active' => true,
+        ])->save();
+    }
+
+    public function markRejected(string $reason, ?int $adminId = null): void
+    {
+        $this->forceFill([
+            'approval_status' => self::STATUS_REJECTED,
+            'rejection_reason' => $reason,
+            'rejected_at' => now(),
+            'approved_by' => $adminId,
+            'is_active' => false,
+        ])->save();
+    }
+
+    /**
+     * @param  Builder<Restaurant>  $query
+     * @return Builder<Restaurant>
+     */
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('approval_status', self::STATUS_PENDING);
     }
 
     public function users()

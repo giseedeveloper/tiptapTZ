@@ -13,7 +13,7 @@
         </p>
     </div>
     <div class="flex items-center gap-3">
-        <span class="text-[9px] text-white/25 font-mono hidden sm:inline" title="Analytics UI build">UI chart-v3</span>
+        <span class="text-[9px] text-white/25 font-mono hidden sm:inline" title="Analytics UI build">UI chart-v4</span>
         <span id="analysis-last-updated" class="text-[10px] text-white/35 tabular-nums"></span>
         <button type="button" id="analysis-refresh-btn" class="px-4 py-2 rounded-xl bg-fin-primary/20 border border-fin-primary/40 text-fin-primary text-xs font-bold hover:bg-fin-primary/30 transition">
             Refresh
