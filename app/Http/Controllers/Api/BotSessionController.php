@@ -2,16 +2,30 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\BotEngagementEvent;
 use App\Http\Controllers\Controller;
 use App\Models\BotSession;
+use App\Services\BotEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Persistent storage for WhatsApp bot session state.
+ *
+ * Replaces the in-memory `sessions[from]` map that previously lived inside the
+ * Node bot. The bot now reads/writes the session over this API so state
+ * survives bot restarts and can be inspected centrally.
+ *
+ * Auth: same Sanctum bearer token (`bot_service` role) used by /api/bot/*.
  */
 class BotSessionController extends Controller
 {
+    /**
+     * Fetch the current session for a WhatsApp id.
+     *
+     * Returns 200 with a fresh default payload (no state) when the row does
+     * not yet exist, so callers can always rely on a session object.
+     */
     public function show(Request $request): JsonResponse
     {
         $waId = $this->resolveWaId($request);
@@ -56,6 +70,17 @@ class BotSessionController extends Controller
         ]);
     }
 
+    /**
+     * Upsert the session for a WhatsApp id.
+     *
+     * Body shape:
+     *   {
+     *     "wa_id": "255712345678",
+     *     "state": "HOME",
+     *     "lang": "en",
+     *     "data": { ... arbitrary cart / restaurant / table fields ... }
+     *   }
+     */
     public function upsert(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -67,15 +92,32 @@ class BotSessionController extends Controller
 
         $waId = BotSession::normalizeWaId($validated['wa_id']);
 
+        $existing = BotSession::query()->where('wa_id', $waId)->first();
+        $previousLang = $existing?->lang;
+        $newLang = $validated['lang'] ?? 'en';
+
         $session = BotSession::query()->updateOrCreate(
             ['wa_id' => $waId],
             [
                 'state' => $validated['state'] ?? 'START',
-                'lang' => $validated['lang'] ?? 'en',
+                'lang' => $newLang,
                 'data' => $validated['data'] ?? [],
                 'last_message_at' => now(),
             ]
         );
+
+        if ($previousLang !== null && $previousLang !== $newLang) {
+            $restaurantId = (int) (($validated['data'] ?? $session->data ?? [])['restaurant_id'] ?? 0);
+
+            if ($restaurantId > 0) {
+                app(BotEventService::class)->record(
+                    event: BotEngagementEvent::ChangeLanguage,
+                    restaurantId: $restaurantId,
+                    waId: $waId,
+                    metadata: ['lang' => $newLang, 'previous_lang' => $previousLang],
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -83,6 +125,9 @@ class BotSessionController extends Controller
         ]);
     }
 
+    /**
+     * Clear a session (e.g. customer types "exit" or the bot completes a flow).
+     */
     public function destroy(Request $request): JsonResponse
     {
         $waId = $this->resolveWaId($request);

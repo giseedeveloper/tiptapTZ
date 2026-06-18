@@ -218,6 +218,8 @@ Route::prefix('bot')->middleware('auth:sanctum')->group(function () {
     Route::get('/session', [App\Http\Controllers\Api\BotSessionController::class, 'show']);
     Route::put('/session', [App\Http\Controllers\Api\BotSessionController::class, 'upsert']);
     Route::delete('/session', [App\Http\Controllers\Api\BotSessionController::class, 'destroy']);
+
+    Route::post('/events', [App\Http\Controllers\Api\BotEventController::class, 'store']);
 });
 
 // WhatsApp Webhook (Meta/WhatsApp Cloud API)

@@ -208,3 +208,34 @@ test('show does not expire sessions without restaurant context', function (): vo
 
     expect(BotSession::query()->where('wa_id', '255712345678')->exists())->toBeTrue();
 });
+
+test('upsert logs change language event when lang changes with restaurant context', function (): void {
+    $restaurant = \App\Models\Restaurant::create([
+        'name' => 'Lang Test Grill',
+        'location' => 'Test',
+        'phone' => '0800000099',
+        'is_active' => true,
+    ]);
+
+    BotSession::create([
+        'wa_id' => '255712345678',
+        'state' => 'HOME',
+        'lang' => 'en',
+        'data' => ['restaurant_id' => $restaurant->id],
+    ]);
+
+    $this->putJson('/api/bot/session', [
+        'wa_id' => '255712345678',
+        'state' => 'HOME',
+        'lang' => 'sw',
+        'data' => ['restaurant_id' => $restaurant->id],
+    ])->assertOk();
+
+    $event = \App\Models\BotEvent::query()
+        ->where('event_type', 'change_language')
+        ->first();
+
+    expect($event)->not->toBeNull();
+    expect($event->metadata['lang'])->toBe('sw');
+    expect($event->restaurant_id)->toBe($restaurant->id);
+});

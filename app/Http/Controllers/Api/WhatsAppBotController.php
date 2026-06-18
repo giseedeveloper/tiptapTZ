@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\BotEngagementEvent;
+use App\Enums\BotFunnelStep;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitBotFeedbackRequest;
 use App\Models\Activity;
@@ -16,9 +18,11 @@ use App\Models\Setting;
 use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
+use App\Services\BotEventService;
 use App\Services\BotFeedbackService;
 use App\Services\FreeWaiterService;
 use App\Services\TableActiveOrderService;
+use App\Support\Money;
 use App\Support\WhatsAppBotBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +31,56 @@ use Illuminate\Support\Facades\Schema;
 
 class WhatsAppBotController extends Controller
 {
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function recordBotEngagement(
+        Request $request,
+        BotEngagementEvent $event,
+        ?int $restaurantId = null,
+        array $metadata = [],
+    ): void {
+        app(BotEventService::class)->record(
+            event: $event,
+            restaurantId: $restaurantId ?? ($request->filled('restaurant_id') ? (int) $request->input('restaurant_id') : null),
+            waId: $request->input('wa_id'),
+            customerPhone: $request->input('customer_phone') ?? $request->input('phone_number'),
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function recordFunnelStep(
+        Request $request,
+        BotFunnelStep $step,
+        int $restaurantId,
+        array $metadata = [],
+    ): void {
+        app(BotEventService::class)->recordFunnelStep(
+            step: $step,
+            restaurantId: $restaurantId,
+            waId: $request->input('wa_id'),
+            customerPhone: $request->input('customer_phone') ?? $request->input('phone_number'),
+            metadata: $metadata,
+        );
+    }
+
+    private function recordPaymentSuccess(Order $order, Payment $payment): void
+    {
+        app(BotEventService::class)->recordFunnelStep(
+            step: BotFunnelStep::PaymentSuccess,
+            restaurantId: (int) $order->restaurant_id,
+            customerPhone: $order->customer_phone,
+            metadata: [
+                'order_id' => $order->id,
+                'payment_id' => $payment->id,
+                'method' => $payment->method,
+            ],
+        );
+    }
+
     /**
      * Search for restaurants (Optimized for WhatsApp Buttons - Max 3 results)
      */
@@ -134,21 +188,24 @@ class WhatsAppBotController extends Controller
                 ], 404);
             }
 
+            $data = [
+                'restaurant_id' => $table->restaurant->id,
+                'restaurant_name' => $table->restaurant->name,
+                'restaurant_location' => $table->restaurant->location,
+                'support_phone' => $table->restaurant->getCustomerSupportPhone(),
+                'table_id' => $table->id,
+                'table_name' => $table->name,
+                'table_tag' => $table->table_tag,
+                'waiter_id' => null,
+                'waiter_name' => null,
+            ];
+            app(BotEventService::class)->recordQrEntryFromRequest($request, 'table', $data);
+
             return response()->json([
                 'success' => true,
                 'type' => 'table',
                 'skip_standalone_welcome' => true,
-                'data' => [
-                    'restaurant_id' => $table->restaurant->id,
-                    'restaurant_name' => $table->restaurant->name,
-                    'restaurant_location' => $table->restaurant->location,
-                    'support_phone' => $table->restaurant->getCustomerSupportPhone(),
-                    'table_id' => $table->id,
-                    'table_name' => $table->name,
-                    'table_tag' => $table->table_tag,
-                    'waiter_id' => null,
-                    'waiter_name' => null,
-                ],
+                'data' => $data,
             ]);
 
         } elseif (preg_match('/^([A-Z0-9]+)-W(\d+)$/i', $tag, $matches)) {
@@ -166,22 +223,25 @@ class WhatsAppBotController extends Controller
                 ], 404);
             }
 
+            $data = [
+                'restaurant_id' => $waiter->restaurant->id,
+                'restaurant_name' => $waiter->restaurant->name,
+                'restaurant_location' => $waiter->restaurant->location,
+                'support_phone' => $waiter->restaurant->getCustomerSupportPhone(),
+                'table_id' => null,
+                'table_name' => null,
+                'table_tag' => null,
+                'waiter_id' => $waiter->id,
+                'waiter_name' => $waiter->name,
+                'waiter_code' => $waiter->waiter_code,
+            ];
+            app(BotEventService::class)->recordQrEntryFromRequest($request, 'waiter', $data);
+
             return response()->json([
                 'success' => true,
                 'type' => 'waiter',
                 'skip_standalone_welcome' => true,
-                'data' => [
-                    'restaurant_id' => $waiter->restaurant->id,
-                    'restaurant_name' => $waiter->restaurant->name,
-                    'restaurant_location' => $waiter->restaurant->location,
-                    'support_phone' => $waiter->restaurant->getCustomerSupportPhone(),
-                    'table_id' => null,
-                    'table_name' => null,
-                    'table_tag' => null,
-                    'waiter_id' => $waiter->id,
-                    'waiter_name' => $waiter->name,
-                    'waiter_code' => $waiter->waiter_code,
-                ],
+                'data' => $data,
             ]);
 
         } else {
@@ -191,16 +251,19 @@ class WhatsAppBotController extends Controller
                 ->first();
 
             if ($restaurant) {
+                $data = [
+                    'restaurant_id' => $restaurant->id,
+                    'restaurant_name' => $restaurant->name,
+                    'restaurant_location' => $restaurant->location,
+                    'support_phone' => $restaurant->getCustomerSupportPhone(),
+                ];
+                app(BotEventService::class)->recordQrEntryFromRequest($request, 'restaurant', $data);
+
                 return response()->json([
                     'success' => true,
                     'type' => 'restaurant',
                     'skip_standalone_welcome' => true,
-                    'data' => [
-                        'restaurant_id' => $restaurant->id,
-                        'restaurant_name' => $restaurant->name,
-                        'restaurant_location' => $restaurant->location,
-                        'support_phone' => $restaurant->getCustomerSupportPhone(),
-                    ],
+                    'data' => $data,
                 ]);
             }
 
@@ -237,15 +300,18 @@ class WhatsAppBotController extends Controller
                 return response()->json(['success' => false, 'message' => 'Restaurant not found'], 404);
             }
 
+            $data = [
+                'restaurant_id' => $restaurant->id,
+                'restaurant_name' => $restaurant->name,
+                'support_phone' => $restaurant->getCustomerSupportPhone(),
+            ];
+            app(BotEventService::class)->recordQrEntryFromRequest($request, 'restaurant', $data);
+
             return response()->json([
                 'success' => true,
                 'type' => 'restaurant',
                 'skip_standalone_welcome' => true,
-                'data' => [
-                    'restaurant_id' => $restaurant->id,
-                    'restaurant_name' => $restaurant->name,
-                    'support_phone' => $restaurant->getCustomerSupportPhone(),
-                ],
+                'data' => $data,
             ]);
         }
 
@@ -258,18 +324,21 @@ class WhatsAppBotController extends Controller
                 return response()->json(['success' => false, 'message' => 'Restaurant not found'], 404);
             }
 
+            $data = [
+                'restaurant_id' => $restaurant->id,
+                'restaurant_name' => $restaurant->name,
+                'support_phone' => $restaurant->getCustomerSupportPhone(),
+                'table_id' => $table ? $table->id : null,
+                'table_name' => $table ? $table->name : null,
+                'table_tag' => $table ? $table->table_tag : null,
+            ];
+            app(BotEventService::class)->recordQrEntryFromRequest($request, 'table', $data);
+
             return response()->json([
                 'success' => true,
                 'type' => 'table',
                 'skip_standalone_welcome' => true,
-                'data' => [
-                    'restaurant_id' => $restaurant->id,
-                    'restaurant_name' => $restaurant->name,
-                    'support_phone' => $restaurant->getCustomerSupportPhone(),
-                    'table_id' => $table ? $table->id : null,
-                    'table_name' => $table ? $table->name : null,
-                    'table_tag' => $table ? $table->table_tag : null,
-                ],
+                'data' => $data,
             ]);
         }
 
@@ -282,18 +351,21 @@ class WhatsAppBotController extends Controller
                 return response()->json(['success' => false, 'message' => 'Restaurant not found'], 404);
             }
 
+            $data = [
+                'restaurant_id' => $restaurant->id,
+                'restaurant_name' => $restaurant->name,
+                'support_phone' => $restaurant->getCustomerSupportPhone(),
+                'waiter_id' => $waiter ? $waiter->id : null,
+                'waiter_name' => $waiter ? $waiter->name : null,
+                'waiter_code' => $waiter ? $waiter->waiter_code : null,
+            ];
+            app(BotEventService::class)->recordQrEntryFromRequest($request, 'waiter', $data);
+
             return response()->json([
                 'success' => true,
                 'type' => 'waiter',
                 'skip_standalone_welcome' => true,
-                'data' => [
-                    'restaurant_id' => $restaurant->id,
-                    'restaurant_name' => $restaurant->name,
-                    'support_phone' => $restaurant->getCustomerSupportPhone(),
-                    'waiter_id' => $waiter ? $waiter->id : null,
-                    'waiter_name' => $waiter ? $waiter->name : null,
-                    'waiter_code' => $waiter ? $waiter->waiter_code : null,
-                ],
+                'data' => $data,
             ]);
         }
 
@@ -309,17 +381,19 @@ class WhatsAppBotController extends Controller
                 return response()->json(['success' => false, 'message' => 'Restaurant not found'], 404);
             }
 
-            // Treat second number as table_number (old format)
+            $data = [
+                'restaurant_id' => $restaurant->id,
+                'restaurant_name' => $restaurant->name,
+                'support_phone' => $restaurant->getCustomerSupportPhone(),
+                'table_number' => $matches[2],
+            ];
+            app(BotEventService::class)->recordQrEntryFromRequest($request, 'table', $data);
+
             return response()->json([
                 'success' => true,
                 'type' => 'table',
                 'skip_standalone_welcome' => true,
-                'data' => [
-                    'restaurant_id' => $restaurant->id,
-                    'restaurant_name' => $restaurant->name,
-                    'support_phone' => $restaurant->getCustomerSupportPhone(),
-                    'table_number' => $matches[2],
-                ],
+                'data' => $data,
             ]);
         }
 
@@ -477,6 +551,19 @@ class WhatsAppBotController extends Controller
                     ],
                 ]);
 
+                $this->recordFunnelStep(
+                    $request,
+                    BotFunnelStep::AddToCart,
+                    (int) $request->restaurant_id,
+                    ['order_id' => $order->id, 'item_count' => count($orderItems)],
+                );
+                $this->recordFunnelStep(
+                    $request,
+                    BotFunnelStep::ConfirmOrder,
+                    (int) $request->restaurant_id,
+                    ['order_id' => $order->id],
+                );
+
                 $order->load('items');
 
                 return response()->json([
@@ -548,7 +635,7 @@ class WhatsAppBotController extends Controller
 
                     // Log successful payment
                     Activity::create([
-                        'description' => 'Order #'.$order->id.' payment completed: Tsh '.number_format($order->total_amount),
+                        'description' => 'Order #'.$order->id.' payment completed: '.Money::format($order->total_amount),
                         'type' => 'order_payment_success',
                         'properties' => [
                             'order_id' => $order->id,
@@ -556,6 +643,8 @@ class WhatsAppBotController extends Controller
                             'amount' => $order->total_amount,
                         ],
                     ]);
+
+                    $this->recordPaymentSuccess($order, $payment);
 
                     // Refresh to get updated status
                     $payment->refresh();
@@ -608,6 +697,13 @@ class WhatsAppBotController extends Controller
 
         Feedback::withoutGlobalScopes()->create($payload);
 
+        $this->recordBotEngagement(
+            $request,
+            BotEngagementEvent::RateService,
+            (int) $payload['restaurant_id'],
+            ['rating' => $payload['rating'], 'type' => $payload['type'] ?? null],
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Feedback submitted successfully',
@@ -636,6 +732,13 @@ class WhatsAppBotController extends Controller
                 'waiter_id' => $waiterId,
                 'amount' => $request->amount,
             ]);
+
+            $this->recordBotEngagement(
+                $request,
+                BotEngagementEvent::GiveTips,
+                (int) $request->restaurant_id,
+                ['amount' => (float) $request->amount, 'order_id' => (int) $request->order_id],
+            );
 
             return response()->json([
                 'success' => true,
@@ -678,6 +781,14 @@ class WhatsAppBotController extends Controller
             ]);
             $order->update(['status' => 'paid']);
 
+            $this->recordBotEngagement(
+                $request,
+                BotEngagementEvent::PayBill,
+                (int) $order->restaurant_id,
+                ['order_id' => $order->id, 'method' => 'ussd', 'demo' => true],
+            );
+            $this->recordPaymentSuccess($order, $payment);
+
             return response()->json([
                 'success' => true,
                 'payment_id' => $payment->id,
@@ -713,6 +824,13 @@ class WhatsAppBotController extends Controller
                 'transaction_reference' => $transactionId,
             ]);
 
+            $this->recordBotEngagement(
+                $request,
+                BotEngagementEvent::PayBill,
+                (int) $order->restaurant_id,
+                ['order_id' => $order->id, 'method' => 'ussd', 'payment_id' => $payment->id],
+            );
+
             return response()->json([
                 'success' => true,
                 'payment_id' => $payment->id,
@@ -722,7 +840,7 @@ class WhatsAppBotController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => $result['message'] ?? 'Failed to initiate payment with Selcom',
+            'message' => $result['message'] ?? 'Failed to initiate payment with '.config('tiptap.payment_gateway'),
             'debug' => $result,
         ], 400);
     }
@@ -788,7 +906,7 @@ class WhatsAppBotController extends Controller
             }
 
             Activity::create([
-                'description' => 'Demo: Quick payment completed: Tsh '.number_format($request->amount),
+                'description' => 'Demo: Quick payment completed: '.Money::format($request->amount),
                 'type' => 'payment_success',
                 'properties' => [
                     'payment_id' => $payment->id,
@@ -796,6 +914,13 @@ class WhatsAppBotController extends Controller
                     'phone' => $request->phone_number,
                 ],
             ]);
+
+            $this->recordBotEngagement(
+                $request,
+                BotEngagementEvent::PayBill,
+                (int) $restaurant->id,
+                ['payment_id' => $payment->id, 'method' => 'ussd', 'quick' => true, 'demo' => true],
+            );
 
             return response()->json([
                 'success' => true,
@@ -839,7 +964,7 @@ class WhatsAppBotController extends Controller
             $payment = Payment::create($paymentData);
 
             Activity::create([
-                'description' => 'Quick payment initiated: Tsh '.number_format($request->amount)." from {$request->phone_number}",
+                'description' => 'Quick payment initiated: '.Money::format($request->amount)." from {$request->phone_number}",
                 'type' => 'quick_payment',
                 'properties' => [
                     'payment_id' => $payment->id,
@@ -847,6 +972,13 @@ class WhatsAppBotController extends Controller
                     'description' => $request->description,
                 ],
             ]);
+
+            $this->recordBotEngagement(
+                $request,
+                BotEngagementEvent::PayBill,
+                (int) $restaurant->id,
+                ['payment_id' => $payment->id, 'method' => 'ussd', 'quick' => true],
+            );
 
             return response()->json([
                 'success' => true,
@@ -858,7 +990,7 @@ class WhatsAppBotController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => $result['message'] ?? 'Failed to initiate payment with Selcom',
+            'message' => $result['message'] ?? 'Failed to initiate payment with '.config('tiptap.payment_gateway'),
             'debug' => $result,
         ], 400);
     }
@@ -933,7 +1065,7 @@ class WhatsAppBotController extends Controller
 
                     // Log successful payment
                     Activity::create([
-                        'description' => 'Quick payment completed: Tsh '.number_format($payment->amount),
+                        'description' => 'Quick payment completed: '.Money::format($payment->amount),
                         'type' => 'payment_success',
                         'properties' => [
                             'payment_id' => $payment->id,
@@ -1092,6 +1224,19 @@ class WhatsAppBotController extends Controller
             $message = $request->type === 'request_bill'
                 ? "Bill request sent to {$waiterName}"
                 : "{$waiterName} has been called";
+        }
+
+        if ($request->type === 'call_waiter') {
+            $this->recordBotEngagement(
+                $request,
+                BotEngagementEvent::CallWaiter,
+                (int) $request->restaurant_id,
+                [
+                    'request_id' => $customerRequest->id,
+                    'table_number' => $tableNumber,
+                    'waiter_id' => $waiterId,
+                ],
+            );
         }
 
         return response()->json([
@@ -1370,6 +1515,19 @@ class WhatsAppBotController extends Controller
                         ],
                     ]);
 
+                    $this->recordFunnelStep(
+                        $request,
+                        BotFunnelStep::AddToCart,
+                        (int) $request->restaurant_id,
+                        ['order_id' => $order->id, 'item_count' => 1, 'unmatched' => true],
+                    );
+                    $this->recordFunnelStep(
+                        $request,
+                        BotFunnelStep::ConfirmOrder,
+                        (int) $request->restaurant_id,
+                        ['order_id' => $order->id, 'unmatched' => true],
+                    );
+
                     $order->load('items');
 
                     return response()->json([
@@ -1420,6 +1578,19 @@ class WhatsAppBotController extends Controller
                     ],
                 ]);
 
+                $this->recordFunnelStep(
+                    $request,
+                    BotFunnelStep::AddToCart,
+                    (int) $request->restaurant_id,
+                    ['order_id' => $order->id, 'item_count' => count($matchedItems)],
+                );
+                $this->recordFunnelStep(
+                    $request,
+                    BotFunnelStep::ConfirmOrder,
+                    (int) $request->restaurant_id,
+                    ['order_id' => $order->id],
+                );
+
                 $order->load('items');
 
                 return response()->json([
@@ -1436,14 +1607,6 @@ class WhatsAppBotController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-    }
-
-    public function branding(): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'data' => WhatsAppBotBranding::resolve(),
-        ]);
     }
 
     /**
@@ -1466,5 +1629,16 @@ class WhatsAppBotController extends Controller
                 'total' => (float) $item->total,
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * Branding for the global "hi" welcome card (logo image + title + body).
+     */
+    public function branding(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => WhatsAppBotBranding::resolve(),
+        ]);
     }
 }

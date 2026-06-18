@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Admin\TiptapAnalysisController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BillImageController;
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
@@ -83,6 +84,24 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [AdminDashboard::class, 'getStats'])->name('dashboard.stats');
     Route::get('/dashboard/analytics', [AdminDashboard::class, 'getAnalytics'])->name('dashboard.analytics');
+
+    Route::get('/tiptap-analysis', [TiptapAnalysisController::class, 'index'])->name('tiptap-analysis.index');
+    Route::get('/tiptap-analysis/platform', [TiptapAnalysisController::class, 'platform'])->name('tiptap-analysis.platform');
+    Route::get('/tiptap-analysis/whatsapp', [TiptapAnalysisController::class, 'whatsapp'])->name('tiptap-analysis.whatsapp');
+    Route::get('/tiptap-analysis/qr-entry', [TiptapAnalysisController::class, 'qrEntry'])->name('tiptap-analysis.qr-entry');
+    Route::get('/tiptap-analysis/journey', [TiptapAnalysisController::class, 'journey'])->name('tiptap-analysis.journey');
+    Route::get('/tiptap-analysis/feedback', [TiptapAnalysisController::class, 'feedback'])->name('tiptap-analysis.feedback');
+    Route::get('/tiptap-analysis/tips-payments', [TiptapAnalysisController::class, 'tipsPayments'])->name('tiptap-analysis.tips-payments');
+    Route::get('/tiptap-analysis/language', [TiptapAnalysisController::class, 'language'])->name('tiptap-analysis.language');
+    Route::get('/tiptap-analysis/venues', [TiptapAnalysisController::class, 'venues'])->name('tiptap-analysis.venues');
+
+    Route::get('/tiptap-analysis/snapshot', [TiptapAnalysisController::class, 'snapshot'])->name('tiptap-analysis.snapshot');
+    Route::get('/tiptap-analysis/whatsapp-engagement', [TiptapAnalysisController::class, 'whatsappEngagement'])->name('tiptap-analysis.whatsapp-engagement');
+    Route::get('/tiptap-analysis/qr-entry-points', [TiptapAnalysisController::class, 'qrEntryPoints'])->name('tiptap-analysis.qr-entry-points');
+    Route::get('/tiptap-analysis/customer-journey', [TiptapAnalysisController::class, 'customerJourney'])->name('tiptap-analysis.customer-journey');
+    Route::get('/tiptap-analysis/feedback-overview', [TiptapAnalysisController::class, 'feedbackOverview'])->name('tiptap-analysis.feedback-overview');
+    Route::get('/tiptap-analysis/tips-and-payments', [TiptapAnalysisController::class, 'tipsAndPayments'])->name('tiptap-analysis.tips-and-payments');
+    Route::get('/tiptap-analysis/language-and-behavior', [TiptapAnalysisController::class, 'languageAndBehavior'])->name('tiptap-analysis.language-and-behavior');
 
     Route::get('search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])
         ->middleware('throttle:admin-search')
