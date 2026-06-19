@@ -64,6 +64,28 @@
     </div>
 
     <div class="space-y-2">
+        <label class="text-[10px] font-bold uppercase text-white/40">Waiter limit (blank = unlimited)</label>
+        <input type="number" min="1" name="waiter_limit" value="{{ old('waiter_limit', $package?->waiter_limit) }}" placeholder="Unlimited"
+               class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-fin-primary/50">
+        @error('waiter_limit')<p class="text-rose-400 text-xs mt-1">{{ $message }}</p>@enderror
+    </div>
+
+    <div class="space-y-2 lg:col-span-2">
+        <label class="text-[10px] font-bold uppercase text-white/40">Capabilities (enforced features)</label>
+        <p class="text-[11px] text-white/35 -mt-1">Only checked capabilities are unlocked for restaurants on this plan.</p>
+        @php $selectedCaps = old('capabilities', $package?->capabilities ?? []); @endphp
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            @foreach (\App\Models\SubscriptionPackage::CAPABILITIES as $capKey => $capLabel)
+                <label class="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10 cursor-pointer">
+                    <input type="checkbox" name="capabilities[]" value="{{ $capKey }}" {{ in_array($capKey, $selectedCaps, true) ? 'checked' : '' }} class="rounded border-white/20 text-violet-600 focus:ring-violet-500">
+                    <span class="text-sm text-white">{{ $capLabel }}</span>
+                </label>
+            @endforeach
+        </div>
+        @error('capabilities')<p class="text-rose-400 text-xs mt-1">{{ $message }}</p>@enderror
+    </div>
+
+    <div class="space-y-2">
         <label class="text-[10px] font-bold uppercase text-white/40">Sort order</label>
         <input type="number" min="0" name="sort_order" value="{{ old('sort_order', $package?->sort_order ?? 0) }}"
                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-fin-primary/50">

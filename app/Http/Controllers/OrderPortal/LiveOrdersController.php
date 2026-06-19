@@ -325,10 +325,10 @@ class LiveOrdersController extends Controller
         $order = $this->orderQuery()->findOrFail($request->order_id);
         $restaurant = $this->restaurant();
 
-        if (! $restaurant->hasSelcomConfigured()) {
+        if (! $restaurant->canAcceptMobilePayments()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'System payment gateway not configured. Contact platform admin.',
+                'message' => 'Mobile money payments are not available for this venue right now.',
             ], 400);
         }
 

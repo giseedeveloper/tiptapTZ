@@ -13,6 +13,23 @@ class SubscriptionPackage extends Model
     /** @use HasFactory<\Database\Factories\SubscriptionPackageFactory> */
     use HasFactory;
 
+    public const CAP_KITCHEN = 'kitchen_display';
+
+    public const CAP_PAYMENTS = 'mobile_payments';
+
+    public const CAP_ANALYTICS = 'advanced_analytics';
+
+    /**
+     * Capability keys that can be gated, with human labels for the admin UI.
+     *
+     * @var array<string, string>
+     */
+    public const CAPABILITIES = [
+        self::CAP_KITCHEN => 'Kitchen display',
+        self::CAP_PAYMENTS => 'Mobile money payments',
+        self::CAP_ANALYTICS => 'Advanced analytics',
+    ];
+
     protected $fillable = [
         'name',
         'slug',
@@ -23,7 +40,9 @@ class SubscriptionPackage extends Model
         'billing_period',
         'trial_days',
         'table_limit',
+        'waiter_limit',
         'features',
+        'capabilities',
         'is_featured',
         'is_active',
         'sort_order',
@@ -38,11 +57,25 @@ class SubscriptionPackage extends Model
             'price' => 'decimal:2',
             'trial_days' => 'integer',
             'table_limit' => 'integer',
+            'waiter_limit' => 'integer',
             'features' => 'array',
+            'capabilities' => 'array',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    public function hasCapability(string $capability): bool
+    {
+        $caps = $this->capabilities;
+
+        // null = never configured → treat as full access (avoid accidental lockout).
+        if ($caps === null) {
+            return true;
+        }
+
+        return in_array($capability, $caps, true);
     }
 
     protected static function booted(): void

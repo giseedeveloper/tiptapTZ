@@ -83,7 +83,9 @@
         </div>
     </div>
 
-    @include('manager.partials.dashboard-analytics', ['analytics' => $analytics])
+    @if(auth()->user()->restaurant?->planAllows(\App\Models\SubscriptionPackage::CAP_ANALYTICS))
+        @include('manager.partials.dashboard-analytics', ['analytics' => $analytics])
+    @endif
 
     <!-- Smart Live Order Tracking -->
     <div class="mb-10">

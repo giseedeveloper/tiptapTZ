@@ -28,6 +28,11 @@ class TableController extends Controller
 
         $restaurant = Auth::user()->restaurant;
 
+        $currentTables = Table::where('restaurant_id', $restaurant->id)->count();
+        if (! $restaurant->withinLimit('tables', $currentTables)) {
+            return back()->with('error', 'You have reached your plan\'s table limit ('.$restaurant->planLimit('tables').'). Upgrade your plan to add more tables.');
+        }
+
         $table = Table::create([
             'restaurant_id' => $restaurant->id,
             'name' => $request->name,

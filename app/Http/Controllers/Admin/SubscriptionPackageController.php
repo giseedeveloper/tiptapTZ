@@ -107,6 +107,10 @@ class SubscriptionPackageController extends Controller
             ->filter()
             ->values()
             ->all();
+        $validated['capabilities'] = collect($validated['capabilities'] ?? [])
+            ->filter(fn ($c) => array_key_exists($c, \App\Models\SubscriptionPackage::CAPABILITIES))
+            ->values()
+            ->all();
         $validated['trial_days'] = $validated['trial_days'] ?? 0;
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
 

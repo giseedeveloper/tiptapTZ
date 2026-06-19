@@ -30,10 +30,10 @@ class PaymentController extends Controller
         $order = Order::with('restaurant')->find($validated['order_id']);
         $restaurant = $order->restaurant;
 
-        if (! $restaurant || ! $restaurant->hasSelcomConfigured()) {
+        if (! $restaurant || ! $restaurant->canAcceptMobilePayments()) {
             return response()->json([
                 'success' => false,
-                'message' => 'System payment gateway not configured. Contact platform admin.',
+                'message' => 'Mobile money payments are not available for this venue right now.',
             ], 400);
         }
 

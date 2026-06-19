@@ -796,10 +796,10 @@ class WhatsAppBotController extends Controller
             ]);
         }
 
-        if (! $restaurant || ! $restaurant->hasSelcomConfigured()) {
+        if (! $restaurant || ! $restaurant->canAcceptMobilePayments()) {
             return response()->json([
                 'success' => false,
-                'message' => 'System payment gateway not configured. Contact platform admin.',
+                'message' => 'Mobile money payments are not available for this venue right now.',
             ], 400);
         }
 
@@ -930,10 +930,10 @@ class WhatsAppBotController extends Controller
             ]);
         }
 
-        if (! $restaurant->hasSelcomConfigured()) {
+        if (! $restaurant->canAcceptMobilePayments()) {
             return response()->json([
                 'success' => false,
-                'message' => 'System payment gateway not configured. Contact platform admin.',
+                'message' => 'Mobile money payments are not available for this venue right now.',
             ], 400);
         }
 

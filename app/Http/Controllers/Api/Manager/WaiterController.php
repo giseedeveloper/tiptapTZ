@@ -119,6 +119,14 @@ class WaiterController extends Controller
             ], 422);
         }
 
+        $currentWaiters = \App\Models\User::role('waiter')->where('restaurant_id', $restaurant->id)->count();
+        if (! $restaurant->withinLimit('waiters', $currentWaiters)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have reached your plan\'s waiter limit ('.$restaurant->planLimit('waiters').'). Upgrade your plan to link more waiters.',
+            ], 422);
+        }
+
         $waiter->restaurant_id = $restaurant->id;
         $waiter->waiter_code = $restaurant->generateWaiterCode();
         $waiter->employment_type = $request->validated('employment_type');

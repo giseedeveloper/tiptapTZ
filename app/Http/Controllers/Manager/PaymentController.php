@@ -164,10 +164,12 @@ class PaymentController extends Controller
         $order = Order::findOrFail($request->order_id);
         $restaurant = Auth::user()->restaurant;
 
-        if (! $restaurant->hasSelcomConfigured()) {
+        if (! $restaurant->canAcceptMobilePayments()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'System payment gateway not configured. Ask platform admin to set up Payment Integration.',
+                'message' => $restaurant->planAllows(\App\Models\SubscriptionPackage::CAP_PAYMENTS)
+                    ? 'System payment gateway not configured. Ask platform admin to set up Payment Integration.'
+                    : 'Mobile money payments are not included in your current plan. Upgrade to accept payments.',
             ], 400);
         }
 

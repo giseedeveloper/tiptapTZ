@@ -228,9 +228,65 @@ class Restaurant extends Model
         return filled($this->payout_method) && filled($this->payout_details);
     }
 
+    /**
+     * Whether this restaurant may collect mobile-money payments: the platform
+     * gateway must be configured AND the plan must include the capability.
+     */
+    public function canAcceptMobilePayments(): bool
+    {
+        return $this->hasSelcomConfigured() && $this->planAllows(SubscriptionPackage::CAP_PAYMENTS);
+    }
+
     public function subscriptionPackage(): BelongsTo
     {
         return $this->belongsTo(SubscriptionPackage::class);
+    }
+
+    /**
+     * Whether the restaurant's plan grants a capability. Restaurants without an
+     * assigned plan (admin-created / internal) get full access.
+     */
+    public function planAllows(string $capability): bool
+    {
+        $package = $this->subscriptionPackage;
+
+        if (! $package) {
+            return true;
+        }
+
+        return $package->hasCapability($capability);
+    }
+
+    /**
+     * Numeric plan limit for a resource key ('tables' | 'waiters'). null = unlimited.
+     */
+    public function planLimit(string $key): ?int
+    {
+        $package = $this->subscriptionPackage;
+
+        if (! $package) {
+            return null;
+        }
+
+        return match ($key) {
+            'tables' => $package->table_limit,
+            'waiters' => $package->waiter_limit,
+            default => null,
+        };
+    }
+
+    /**
+     * Whether adding one more of $key stays within the plan limit.
+     */
+    public function withinLimit(string $key, int $currentCount): bool
+    {
+        $limit = $this->planLimit($key);
+
+        if ($limit === null) {
+            return true;
+        }
+
+        return $currentCount < $limit;
     }
 
     public function approvedBy(): BelongsTo
