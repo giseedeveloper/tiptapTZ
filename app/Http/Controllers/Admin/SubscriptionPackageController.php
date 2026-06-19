@@ -105,6 +105,7 @@ class SubscriptionPackageController extends Controller
         $validated['features'] = collect($validated['features'] ?? [])
             ->map(fn ($f) => is_string($f) ? trim($f) : '')
             ->filter()
+            ->unique()
             ->values()
             ->all();
         $validated['capabilities'] = collect($validated['capabilities'] ?? [])

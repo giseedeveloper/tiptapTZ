@@ -98,19 +98,38 @@
         @error('description')<p class="text-rose-400 text-xs mt-1">{{ $message }}</p>@enderror
     </div>
 
+    @php
+        $catalog = \App\Models\SubscriptionPackage::FEATURE_CATALOG;
+        $selectedFeatures = array_values(array_filter($features, fn ($f) => is_string($f) && trim($f) !== ''));
+        $customFeatures = array_values(array_diff($selectedFeatures, $catalog));
+        if (empty($customFeatures)) { $customFeatures = ['']; }
+    @endphp
     <div class="space-y-2 lg:col-span-2">
-        <label class="text-[10px] font-bold uppercase text-white/40">Features</label>
-        <div id="plan-features-list" class="space-y-2">
-            @foreach (array_values($features) as $i => $feature)
+        <label class="text-[10px] font-bold uppercase text-white/40">Features (tick what's included in this plan)</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            @foreach ($catalog as $catalogFeature)
+                <label class="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10 cursor-pointer">
+                    <input type="checkbox" name="features[]" value="{{ $catalogFeature }}" {{ in_array($catalogFeature, $selectedFeatures, true) ? 'checked' : '' }} class="rounded border-white/20 text-violet-600 focus:ring-violet-500">
+                    <span class="text-sm text-white">{{ $catalogFeature }}</span>
+                </label>
+            @endforeach
+        </div>
+        @error('features')<p class="text-rose-400 text-xs mt-1">{{ $message }}</p>@enderror
+    </div>
+
+    <div class="space-y-2 lg:col-span-2">
+        <label class="text-[10px] font-bold uppercase text-white/40">Custom features (optional)</label>
+        <p class="text-[11px] text-white/35 -mt-1">Add anything not in the list above.</p>
+        <div id="plan-features-list" class="space-y-2 mt-1">
+            @foreach ($customFeatures as $feature)
                 <div class="flex gap-2 plan-feature-row">
-                    <input type="text" name="features[]" value="{{ $feature }}" placeholder="e.g. Unlimited tables"
+                    <input type="text" name="features[]" value="{{ $feature }}" placeholder="e.g. Loyalty rewards"
                            class="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-fin-primary/50">
                     <button type="button" class="plan-feature-remove px-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition shrink-0">&times;</button>
                 </div>
             @endforeach
         </div>
-        <button type="button" id="plan-feature-add" class="mt-1 text-xs font-bold text-fin-primary hover:text-fin-lavender transition">+ Add feature</button>
-        @error('features')<p class="text-rose-400 text-xs mt-1">{{ $message }}</p>@enderror
+        <button type="button" id="plan-feature-add" class="mt-1 text-xs font-bold text-fin-primary hover:text-fin-lavender transition">+ Add custom feature</button>
     </div>
 
     <label class="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10 cursor-pointer">
@@ -132,7 +151,7 @@
 
     const rowHtml = () =>
         '<div class="flex gap-2 plan-feature-row">' +
-        '<input type="text" name="features[]" placeholder="e.g. Unlimited tables" class="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-fin-primary/50">' +
+        '<input type="text" name="features[]" placeholder="e.g. Loyalty rewards" class="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-fin-primary/50">' +
         '<button type="button" class="plan-feature-remove px-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition shrink-0">&times;</button>' +
         '</div>';
 

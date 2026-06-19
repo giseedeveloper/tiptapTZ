@@ -30,6 +30,30 @@ class SubscriptionPackage extends Model
         self::CAP_ANALYTICS => 'Advanced analytics',
     ];
 
+    /**
+     * Suggested marketing features the admin can tick when building a plan.
+     * Admins may still add custom feature lines on top of these.
+     *
+     * @var list<string>
+     */
+    public const FEATURE_CATALOG = [
+        'QR ordering',
+        'WhatsApp bot (TipTap Rafiki)',
+        'Mobile money payments',
+        'Kitchen display',
+        'Unlimited tables',
+        'Unlimited waiters',
+        'Basic analytics',
+        'Advanced analytics',
+        'Email support',
+        'Priority support',
+        '24/7 support',
+        'Multi-branch',
+        'API access',
+        'Dedicated manager',
+        'Custom integrations',
+    ];
+
     protected $fillable = [
         'name',
         'slug',

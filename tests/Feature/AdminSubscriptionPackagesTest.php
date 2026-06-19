@@ -26,6 +26,17 @@ test('super admin can view the plans index', function () {
         ->assertSee('Business');
 });
 
+test('super admin can view the edit plan page with feature checkboxes', function () {
+    $package = SubscriptionPackage::factory()->create(['name' => 'Business', 'features' => ['Kitchen display', 'Loyalty rewards']]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.plans.edit', $package))
+        ->assertOk()
+        ->assertSee('QR ordering')          // catalog checkbox rendered
+        ->assertSee('Kitchen display')      // catalog feature (ticked)
+        ->assertSee('Loyalty rewards');     // custom feature preserved
+});
+
 test('non admin cannot view the plans index', function () {
     $this->actingAs($this->manager)
         ->get(route('admin.plans.index'))
