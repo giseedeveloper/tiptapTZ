@@ -342,37 +342,32 @@
                 <h2 class="text-3xl lg:text-4xl font-light text-fin-ink mt-4">Simple plans, clear value</h2>
             </div>
             <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto items-stretch">
-                <div class="fin-card rounded-3xl p-8 flex flex-col reveal">
-                    <h3 class="font-semibold text-fin-ink text-lg">Starter</h3>
-                    <p class="mt-3"><span class="text-4xl font-light text-fin-ink tracking-tight">Free</span><span class="text-sm text-fin-muted ml-1">/ 14 days</span></p>
-                    <ul class="mt-8 space-y-3.5 text-sm text-fin-muted flex-1">
-                        @foreach(['Up to 10 tables', 'QR ordering', 'Basic analytics'] as $f)
-                            <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full bg-fin-mist flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 text-fin-primary"></i></span>{{ $f }}</li>
-                        @endforeach
-                    </ul>
-                    <a href="{{ route('restaurant.register') }}" class="mt-8 block text-center rounded-xl border-2 border-fin-ink/8 py-3.5 text-sm font-bold text-fin-ink hover:bg-fin-surface transition-colors">Start trial</a>
-                </div>
-                <div class="pricing-featured rounded-3xl p-8 flex flex-col relative reveal scale-[1.02]">
-                    <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-fin-primary to-fin-primary-dark text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">Most popular</span>
-                    <h3 class="font-semibold text-fin-ink text-lg">Business</h3>
-                    <p class="mt-3"><span class="text-4xl font-light text-hero-accent tracking-tight">50k</span><span class="text-sm text-fin-muted ml-1">TZS / month</span></p>
-                    <ul class="mt-8 space-y-3.5 text-sm text-fin-ink flex-1">
-                        @foreach(['Unlimited tables', 'TipTap Rafiki', 'Mobile money payments', 'Kitchen display'] as $f)
-                            <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full bg-fin-primary/15 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 text-fin-primary-dark"></i></span>{{ $f }}</li>
-                        @endforeach
-                    </ul>
-                    <a href="{{ route('restaurant.register') }}" class="btn-glow mt-8 block text-center rounded-xl py-3.5 text-sm font-bold text-white">Get Business</a>
-                </div>
-                <div class="fin-card rounded-3xl p-8 flex flex-col reveal">
-                    <h3 class="font-semibold text-fin-ink text-lg">Enterprise</h3>
-                    <p class="mt-3"><span class="text-4xl font-light text-fin-ink tracking-tight">Custom</span></p>
-                    <ul class="mt-8 space-y-3.5 text-sm text-fin-muted flex-1">
-                        @foreach(['Multi-branch', 'API access', 'Dedicated support'] as $f)
-                            <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full bg-fin-mist flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 text-fin-primary"></i></span>{{ $f }}</li>
-                        @endforeach
-                    </ul>
-                    <a href="{{ $landing['whatsapp_url'] }}" class="mt-8 block text-center rounded-xl border-2 border-fin-ink/8 py-3.5 text-sm font-bold text-fin-ink hover:bg-fin-surface transition-colors">Contact sales</a>
-                </div>
+                @forelse($plans as $plan)
+                    @php($isFeatured = $plan->is_featured)
+                    <div class="{{ $isFeatured ? 'pricing-featured scale-[1.02]' : 'fin-card' }} rounded-3xl p-8 flex flex-col relative reveal">
+                        @if($isFeatured)
+                            <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-fin-primary to-fin-primary-dark text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">Most popular</span>
+                        @endif
+                        <h3 class="font-semibold text-fin-ink text-lg">{{ $plan->name }}</h3>
+                        <p class="mt-3"><span class="text-4xl font-light {{ $isFeatured ? 'text-hero-accent' : 'text-fin-ink' }} tracking-tight">{{ $plan->priceLabel() }}</span><span class="text-sm text-fin-muted ml-1">{{ $plan->periodLabel() }}</span></p>
+                        <ul class="mt-8 space-y-3.5 text-sm {{ $isFeatured ? 'text-fin-ink' : 'text-fin-muted' }} flex-1">
+                            @foreach($plan->features ?? [] as $feature)
+                                <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full {{ $isFeatured ? 'bg-fin-primary/15' : 'bg-fin-mist' }} flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 {{ $isFeatured ? 'text-fin-primary-dark' : 'text-fin-primary' }}"></i></span>{{ $feature }}</li>
+                            @endforeach
+                        </ul>
+                        @if($isFeatured)
+                            <a href="{{ route('restaurant.register') }}" class="btn-glow mt-8 block text-center rounded-xl py-3.5 text-sm font-bold text-white">Get {{ $plan->name }}</a>
+                        @else
+                            <a href="{{ route('restaurant.register') }}" class="mt-8 block text-center rounded-xl border-2 border-fin-ink/8 py-3.5 text-sm font-bold text-fin-ink hover:bg-fin-surface transition-colors">{{ $plan->isFree() ? 'Start trial' : 'Get '.$plan->name }}</a>
+                        @endif
+                    </div>
+                @empty
+                    <div class="fin-card rounded-3xl p-8 flex flex-col reveal md:col-span-3 text-center">
+                        <h3 class="font-semibold text-fin-ink text-lg">Plans coming soon</h3>
+                        <p class="mt-3 text-sm text-fin-muted">Start your free trial today and pick a plan once you're set up.</p>
+                        <a href="{{ route('restaurant.register') }}" class="btn-glow mt-6 inline-block mx-auto text-center rounded-xl px-8 py-3.5 text-sm font-bold text-white">Start free trial</a>
+                    </div>
+                @endforelse
             </div>
         </div>
     </section>

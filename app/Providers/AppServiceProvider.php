@@ -54,5 +54,9 @@ class AppServiceProvider extends ServiceProvider
         View::composer(['welcome', 'partials.landing-contact', 'partials.social-links'], function ($view): void {
             $view->with('landing', LandingPageContent::viewData());
         });
+
+        View::composer('welcome', function ($view): void {
+            $view->with('plans', \App\Models\SubscriptionPackage::query()->active()->ordered()->get());
+        });
     }
 }
