@@ -45,13 +45,6 @@ class SubscriptionPackage extends Model
         'Unlimited waiters',
         'Basic analytics',
         'Advanced analytics',
-        'Email support',
-        'Priority support',
-        '24/7 support',
-        'Multi-branch',
-        'API access',
-        'Dedicated manager',
-        'Custom integrations',
     ];
 
     protected $fillable = [
