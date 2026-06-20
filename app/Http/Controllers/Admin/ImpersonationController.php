@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdminActivityLog;
 use App\Models\User;
+use App\Support\AdminPortalAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,7 +14,7 @@ class ImpersonationController extends Controller
     public function start(User $user): RedirectResponse
     {
         $admin = Auth::user();
-        abort_unless($admin && $admin->hasRole('super_admin'), 403);
+        abort_unless($admin && AdminPortalAccess::can($admin, 'admin.panel.impersonate'), 403);
         abort_unless($user->hasRole('manager'), 403, 'Only managers can be impersonated.');
         abort_if($user->hasRole('super_admin'), 403);
         abort_if(session()->has('impersonator_id'), 403, 'Stop the current impersonation session first.');
@@ -41,7 +42,7 @@ class ImpersonationController extends Controller
         abort_unless($impersonatorId, 403);
 
         $admin = User::query()->findOrFail($impersonatorId);
-        abort_unless($admin->hasRole('super_admin'), 403);
+        abort_unless(AdminPortalAccess::isPortalUser($admin), 403);
 
         $impersonated = Auth::user();
 

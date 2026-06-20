@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\AdminPortalAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -9,7 +10,7 @@ class UpdateAdminSettingsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('super_admin') ?? false;
+        return AdminPortalAccess::can($this->user(), 'admin.technical.settings');
     }
 
     /**

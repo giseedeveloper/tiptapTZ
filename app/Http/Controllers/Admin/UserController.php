@@ -3,82 +3,159 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreAdminUserRequest;
+use App\Http\Requests\Admin\UpdateAdminUserRequest;
+use App\Models\AdminActivityLog;
+use App\Models\User;
+use App\Support\AdminPortalAccess;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = \App\Models\User::with('restaurant')->latest();
+        abort_unless(AdminPortalAccess::can($request->user(), 'admin.manage_users'), 403);
+
+        $query = User::with('restaurant')->latest();
 
         if ($request->filled('role')) {
             $query->role($request->role);
         }
         if ($request->filled('q')) {
             $q = $request->q;
-            $query->where(function ($qry) use ($q) {
+            $query->where(function ($qry) use ($q): void {
                 $qry->where('name', 'like', '%'.$q.'%')
                     ->orWhere('email', 'like', '%'.$q.'%');
             });
         }
 
         $users = $query->paginate(15)->withQueryString();
-        $roles = \Spatie\Permission\Models\Role::whereIn('name', ['super_admin', 'manager', 'waiter'])->orderBy('name')->get(['name']);
+        $roles = Role::query()
+            ->whereIn('name', array_keys(AdminPortalAccess::assignableUserRoles()))
+            ->orderBy('name')
+            ->get(['name']);
 
         return view('admin.users.index', compact('users', 'roles'));
     }
 
-    public function show(string $id)
+    public function create(): View
     {
-        $user = \App\Models\User::with('restaurant')->findOrFail($id);
+        abort_unless(AdminPortalAccess::can(auth()->user(), 'admin.manage_users'), 403);
 
-        return view('admin.users.show', compact('user'));
+        $roles = Role::query()
+            ->whereIn('name', array_keys(AdminPortalAccess::assignableUserRoles()))
+            ->orderBy('name')
+            ->get();
+        $restaurants = \App\Models\Restaurant::query()->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.users.create', compact('roles', 'restaurants'));
     }
 
-    public function edit(string $id)
+    public function store(StoreAdminUserRequest $request): RedirectResponse
     {
-        $user = \App\Models\User::findOrFail($id);
-        $restaurants = \App\Models\Restaurant::all();
-        $roles = \Spatie\Permission\Models\Role::all();
+        $validated = $request->validated();
 
-        return view('admin.users.edit', compact('user', 'restaurants', 'roles'));
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $user = \App\Models\User::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'restaurant_id' => 'nullable|exists:restaurants,id',
-            'role' => 'required|exists:roles,name',
-        ]);
-
-        $user->update([
+        $user = User::query()->create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'restaurant_id' => $validated['restaurant_id'],
+            'password' => $validated['password'],
+            'restaurant_id' => $validated['restaurant_id'] ?? null,
         ]);
 
         $user->syncRoles($validated['role']);
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        AdminActivityLog::log(
+            'user.created',
+            User::class,
+            (int) $user->id,
+            null,
+            ['email' => $user->email, 'role' => $validated['role']],
+        );
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User created successfully.');
     }
 
-    public function destroy(string $id)
+    public function show(string $id): View
     {
-        $user = \App\Models\User::findOrFail($id);
+        abort_unless(AdminPortalAccess::can(auth()->user(), 'admin.manage_users'), 403);
+
+        $user = User::with('restaurant')->findOrFail($id);
+
+        return view('admin.users.show', compact('user'));
+    }
+
+    public function edit(string $id): View
+    {
+        abort_unless(AdminPortalAccess::can(auth()->user(), 'admin.manage_users'), 403);
+
+        $user = User::query()->findOrFail($id);
+        $restaurants = \App\Models\Restaurant::query()->orderBy('name')->get();
+        $roles = Role::query()
+            ->whereIn('name', array_keys(AdminPortalAccess::assignableUserRoles()))
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.users.edit', compact('user', 'restaurants', 'roles'));
+    }
+
+    public function update(UpdateAdminUserRequest $request, User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id() && $request->input('role') !== 'super_admin') {
+            return back()->with('error', 'You cannot remove your own super admin access.');
+        }
+
+        $validated = $request->validated();
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'restaurant_id' => $validated['restaurant_id'] ?? null,
+        ]);
+
+        if (! empty($validated['password'])) {
+            $user->update(['password' => $validated['password']]);
+        }
+
+        $user->syncRoles($validated['role']);
+
+        AdminActivityLog::log(
+            'user.updated',
+            User::class,
+            (int) $user->id,
+            null,
+            ['email' => $user->email, 'role' => $validated['role']],
+        );
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User updated successfully.');
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        abort_unless(AdminPortalAccess::can(auth()->user(), 'admin.manage_users'), 403);
 
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot delete yourself.');
         }
 
+        AdminActivityLog::log(
+            'user.deleted',
+            User::class,
+            (int) $user->id,
+            ['email' => $user->email],
+            null,
+        );
+
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User deleted successfully.');
     }
 }

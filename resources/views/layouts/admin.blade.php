@@ -15,6 +15,7 @@
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.portal-theme')
+    @stack('styles')
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -390,5 +391,6 @@
             }
         });
     </script>
+    @stack('scripts')
 </body>
 </html>

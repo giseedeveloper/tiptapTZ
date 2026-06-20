@@ -5,11 +5,13 @@ namespace App\Providers;
 use App\Contracts\DockerControlContract;
 use App\Notifications\SalaryPaymentConfirmed;
 use App\Services\Docker\DockerControlService;
+use App\Support\AdminPortalAccess;
 use App\Support\LandingPageContent;
 use App\Support\Money;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -57,6 +59,14 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('welcome', function ($view): void {
             $view->with('plans', \App\Models\SubscriptionPackage::query()->active()->ordered()->get());
+        });
+
+        View::composer(['components.admin-layout', 'admin.*'], function ($view): void {
+            $view->with('adminAccess', AdminPortalAccess::class);
+        });
+
+        Blade::if('adminCan', function (string $permission): bool {
+            return AdminPortalAccess::can(auth()->user(), $permission);
         });
     }
 }

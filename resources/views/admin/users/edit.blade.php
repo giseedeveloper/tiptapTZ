@@ -34,7 +34,7 @@
                         <select name="role" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black">
                             @foreach($roles as $role)
                                 <option value="{{ $role->name }}" {{ $user->hasRole($role->name) ? 'selected' : '' }}>
-                                    {{ ucwords(str_replace('_', ' ', $role->name)) }}
+                                    {{ \App\Support\AdminPortalAccess::assignableUserRoles()[$role->name] ?? ucwords(str_replace('_', ' ', $role->name)) }}
                                 </option>
                             @endforeach
                         </select>
@@ -44,7 +44,7 @@
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 block">Assigned Restaurant</label>
                         <select name="restaurant_id" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black">
-                            <option value="">None (System Admin)</option>
+                            <option value="">None (System user)</option>
                             @foreach($restaurants as $restaurant)
                                 <option value="{{ $restaurant->id }}" {{ $user->restaurant_id == $restaurant->id ? 'selected' : '' }}>
                                     {{ $restaurant->name }}
@@ -52,6 +52,19 @@
                             @endforeach
                         </select>
                         @error('restaurant_id') <p class="text-rose-400 text-[10px] font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 block">New Password (optional)</label>
+                        <input type="password" name="password" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
+                        @error('password') <p class="text-rose-400 text-[10px] font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 block">Confirm Password</label>
+                        <input type="password" name="password_confirmation" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white placeholder-white/30 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
                     </div>
                 </div>
 

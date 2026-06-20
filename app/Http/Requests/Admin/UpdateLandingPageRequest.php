@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\AdminPortalAccess;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateLandingPageRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('super_admin') ?? false;
+        return AdminPortalAccess::can($this->user(), 'admin.panel.landing_page');
     }
 
     /**

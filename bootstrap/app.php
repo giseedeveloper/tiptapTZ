@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'admin.portal' => \App\Http\Middleware\EnsureAdminPortal::class,
+            'admin.section' => \App\Http\Middleware\EnsureAdminSection::class,
             'waiter.linked' => \App\Http\Middleware\EnsureWaiterIsLinked::class,
             'order.portal' => \App\Http\Middleware\EnsureOrderPortalAuthenticated::class,
             'restaurant.approved' => \App\Http\Middleware\EnsureRestaurantApproved::class,

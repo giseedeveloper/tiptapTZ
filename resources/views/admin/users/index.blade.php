@@ -6,8 +6,12 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div>
                     <h2 class="text-xl font-black text-white tracking-tight">System Users</h2>
-                    <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Manage administrators, managers, and waiters</p>
+                    <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Create admins, technical staff, managers, and waiters</p>
                 </div>
+                <a href="{{ route('admin.users.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-violet-500/25 transition-all shrink-0">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    Add User
+                </a>
             </div>
 
             <form method="GET" action="{{ route('admin.users.index') }}" class="mt-6 flex flex-wrap items-end gap-4">
@@ -63,6 +67,8 @@
                                 $role = $user->getRoleNames()->first();
                                 $roleColor = match($role) {
                                     'super_admin' => 'bg-gradient-to-r from-violet-600/80 to-cyan-600/80 text-white border-0',
+                                    'admin' => 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+                                    'technical' => 'bg-sky-500/20 text-sky-300 border-sky-500/30',
                                     'manager' => 'bg-blue-500/20 text-blue-400 border-blue-500/30',
                                     'waiter' => 'bg-orange-500/20 text-orange-400 border-orange-500/30',
                                     default => 'bg-white/10 text-white/60 border-white/20',

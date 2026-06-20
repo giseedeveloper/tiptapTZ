@@ -59,9 +59,12 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/dashboard', function () {
     $user = Auth::user();
-    if ($user->hasRole('super_admin')) {
-        return redirect()->route('admin.dashboard');
-    } elseif ($user->hasRole('manager')) {
+
+    if ($home = \App\Support\AdminPortalAccess::homeRouteName($user)) {
+        return redirect()->route($home);
+    }
+
+    if ($user->hasRole('manager')) {
         return redirect()->route('manager.dashboard');
     } elseif ($user->hasRole('waiter')) {
         return redirect()->route('waiter.dashboard');
@@ -80,117 +83,124 @@ Route::middleware(['auth', 'verified'])->group(function () {
 */
 
 // Admin Portal
-Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/stats', [AdminDashboard::class, 'getStats'])->name('dashboard.stats');
-    Route::get('/dashboard/analytics', [AdminDashboard::class, 'getAnalytics'])->name('dashboard.analytics');
+Route::middleware(['auth', 'admin.portal'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['admin.section:management'])->group(function () {
+        Route::get('roles', [\App\Http\Controllers\Admin\RoleController::class, 'index'])->name('roles.index');
 
-    Route::get('/tiptap-analysis', [TiptapAnalysisController::class, 'index'])->name('tiptap-analysis.index');
-    Route::get('/tiptap-analysis/platform', [TiptapAnalysisController::class, 'platform'])->name('tiptap-analysis.platform');
-    Route::get('/tiptap-analysis/whatsapp', [TiptapAnalysisController::class, 'whatsapp'])->name('tiptap-analysis.whatsapp');
-    Route::get('/tiptap-analysis/qr-entry', [TiptapAnalysisController::class, 'qrEntry'])->name('tiptap-analysis.qr-entry');
-    Route::get('/tiptap-analysis/journey', [TiptapAnalysisController::class, 'journey'])->name('tiptap-analysis.journey');
-    Route::get('/tiptap-analysis/feedback', [TiptapAnalysisController::class, 'feedback'])->name('tiptap-analysis.feedback');
-    Route::get('/tiptap-analysis/tips-payments', [TiptapAnalysisController::class, 'tipsPayments'])->name('tiptap-analysis.tips-payments');
-    Route::get('/tiptap-analysis/language', [TiptapAnalysisController::class, 'language'])->name('tiptap-analysis.language');
-    Route::get('/tiptap-analysis/venues', [TiptapAnalysisController::class, 'venues'])->name('tiptap-analysis.venues');
+        Route::prefix('api')->name('api.')->group(function () {
+            Route::get('roles', [\App\Http\Controllers\Admin\Api\RoleApiController::class, 'index'])->name('roles.index');
+            Route::put('roles/{role}', [\App\Http\Controllers\Admin\Api\RoleApiController::class, 'update'])->name('roles.update');
+            Route::post('roles/{role}/reset', [\App\Http\Controllers\Admin\Api\RoleApiController::class, 'reset'])->name('roles.reset');
 
-    Route::get('/tiptap-analysis/platform-pulse', [TiptapAnalysisController::class, 'platformPulse'])->name('tiptap-analysis.platform-pulse');
-    Route::get('/tiptap-analysis/snapshot', [TiptapAnalysisController::class, 'snapshot'])->name('tiptap-analysis.snapshot');
-    Route::get('/tiptap-analysis/whatsapp-engagement', [TiptapAnalysisController::class, 'whatsappEngagement'])->name('tiptap-analysis.whatsapp-engagement');
-    Route::get('/tiptap-analysis/qr-entry-points', [TiptapAnalysisController::class, 'qrEntryPoints'])->name('tiptap-analysis.qr-entry-points');
-    Route::get('/tiptap-analysis/customer-journey', [TiptapAnalysisController::class, 'customerJourney'])->name('tiptap-analysis.customer-journey');
-    Route::get('/tiptap-analysis/feedback-overview', [TiptapAnalysisController::class, 'feedbackOverview'])->name('tiptap-analysis.feedback-overview');
-    Route::get('/tiptap-analysis/tips-and-payments', [TiptapAnalysisController::class, 'tipsAndPayments'])->name('tiptap-analysis.tips-and-payments');
-    Route::get('/tiptap-analysis/language-and-behavior', [TiptapAnalysisController::class, 'languageAndBehavior'])->name('tiptap-analysis.language-and-behavior');
+            Route::get('users', [\App\Http\Controllers\Admin\Api\UserApiController::class, 'index'])->name('users.index');
+            Route::post('users', [\App\Http\Controllers\Admin\Api\UserApiController::class, 'store'])->name('users.store');
+            Route::put('users/{user}', [\App\Http\Controllers\Admin\Api\UserApiController::class, 'update'])->name('users.update');
+        });
 
-    Route::get('search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])
-        ->middleware('throttle:admin-search')
-        ->name('search.index');
-    Route::get('live-orders', [\App\Http\Controllers\Admin\LiveOrderController::class, 'index'])->name('live-orders.index');
-    Route::get('live-orders/feed', [\App\Http\Controllers\Admin\LiveOrderController::class, 'feed'])->name('live-orders.feed');
-    Route::get('customer-requests', [\App\Http\Controllers\Admin\CustomerRequestController::class, 'index'])->name('customer-requests.index');
-    Route::post('customer-requests/{id}/complete', [\App\Http\Controllers\Admin\CustomerRequestController::class, 'complete'])->name('customer-requests.complete');
-    Route::get('tips', [\App\Http\Controllers\Admin\TipController::class, 'index'])->name('tips.index');
-    Route::get('payroll', [\App\Http\Controllers\Admin\PayrollController::class, 'index'])->name('payroll.index');
-    Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
-    Route::get('feedback', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])->name('feedback.index');
-    Route::get('menus', [\App\Http\Controllers\Admin\MenuController::class, 'index'])->name('menus.index');
-    Route::get('menus/{restaurant}', [\App\Http\Controllers\Admin\MenuController::class, 'show'])->name('menus.show');
-    Route::get('activity-log', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-log.index');
+        Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+    });
 
-    // Restaurants
-    Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
-    Route::post('restaurants/{restaurant}/toggle-status', [\App\Http\Controllers\Admin\RestaurantController::class, 'toggleStatus'])->name('restaurants.toggle-status');
+    Route::middleware(['admin.section:panel'])->group(function () {
+        Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/stats', [AdminDashboard::class, 'getStats'])->name('dashboard.stats');
+        Route::get('/dashboard/analytics', [AdminDashboard::class, 'getAnalytics'])->name('dashboard.analytics');
 
-    // Restaurant join requests (approval queue)
-    Route::get('restaurant-requests', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'index'])->name('restaurant-requests.index');
-    Route::get('restaurant-requests/{restaurant}', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'show'])->name('restaurant-requests.show');
-    Route::post('restaurant-requests/{restaurant}/approve', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'approve'])->name('restaurant-requests.approve');
-    Route::post('restaurant-requests/{restaurant}/reject', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'reject'])->name('restaurant-requests.reject');
-    Route::post('restaurant-requests/bulk-approve', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'bulkApprove'])->name('restaurant-requests.bulk-approve');
+        Route::get('/tiptap-analysis', [TiptapAnalysisController::class, 'index'])->name('tiptap-analysis.index');
+        Route::get('/tiptap-analysis/platform', [TiptapAnalysisController::class, 'platform'])->name('tiptap-analysis.platform');
+        Route::get('/tiptap-analysis/whatsapp', [TiptapAnalysisController::class, 'whatsapp'])->name('tiptap-analysis.whatsapp');
+        Route::get('/tiptap-analysis/qr-entry', [TiptapAnalysisController::class, 'qrEntry'])->name('tiptap-analysis.qr-entry');
+        Route::get('/tiptap-analysis/journey', [TiptapAnalysisController::class, 'journey'])->name('tiptap-analysis.journey');
+        Route::get('/tiptap-analysis/feedback', [TiptapAnalysisController::class, 'feedback'])->name('tiptap-analysis.feedback');
+        Route::get('/tiptap-analysis/tips-payments', [TiptapAnalysisController::class, 'tipsPayments'])->name('tiptap-analysis.tips-payments');
+        Route::get('/tiptap-analysis/language', [TiptapAnalysisController::class, 'language'])->name('tiptap-analysis.language');
+        Route::get('/tiptap-analysis/venues', [TiptapAnalysisController::class, 'venues'])->name('tiptap-analysis.venues');
 
-    // Subscription plans (pricing packages)
-    Route::resource('plans', \App\Http\Controllers\Admin\SubscriptionPackageController::class)
-        ->parameters(['plans' => 'plan'])
-        ->except(['show']);
+        Route::get('/tiptap-analysis/platform-pulse', [TiptapAnalysisController::class, 'platformPulse'])->name('tiptap-analysis.platform-pulse');
+        Route::get('/tiptap-analysis/snapshot', [TiptapAnalysisController::class, 'snapshot'])->name('tiptap-analysis.snapshot');
+        Route::get('/tiptap-analysis/whatsapp-engagement', [TiptapAnalysisController::class, 'whatsappEngagement'])->name('tiptap-analysis.whatsapp-engagement');
+        Route::get('/tiptap-analysis/qr-entry-points', [TiptapAnalysisController::class, 'qrEntryPoints'])->name('tiptap-analysis.qr-entry-points');
+        Route::get('/tiptap-analysis/customer-journey', [TiptapAnalysisController::class, 'customerJourney'])->name('tiptap-analysis.customer-journey');
+        Route::get('/tiptap-analysis/feedback-overview', [TiptapAnalysisController::class, 'feedbackOverview'])->name('tiptap-analysis.feedback-overview');
+        Route::get('/tiptap-analysis/tips-and-payments', [TiptapAnalysisController::class, 'tipsAndPayments'])->name('tiptap-analysis.tips-and-payments');
+        Route::get('/tiptap-analysis/language-and-behavior', [TiptapAnalysisController::class, 'languageAndBehavior'])->name('tiptap-analysis.language-and-behavior');
 
-    Route::post('impersonate/{user}', [\App\Http\Controllers\Admin\ImpersonationController::class, 'start'])->name('impersonate.start');
+        Route::get('search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])
+            ->middleware('throttle:admin-search')
+            ->name('search.index');
+        Route::get('live-orders', [\App\Http\Controllers\Admin\LiveOrderController::class, 'index'])->name('live-orders.index');
+        Route::get('live-orders/feed', [\App\Http\Controllers\Admin\LiveOrderController::class, 'feed'])->name('live-orders.feed');
+        Route::get('customer-requests', [\App\Http\Controllers\Admin\CustomerRequestController::class, 'index'])->name('customer-requests.index');
+        Route::post('customer-requests/{id}/complete', [\App\Http\Controllers\Admin\CustomerRequestController::class, 'complete'])->name('customer-requests.complete');
+        Route::get('tips', [\App\Http\Controllers\Admin\TipController::class, 'index'])->name('tips.index');
+        Route::get('payroll', [\App\Http\Controllers\Admin\PayrollController::class, 'index'])->name('payroll.index');
+        Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::get('feedback', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])->name('feedback.index');
+        Route::get('menus', [\App\Http\Controllers\Admin\MenuController::class, 'index'])->name('menus.index');
+        Route::get('menus/{restaurant}', [\App\Http\Controllers\Admin\MenuController::class, 'show'])->name('menus.show');
 
-    // Users
-    Route::resource('users', \App\Http\Controllers\Admin\UserController::class)
-        ->except(['create', 'store']);
+        Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
+        Route::post('restaurants/{restaurant}/toggle-status', [\App\Http\Controllers\Admin\RestaurantController::class, 'toggleStatus'])->name('restaurants.toggle-status');
 
-    // Waiters (all waiters + unique codes + search like manager)
-    Route::get('waiters', [\App\Http\Controllers\Admin\WaiterController::class, 'index'])->name('waiters.index');
-    Route::get('waiters/search', [\App\Http\Controllers\Admin\WaiterController::class, 'search'])->name('waiters.search');
+        Route::get('restaurant-requests', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'index'])->name('restaurant-requests.index');
+        Route::get('restaurant-requests/{restaurant}', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'show'])->name('restaurant-requests.show');
+        Route::post('restaurant-requests/{restaurant}/approve', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'approve'])->name('restaurant-requests.approve');
+        Route::post('restaurant-requests/{restaurant}/reject', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'reject'])->name('restaurant-requests.reject');
+        Route::post('restaurant-requests/bulk-approve', [\App\Http\Controllers\Admin\RestaurantRequestController::class, 'bulkApprove'])->name('restaurant-requests.bulk-approve');
 
-    // Orders
-    Route::get('orders/export', [\App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
-    Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)
-        ->except(['create', 'store', 'edit']);
+        Route::resource('plans', \App\Http\Controllers\Admin\SubscriptionPackageController::class)
+            ->parameters(['plans' => 'plan'])
+            ->except(['show']);
 
-    // Payments
-    Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
-    Route::get('payments/export', [\App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('payments.export');
-    Route::get('payments/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
+        Route::post('impersonate/{user}', [\App\Http\Controllers\Admin\ImpersonationController::class, 'start'])->name('impersonate.start');
 
-    Route::get('payment-integration', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'index'])->name('payment-integration.index');
-    Route::post('payment-integration', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'update'])->name('payment-integration.update');
-    Route::post('payment-integration/test', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'test'])->name('payment-integration.test');
+        Route::get('waiters', [\App\Http\Controllers\Admin\WaiterController::class, 'index'])->name('waiters.index');
+        Route::get('waiters/search', [\App\Http\Controllers\Admin\WaiterController::class, 'search'])->name('waiters.search');
 
-    // Withdrawals
-    Route::get('withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('withdrawals.index');
-    Route::post('withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('withdrawals.approve');
-    Route::post('withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('withdrawals.reject');
+        Route::get('orders/export', [\App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
+        Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)
+            ->except(['create', 'store', 'edit']);
 
-    // Bots
-    Route::get('bots', [\App\Http\Controllers\Admin\BotController::class, 'index'])->name('bots.index');
-    Route::post('bots/update-endpoint', [\App\Http\Controllers\Admin\BotController::class, 'updateEndpoint'])->name('bots.update-endpoint');
-    Route::post('bots/update-branding', [\App\Http\Controllers\Admin\BotController::class, 'updateBranding'])->name('bots.update-branding');
-    Route::post('bots/generate-token', [\App\Http\Controllers\Admin\BotController::class, 'generateToken'])
-        ->middleware('throttle:bot-token')
-        ->name('bots.generate-token');
+        Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/export', [\App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('payments.export');
+        Route::get('payments/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
 
-    Route::post('system/fix-storage', \App\Http\Controllers\Admin\FixStorageController::class)
-        ->name('fix-storage');
+        Route::get('withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('withdrawals.index');
+        Route::post('withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('withdrawals.approve');
+        Route::post('withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('withdrawals.reject');
 
-    Route::get('infrastructure/docker', [\App\Http\Controllers\Admin\DockerController::class, 'index'])->name('docker.index');
-    Route::get('infrastructure/docker/status', [\App\Http\Controllers\Admin\DockerController::class, 'status'])->name('docker.status');
-    Route::post('infrastructure/docker/action', [\App\Http\Controllers\Admin\DockerController::class, 'action'])
-        ->middleware('throttle:docker-control')
-        ->name('docker.action');
+        Route::get('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
 
-    // Notifications
-    Route::get('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
+        Route::get('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'index'])->name('landing-page.index');
+        Route::post('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'update'])->name('landing-page.update');
+    });
 
-    // Settings
-    Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
-    Route::post('settings/update', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::middleware(['admin.section:technical'])->group(function () {
+        Route::get('activity-log', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-log.index');
 
-    Route::get('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'index'])->name('landing-page.index');
-    Route::post('landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'update'])->name('landing-page.update');
+        Route::get('payment-integration', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'index'])->name('payment-integration.index');
+        Route::post('payment-integration', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'update'])->name('payment-integration.update');
+        Route::post('payment-integration/test', [\App\Http\Controllers\Admin\PaymentIntegrationController::class, 'test'])->name('payment-integration.test');
+
+        Route::get('bots', [\App\Http\Controllers\Admin\BotController::class, 'index'])->name('bots.index');
+        Route::post('bots/update-endpoint', [\App\Http\Controllers\Admin\BotController::class, 'updateEndpoint'])->name('bots.update-endpoint');
+        Route::post('bots/update-branding', [\App\Http\Controllers\Admin\BotController::class, 'updateBranding'])->name('bots.update-branding');
+        Route::post('bots/generate-token', [\App\Http\Controllers\Admin\BotController::class, 'generateToken'])
+            ->middleware('throttle:bot-token')
+            ->name('bots.generate-token');
+
+        Route::post('system/fix-storage', \App\Http\Controllers\Admin\FixStorageController::class)
+            ->name('fix-storage');
+
+        Route::get('infrastructure/docker', [\App\Http\Controllers\Admin\DockerController::class, 'index'])->name('docker.index');
+        Route::get('infrastructure/docker/status', [\App\Http\Controllers\Admin\DockerController::class, 'status'])->name('docker.status');
+        Route::post('infrastructure/docker/action', [\App\Http\Controllers\Admin\DockerController::class, 'action'])
+            ->middleware('throttle:docker-control')
+            ->name('docker.action');
+
+        Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+        Route::post('settings/update', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    });
 });
 
 // Manager onboarding (waiting + plan selection) — NOT gated by approval, else redirect loop
