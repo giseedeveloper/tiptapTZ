@@ -149,13 +149,59 @@ class SubscriptionPackage extends Model
         return (float) $this->price <= 0;
     }
 
+    public function supportsAnnualBilling(): bool
+    {
+        return $this->billing_period === 'monthly' && ! $this->isFree();
+    }
+
+    public function annualTotalPrice(): ?float
+    {
+        if (! $this->supportsAnnualBilling()) {
+            return null;
+        }
+
+        return (float) $this->price * 10;
+    }
+
+    public function formattedPrice(float $amount): string
+    {
+        return $this->currency.' '.number_format($amount, 0);
+    }
+
+    public function annualPriceLabel(): string
+    {
+        $total = $this->annualTotalPrice();
+
+        if ($total === null) {
+            return '';
+        }
+
+        return $this->formattedPrice($total);
+    }
+
+    public function annualMonthlyEquivalentLabel(): string
+    {
+        $total = $this->annualTotalPrice();
+
+        if ($total === null) {
+            return '';
+        }
+
+        return $this->formattedPrice($total / 12);
+    }
+
+    public function isEnterprisePlan(): bool
+    {
+        return $this->slug === 'enterprise';
+    }
+
     public function priceLabel(): string
     {
         if ($this->isFree()) {
             return $this->trial_days > 0 ? 'Free' : 'Free';
         }
 
-        return $this->currency.' '.number_format((float) $this->price, 0);
+        return $this->formattedPrice((float) $this->price);
     }
 
     public function periodLabel(): string

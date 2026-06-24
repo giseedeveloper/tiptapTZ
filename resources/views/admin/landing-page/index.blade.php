@@ -57,6 +57,16 @@
                         <textarea name="hero_description" rows="3"
                                   class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">{{ old('hero_description', $content['hero_description']) }}</textarea>
                     </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">TipTap Rafiki intro</label>
+                        <input type="text" name="hero_rafiki_intro" value="{{ old('hero_rafiki_intro', $content['hero_rafiki_intro']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Rafiki meaning line</label>
+                        <input type="text" name="hero_rafiki_meaning" value="{{ old('hero_rafiki_meaning', $content['hero_rafiki_meaning']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">
+                    </div>
                     <div>
                         <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Primary button</label>
                         <input type="text" name="hero_cta_primary" value="{{ old('hero_cta_primary', $content['hero_cta_primary']) }}"
@@ -66,6 +76,116 @@
                         <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Secondary button</label>
                         <input type="text" name="hero_cta_secondary" value="{{ old('hero_cta_secondary', $content['hero_cta_secondary']) }}"
                                class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-8">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-black text-white tracking-tight">Video demo &amp; live Rafiki</h3>
+                    <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Homepage demo section — paste a YouTube/Vimeo link or leave blank for the interactive preview</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Section title</label>
+                        <input type="text" name="demo_title" value="{{ old('demo_title', $content['demo_title']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Section subtitle</label>
+                        <textarea name="demo_subtitle" rows="2"
+                                  class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">{{ old('demo_subtitle', $content['demo_subtitle']) }}</textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Demo video URL (YouTube, Vimeo, or .mp4)</label>
+                        <input type="url" name="demo_video_url" value="{{ old('demo_video_url', $content['demo_video_url']) }}"
+                               placeholder="https://www.youtube.com/watch?v=..."
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Try Rafiki button label</label>
+                        <input type="text" name="demo_try_rafiki_label" value="{{ old('demo_try_rafiki_label', $content['demo_try_rafiki_label']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">WhatsApp prefill message</label>
+                        <input type="text" name="demo_try_rafiki_message" value="{{ old('demo_try_rafiki_message', $content['demo_try_rafiki_message']) }}"
+                               placeholder="Hi"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-8">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-black text-white tracking-tight">Nurture CTAs &amp; lead magnet</h3>
+                    <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Book-a-demo WhatsApp/Calendly and efficiency guide capture</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Book demo button label</label>
+                        <input type="text" name="nurture_book_demo_label" value="{{ old('nurture_book_demo_label', $content['nurture_book_demo_label']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Chat with us label</label>
+                        <input type="text" name="nurture_chat_with_us_label" value="{{ old('nurture_chat_with_us_label', $content['nurture_chat_with_us_label']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Calendly URL (optional — overrides WhatsApp booking)</label>
+                        <input type="url" name="nurture_book_demo_calendly_url" value="{{ old('nurture_book_demo_calendly_url', $content['nurture_book_demo_calendly_url']) }}"
+                               placeholder="https://calendly.com/tiptap/demo"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">WhatsApp book-demo prefill message</label>
+                        <textarea name="nurture_book_demo_whatsapp_message" rows="2"
+                                  class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">{{ old('nurture_book_demo_whatsapp_message', $content['nurture_book_demo_whatsapp_message']) }}</textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Lead magnet title</label>
+                        <input type="text" name="nurture_lead_magnet_title" value="{{ old('nurture_lead_magnet_title', $content['nurture_lead_magnet_title']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Lead magnet subtitle</label>
+                        <textarea name="nurture_lead_magnet_subtitle" rows="2"
+                                  class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">{{ old('nurture_lead_magnet_subtitle', $content['nurture_lead_magnet_subtitle']) }}</textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Lead magnet button</label>
+                        <input type="text" name="nurture_lead_magnet_button" value="{{ old('nurture_lead_magnet_button', $content['nurture_lead_magnet_button']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Lead magnet success message</label>
+                        <input type="text" name="nurture_lead_magnet_success" value="{{ old('nurture_lead_magnet_success', $content['nurture_lead_magnet_success']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-8">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-black text-white tracking-tight">SEO &amp; schema markup</h3>
+                    <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Page title, meta description, and search/social previews</p>
+                </div>
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">SEO title (geo + keywords)</label>
+                        <input type="text" name="seo_title" value="{{ old('seo_title', $content['seo_title']) }}"
+                               class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Meta description</label>
+                        <textarea name="seo_description" rows="3"
+                                  class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">{{ old('seo_description', $content['seo_description']) }}</textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2 block">Meta keywords (optional)</label>
+                        <textarea name="seo_keywords" rows="2"
+                                  class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white">{{ old('seo_keywords', $content['seo_keywords']) }}</textarea>
                     </div>
                 </div>
             </div>

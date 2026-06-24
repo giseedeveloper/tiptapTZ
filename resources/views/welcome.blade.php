@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="{{ $landing['seo']['html_lang'] ?? 'en' }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TIPTAP | QR & WhatsApp Ordering for Restaurants</title>
-    <meta name="description" content="The smartest QR and WhatsApp ordering system for modern restaurants in Tanzania. TipTap Rafiki, instant mobile money, kitchen display, and live analytics.">
+    @include('partials.landing-seo-head')
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
@@ -52,6 +51,7 @@
         .text-hero-accent { background: linear-gradient(90deg, #6D52E8, #8C71F6, #A78BFA); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .nav-glass { background: rgba(255,255,255,0.88); backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 8px 32px rgba(18,20,28,0.06), 0 0 0 1px rgba(140,113,246,0.06); }
         .nav-glass.scrolled { box-shadow: 0 12px 40px rgba(109,82,232,0.12); }
+        #site-nav.scrolled { box-shadow: 0 4px 24px rgba(18,20,28,0.08); }
         .btn-glow { background: linear-gradient(135deg, #8C71F6 0%, #6D52E8 100%); box-shadow: 0 4px 20px rgba(109,82,232,0.4), 0 0 0 1px rgba(255,255,255,0.15) inset; transition: transform 0.25s ease, box-shadow 0.25s ease; }
         .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(109,82,232,0.5); }
         .section-label { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6D52E8; background: linear-gradient(135deg, rgba(237,233,254,0.9), rgba(255,255,255,0.9)); border: 1px solid rgba(140,113,246,0.2); }
@@ -80,87 +80,29 @@
             .step-line:last-child::after { display: none; }
         }
         .pricing-featured { background: linear-gradient(180deg, rgba(237,233,254,0.6) 0%, #fff 40%); border: 2px solid rgba(140,113,246,0.35); box-shadow: 0 24px 60px rgba(109,82,232,0.15); }
-        .testimonial-card { background: #fff; border: 1px solid rgba(18,20,28,0.06); border-radius: 1.5rem; padding: 1.75rem; box-shadow: 0 8px 30px rgba(18,20,28,0.04); }
+        .pricing-billing-btn { border-radius: 9999px; padding: 0.55rem 1.15rem; font-size: 0.8rem; font-weight: 600; color: #64708B; transition: all 0.2s ease; }
+        .pricing-billing-btn.is-active { background: #fff; color: #6D52E8; box-shadow: 0 4px 14px rgba(109,82,232,0.15); }
+        .testimonial-card { background: #fff; border: 1px solid rgba(18,20,28,0.06); border-radius: 1.5rem; padding: 1.75rem; box-shadow: 0 8px 30px rgba(18,20,28,0.04); transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease; }
+        .testimonial-card:hover { transform: translateY(-4px); border-color: rgba(140,113,246,0.2); box-shadow: 0 16px 40px rgba(109,82,232,0.1); }
+        .testimonial-avatar { background: linear-gradient(135deg, #8C71F6 0%, #6D52E8 100%); }
         .footer-dark { background: linear-gradient(180deg, #12141C 0%, #1a1d28 100%); color: #94A3B8; }
         details[open] summary { color: #6D52E8; }
         details summary { list-style: none; cursor: pointer; }
         details summary::-webkit-details-marker { display: none; }
         .trust-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; color: #64708B; background: rgba(255,255,255,0.7); border: 1px solid rgba(18,20,28,0.06); }
+        .hero-trust-bar { background: rgba(255,255,255,0.78); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.95); border-radius: 1.35rem; padding: 1.2rem 1.3rem; box-shadow: 0 10px 32px rgba(18,20,28,0.06), 0 0 0 1px rgba(140,113,246,0.06); }
+        .hero-trust-logo { filter: saturate(0.9); }
+        .hero-trust-logo:hover { filter: saturate(1); }
+        .demo-walkthrough-scene { transition: opacity 0.45s ease; }
+        .demo-walkthrough-scene.is-active { opacity: 1 !important; }
+        .demo-step-btn.is-active { border-color: rgba(140,113,246,0.25); background: rgba(255,255,255,0.88); }
+        .partners-logo { filter: saturate(0.92); }
+        .partners-logo:hover { filter: saturate(1); }
     </style>
 </head>
 <body class="antialiased font-sans selection:bg-fin-primary selection:text-white">
 
-    <header id="site-nav" class="fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-5xl -translate-x-1/2 nav-glass rounded-2xl px-5 py-3 lg:top-6 transition-shadow duration-300">
-        <div class="flex items-center justify-between gap-4">
-            <a href="/" class="flex items-center gap-2.5 group">
-                <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-fin-primary to-fin-primary-dark p-1.5 shadow-md shadow-fin-primary/25 group-hover:scale-105 transition-transform">
-                    <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="h-full w-full object-contain rounded-lg bg-white">
-                </div>
-                <span class="text-lg font-bold tracking-tight text-fin-ink">TIP<span class="text-fin-primary">TAP</span></span>
-            </a>
-            <nav class="hidden lg:flex items-center gap-9 text-[0.9rem] font-medium text-fin-muted">
-                <a href="#features" class="hover:text-fin-primary-dark transition-colors">Features</a>
-                <a href="#how-it-works" class="hover:text-fin-primary-dark transition-colors">How it works</a>
-                <a href="#pricing" class="hover:text-fin-primary-dark transition-colors">Pricing</a>
-                <a href="#contact" class="hover:text-fin-primary-dark transition-colors">Contact</a>
-                <a href="#faq" class="hover:text-fin-primary-dark transition-colors">FAQ</a>
-            </nav>
-            <div class="hidden lg:flex items-center gap-3">
-                @auth
-                    <a href="{{ url('/dashboard') }}" class="text-sm font-semibold text-fin-ink hover:text-fin-primary transition-colors">Dashboard</a>
-                @else
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-fin-muted hover:text-fin-ink transition-colors px-2">Log in</a>
-                    <div class="relative group">
-                        <button type="button" class="btn-glow inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white">
-                            Get Started
-                            <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
-                        </button>
-                        <div class="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-fin-ink/5 bg-white py-2 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                            <a href="{{ route('restaurant.register') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-fin-muted hover:bg-fin-mist hover:text-fin-ink transition-colors">
-                                <span class="icon-box !w-8 !h-8"><i data-lucide="store" class="w-4 h-4 text-fin-primary"></i></span>
-                                <span><span class="font-semibold text-fin-ink block">Restaurant / Manager</span><span class="text-xs">Free trial</span></span>
-                            </a>
-                            <a href="{{ route('waiter.register') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-fin-muted hover:bg-fin-mist hover:text-fin-ink transition-colors">
-                                <span class="icon-box !w-8 !h-8"><i data-lucide="user" class="w-4 h-4 text-fin-primary"></i></span>
-                                <span><span class="font-semibold text-fin-ink block">Waiter</span><span class="text-xs">Get your code</span></span>
-                            </a>
-                        </div>
-                    </div>
-                @endauth
-            </div>
-            <div class="flex items-center gap-2 lg:hidden">
-                <img
-                    src="{{ asset('images/flags/tz.svg') }}"
-                    alt="Tanzania"
-                    width="28"
-                    height="20"
-                    class="h-5 w-7 shrink-0 rounded-[2px] shadow-sm ring-1 ring-black/10 object-cover"
-                    title="Tanzania"
-                >
-                <button type="button" id="mobile-menu-btn" class="p-2 rounded-xl hover:bg-fin-mist text-fin-ink" aria-label="Menu">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <div id="mobile-menu" class="fixed inset-0 z-[60] bg-white hidden flex-col p-8 lg:hidden">
-        <div class="flex justify-between items-center mb-10">
-            <span class="text-xl font-bold text-fin-ink">TIPTAP</span>
-            <button type="button" id="mobile-menu-close" class="p-2 rounded-xl hover:bg-fin-surface"><i data-lucide="x" class="w-7 h-7"></i></button>
-        </div>
-        <nav class="flex flex-col gap-5 text-lg font-medium text-fin-muted">
-            <a href="#features" class="hover:text-fin-primary">Features</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#contact">Contact</a>
-            <a href="#faq">FAQ</a>
-            <hr class="border-fin-ink/10 my-2">
-            <a href="{{ route('login') }}">Log in</a>
-            <a href="{{ route('restaurant.register') }}" class="text-fin-primary font-semibold">Register restaurant</a>
-            <a href="{{ route('waiter.register') }}" class="text-fin-primary font-semibold">Register as waiter</a>
-        </nav>
-    </div>
+    @include('partials.landing-nav-header')
 
     {{-- Hero --}}
     <section class="hero-section pt-28 pb-20 lg:pt-40 lg:pb-28">
@@ -178,10 +120,12 @@
                         <span class="text-hero-gradient font-normal">{{ $landing['hero']['title_line1'] }}</span><br>
                         <span class="text-hero-accent font-medium">{{ $landing['hero']['title_line2'] }}</span>
                     </h1>
-                    <p class="text-base sm:text-lg text-fin-muted leading-relaxed font-normal max-w-lg mx-auto lg:mx-0 mb-8">
+                    @include('partials.landing-hero-rafiki-intro')
+                    <p class="text-base sm:text-lg text-fin-muted leading-relaxed font-normal max-w-lg mx-auto lg:mx-0 mb-6">
                         {{ $landing['hero']['description'] }}
                     </p>
-                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-8">
+                    @include('partials.landing-hero-trust-bar')
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-4">
                         <a href="{{ route('restaurant.register') }}" class="btn-glow w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white">
                             {{ $landing['hero']['cta_primary'] }}
                             <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -191,36 +135,31 @@
                             {{ $landing['hero']['cta_secondary'] }}
                         </a>
                     </div>
-                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2">
-                        <span class="trust-pill"><i data-lucide="message-circle" class="w-3.5 h-3.5 text-whatsapp"></i> WhatsApp</span>
-                        <span class="trust-pill"><i data-lucide="qr-code" class="w-3.5 h-3.5 text-fin-primary"></i> QR Tables</span>
-                        <span class="trust-pill"><i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-600"></i> Mobile payment &middot; Bank</span>
-                        <span class="trust-pill"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-fin-primary"></i> Selcom</span>
+                    <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 mb-2">
+                        @include('partials.landing-book-demo-link', ['variant' => 'ghost'])
+                        @include('partials.landing-chat-with-us-link', ['variant' => 'ghost'])
                     </div>
                 </div>
-                <div class="flex-1 w-full flex justify-center lg:justify-end" id="demo">
+                <div class="flex-1 w-full flex justify-center lg:justify-end">
                     @include('partials.landing-phone-mockup')
                 </div>
             </div>
         </div>
     </section>
 
+    @include('partials.landing-demo-section')
+
     {{-- Stats --}}
     <section class="py-14 lg:py-20 bg-white relative">
         <div class="max-w-6xl mx-auto px-5">
             <p class="text-center text-fin-muted text-sm font-medium mb-10 max-w-md mx-auto leading-relaxed">
-                Trusted by leading restaurants across Tanzania for faster ordering and payments
+                {{ $landing['trust']['stats_headline'] }}
             </p>
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
-                @foreach([
-                    ['50+', 'Live restaurants'],
-                    ['10k+', 'Orders processed'],
-                    ['24/7', 'Bot always on'],
-                    ['4.9*', 'Manager rating'],
-                ] as [$val, $label])
+                @foreach($landing['trust']['stats'] as $stat)
                     <div class="stat-card reveal">
-                        <p class="stat-number">{{ $val }}</p>
-                        <p class="text-sm text-fin-muted mt-2 font-medium">{{ $label }}</p>
+                        <p class="stat-number">{{ $stat['value'] }}</p>
+                        <p class="text-sm text-fin-muted mt-2 font-medium">{{ $stat['label'] }}</p>
                     </div>
                 @endforeach
             </div>
@@ -235,13 +174,13 @@
                 <h2 class="text-3xl lg:text-[2.75rem] font-light text-fin-ink tracking-tight mt-4 leading-tight">
                     Everything your <span class="text-fin-primary font-medium">restaurant</span> needs
                 </h2>
-                <p class="text-fin-muted mt-5 text-base leading-relaxed">QR tables, WhatsApp bot, payments, kitchen screen, and manager dashboard &mdash; one beautiful platform.</p>
+                <p class="text-fin-muted mt-5 text-base leading-relaxed">{{ $landing['features']['subtitle'] }}</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <div class="fin-card feature-card-lg rounded-3xl p-8 md:col-span-7 reveal">
                     <div class="icon-box mb-6"><i data-lucide="bot" class="w-6 h-6 text-fin-primary"></i></div>
                     <h3 class="text-2xl font-semibold text-fin-ink mb-3 tracking-tight">TipTap Rafiki on WhatsApp</h3>
-                    <p class="text-fin-muted leading-relaxed max-w-md text-[0.95rem]">Customers browse your menu, order, request the bill, and pay &mdash; all inside one chat. English and Swahili supported.</p>
+                    <p class="text-fin-muted leading-relaxed max-w-md text-[0.95rem]">{{ $landing['features']['rafiki_card_body'] }}</p>
                     <div class="mt-8 p-5 rounded-2xl bg-white border border-fin-primary/10 shadow-inner max-w-sm">
                         <div class="flex gap-3 items-center">
                             <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 rounded-full object-contain bg-fin-mist p-1 ring-2 ring-fin-primary/20" alt="">
@@ -312,109 +251,19 @@
         </div>
     </section>
 
-    {{-- Testimonials --}}
-    <section class="py-16 lg:py-20 bg-fin-mist/50 border-y border-fin-primary/5">
-        <div class="max-w-6xl mx-auto px-5">
-            <div class="text-center mb-12 reveal">
-                <span class="section-label">Reviews</span>
-                <h2 class="text-2xl lg:text-3xl font-light text-fin-ink mt-4">What managers are saying</h2>
-            </div>
-            <div class="grid md:grid-cols-3 gap-5">
-                @foreach([
-                    ['Queues dropped &mdash; guests now order themselves on WhatsApp.', 'Manager, Dar es Salaam'],
-                    ['M-Pesa payments land instantly. No more lost bills.', 'Owner, Zanzibar'],
-                    ['The kitchen screen completely changed how we run service.', 'Head Chef, Arusha'],
-                ] as [$quote, $role])
-                    <blockquote class="testimonial-card reveal">
-                        <p class="text-fin-ink text-[0.95rem] leading-relaxed font-medium">&ldquo;{!! $quote !!}&rdquo;</p>
-                        <footer class="mt-4 text-xs font-semibold text-fin-primary uppercase tracking-wider">{{ $role }}</footer>
-                    </blockquote>
-                @endforeach
-            </div>
-        </div>
-    </section>
+    @include('partials.landing-testimonials')
 
-    {{-- Pricing --}}
-    <section id="pricing" class="py-20 lg:py-28 bg-white">
-        <div class="max-w-6xl mx-auto px-5">
-            <div class="text-center mb-14 reveal">
-                <span class="section-label">Pricing</span>
-                <h2 class="text-3xl lg:text-4xl font-light text-fin-ink mt-4">Simple plans, clear value</h2>
-            </div>
-            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto items-stretch">
-                @forelse($plans as $plan)
-                    @php($isFeatured = $plan->is_featured)
-                    <div class="{{ $isFeatured ? 'pricing-featured scale-[1.02]' : 'fin-card' }} rounded-3xl p-8 flex flex-col relative reveal">
-                        @if($isFeatured)
-                            <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-fin-primary to-fin-primary-dark text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">Most popular</span>
-                        @endif
-                        <h3 class="font-semibold text-fin-ink text-lg">{{ $plan->name }}</h3>
-                        <p class="mt-3"><span class="text-4xl font-light {{ $isFeatured ? 'text-hero-accent' : 'text-fin-ink' }} tracking-tight">{{ $plan->priceLabel() }}</span><span class="text-sm text-fin-muted ml-1">{{ $plan->periodLabel() }}</span></p>
-                        <ul class="mt-8 space-y-3.5 text-sm {{ $isFeatured ? 'text-fin-ink' : 'text-fin-muted' }} flex-1">
-                            @foreach($plan->features ?? [] as $feature)
-                                <li class="flex gap-2.5 items-center"><span class="w-5 h-5 rounded-full {{ $isFeatured ? 'bg-fin-primary/15' : 'bg-fin-mist' }} flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3 {{ $isFeatured ? 'text-fin-primary-dark' : 'text-fin-primary' }}"></i></span>{{ $feature }}</li>
-                            @endforeach
-                        </ul>
-                        @if($isFeatured)
-                            <a href="{{ route('restaurant.register') }}" class="btn-glow mt-8 block text-center rounded-xl py-3.5 text-sm font-bold text-white">Get {{ $plan->name }}</a>
-                        @else
-                            <a href="{{ route('restaurant.register') }}" class="mt-8 block text-center rounded-xl border-2 border-fin-ink/8 py-3.5 text-sm font-bold text-fin-ink hover:bg-fin-surface transition-colors">{{ $plan->isFree() ? 'Start trial' : 'Get '.$plan->name }}</a>
-                        @endif
-                    </div>
-                @empty
-                    <div class="fin-card rounded-3xl p-8 flex flex-col reveal md:col-span-3 text-center">
-                        <h3 class="font-semibold text-fin-ink text-lg">Plans coming soon</h3>
-                        <p class="mt-3 text-sm text-fin-muted">Start your free trial today and pick a plan once you're set up.</p>
-                        <a href="{{ route('restaurant.register') }}" class="btn-glow mt-6 inline-block mx-auto text-center rounded-xl px-8 py-3.5 text-sm font-bold text-white">Start free trial</a>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-    </section>
+    @include('partials.landing-pricing')
 
-    {{-- FAQ --}}
-    <section id="faq" class="py-20 lg:py-28 bg-fin-surface">
-        <div class="max-w-2xl mx-auto px-5">
-            <div class="text-center mb-12 reveal">
-                <span class="section-label">FAQ</span>
-                <h2 class="text-3xl font-light text-fin-ink mt-4">Frequently asked questions</h2>
-            </div>
-            <div class="space-y-3 reveal">
-                @foreach([
-                    ['What is TIPTAP?', 'A restaurant operating system: QR ordering, TipTap Rafiki on WhatsApp, mobile money payments, kitchen display, and manager dashboards built for Tanzania.'],
-                    ['Do customers need an app?', 'No. Guests scan a QR code and order through WhatsApp, the chat they already use every day.'],
-                    ['Which payments are supported?', 'M-Pesa, TigoPesa, and Airtel Money via Selcom. Tips and bills are tracked in real time.'],
-                    ['Can waiters register separately?', 'Yes. Waiters receive a unique TIPTAP-W code and link to venues through their manager.'],
-                ] as [$q, $a])
-                    <details class="fin-card rounded-2xl px-6 py-5 group bg-white">
-                        <summary class="flex justify-between items-center gap-4 font-semibold text-fin-ink text-[0.95rem]">
-                            {{ $q }}
-                            <i data-lucide="plus" class="w-5 h-5 text-fin-muted group-open:rotate-45 transition-transform shrink-0"></i>
-                        </summary>
-                        <p class="text-sm text-fin-muted mt-4 leading-relaxed pr-8">{{ $a }}</p>
-                    </details>
-                @endforeach
-            </div>
-        </div>
-    </section>
+    @include('partials.landing-partners-section')
+
+    @include('partials.landing-faq')
 
     @include('partials.landing-contact')
 
-    {{-- CTA --}}
-    <section class="py-16 lg:py-24 px-5">
-        <div class="max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden relative reveal">
-            <div class="absolute inset-0 bg-gradient-to-br from-[#8C71F6] via-[#6D52E8] to-[#5B3FD6]"></div>
-            <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 30% 20%, white, transparent 45%), radial-gradient(circle at 80% 80%, #C6BDFA, transparent 40%);"></div>
-            <div class="relative px-8 py-16 lg:py-20 text-center">
-                <h2 class="text-3xl lg:text-4xl font-light text-white mb-4 tracking-tight">{{ $landing['cta']['title'] }}</h2>
-                <p class="text-white/85 font-normal mb-10 max-w-md mx-auto text-base leading-relaxed">{{ $landing['cta']['description'] }}</p>
-                <a href="{{ route('restaurant.register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-10 py-4 text-sm font-bold text-fin-primary-dark shadow-2xl hover:scale-[1.03] transition-transform">
-                    {{ $landing['cta']['button'] }}
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </a>
-            </div>
-        </div>
-    </section>
+    @include('partials.landing-lead-magnet')
+
+    @include('partials.landing-bottom-cta')
 
     <footer class="footer-dark pt-16 pb-10">
         <div class="max-w-6xl mx-auto px-5">
@@ -444,6 +293,8 @@
                 <div>
                     <h4 class="text-sm font-semibold text-white mb-4">Product</h4>
                     <ul class="space-y-2.5 text-sm text-slate-400">
+                        <li><a href="#partners" class="hover:text-fin-lavender transition-colors">Payment partners</a></li>
+                        <li><a href="#demo" class="hover:text-fin-lavender transition-colors">Live demo</a></li>
                         <li><a href="#features" class="hover:text-fin-lavender transition-colors">Features</a></li>
                         <li><a href="#pricing" class="hover:text-fin-lavender transition-colors">Pricing</a></li>
                         <li><a href="{{ route('login') }}" class="hover:text-fin-lavender transition-colors">Log in</a></li>
@@ -465,7 +316,7 @@
         </div>
     </footer>
 
-    <a href="{{ $landing['whatsapp_url'] }}" class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-2xl bg-whatsapp text-white shadow-[0_8px_30px_rgba(37,211,102,0.45)] hover:scale-110 transition-transform" aria-label="WhatsApp">
+    <a href="{{ $landing['nurture']['chat_with_us_url'] }}" class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-2xl bg-whatsapp text-white shadow-[0_8px_30px_rgba(37,211,102,0.45)] hover:scale-110 transition-transform" aria-label="{{ $landing['nurture']['chat_with_us_label'] }} on WhatsApp" title="{{ $landing['nurture']['chat_with_us_label'] }}">
         <i data-lucide="message-circle" class="w-6 h-6"></i>
     </a>
 

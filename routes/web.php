@@ -15,6 +15,10 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 Route::view('/', 'welcome')->name('home');
 
+Route::post('/lead-magnet', [\App\Http\Controllers\LandingLeadController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('landing.lead-magnet');
+
 // Serve profile & menu_images from storage (works when storage:link missing on host)
 Route::get('/serve-storage/{path}', \App\Http\Controllers\ServeStorageController::class)->where('path', '.*')->name('storage.serve');
 // Path signature avoids some WAFs that block ?signature=... on shared hosting.
