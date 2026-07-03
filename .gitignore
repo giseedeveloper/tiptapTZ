@@ -21,3 +21,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# WhatsApp bot — separate repo (not part of tiptapTZ)
+/tiptopbot/
+
+# Large archives / SQL dumps (keep local only)
+tiptopbot.zip
