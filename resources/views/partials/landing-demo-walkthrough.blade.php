@@ -89,13 +89,13 @@
         </div>
     </div>
 
-    <div class="mt-5 flex justify-center gap-2" data-demo-dots role="tablist" aria-label="Demo steps">
+    <div class="mt-5 flex justify-center gap-2" data-demo-dots role="group" aria-label="Demo steps">
         @foreach ($demo['steps'] as $index => $step)
             <button type="button"
                     class="demo-walkthrough-dot h-2 rounded-full transition-all duration-300 {{ $index === 0 ? 'w-6 bg-fin-primary' : 'w-2 bg-fin-primary/25' }}"
                     data-demo-dot="{{ $index }}"
                     aria-label="{{ $step['title'] }}"
-                    aria-selected="{{ $index === 0 ? 'true' : 'false' }}"></button>
+                    aria-current="{{ $index === 0 ? 'step' : 'false' }}"></button>
         @endforeach
     </div>
 </div>

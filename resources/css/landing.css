@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+@source '../views/welcome.blade.php';
+@source '../views/partials/landing-*.blade.php';
+@source '../views/partials/social-links.blade.php';
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-fin-primary: #8C71F6;
+    --color-fin-primary-dark: #6D52E8;
+    --color-fin-primary-deep: #5B3FD6;
+    --color-fin-light: #EDE9FE;
+    --color-fin-lavender: #DDD7FE;
+    --color-fin-mist: #F5F3FF;
+    --color-fin-ink: #12141C;
+    --color-fin-muted: #64708B;
+    --color-fin-surface: #F4F6FA;
+    --color-whatsapp: #25D366;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply antialiased text-fin-ink selection:bg-fin-primary selection:text-white;
+    }
+}

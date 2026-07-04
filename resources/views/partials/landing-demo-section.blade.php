@@ -86,7 +86,7 @@
             dot.classList.toggle('w-2', !active);
             dot.classList.toggle('bg-fin-primary', active);
             dot.classList.toggle('bg-fin-primary/25', !active);
-            dot.setAttribute('aria-selected', active ? 'true' : 'false');
+            dot.setAttribute('aria-current', active ? 'step' : 'false');
         });
         stepBtns.forEach((btn, i) => btn.classList.toggle('is-active', i === index));
     }
