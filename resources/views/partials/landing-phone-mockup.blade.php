@@ -1,27 +1,27 @@
 {{-- TipTap Rafiki — premium phone mockup (real bot conversation) --}}
 <div class="phone-mockup relative mx-auto w-[290px] sm:w-[310px] lg:w-[340px] phone-float">
-    <div class="absolute -inset-8 rounded-[4rem] bg-gradient-to-br from-[#8C71F6]/30 via-[#C6BDFA]/20 to-transparent blur-3xl pointer-events-none"></div>
-    <div class="absolute -right-6 top-1/4 w-20 h-20 rounded-2xl bg-white/80 backdrop-blur border border-white shadow-lg flex items-center justify-center hidden sm:flex">
+    <div class="absolute -inset-8 rounded-[4rem] bg-linear-to-br from-[#8C71F6]/30 via-[#C6BDFA]/20 to-transparent blur-3xl pointer-events-none"></div>
+    <div class="absolute -right-6 top-1/4 w-20 h-20 rounded-2xl bg-white/80 backdrop-blur border border-white shadow-lg hidden items-center justify-center sm:flex">
         <i data-lucide="qr-code" class="w-8 h-8 text-[#8C71F6]"></i>
     </div>
-    <div class="absolute -left-4 bottom-1/3 w-16 h-16 rounded-full bg-[#25D366]/15 border border-[#25D366]/30 flex items-center justify-center hidden sm:flex">
-        <i data-lucide="message-circle" class="w-7 h-7 text-[#25D366]"></i>
+    <div class="absolute -left-4 bottom-1/3 w-16 h-16 rounded-full bg-whatsapp/15 border border-whatsapp/30 hidden items-center justify-center sm:flex">
+        <i data-lucide="message-circle" class="w-7 h-7 text-whatsapp"></i>
     </div>
-    <div class="relative rounded-[3rem] border-[11px] border-[#12141C] bg-[#12141C] shadow-[0_32px_64px_-12px_rgba(109,82,232,0.45),0_0_0_1px_rgba(255,255,255,0.06)_inset] overflow-hidden ring-1 ring-white/10">
-        <div class="h-8 bg-[#12141C] flex items-center justify-center">
+    <div class="relative rounded-[3rem] border-11 border-fin-ink bg-fin-ink shadow-[0_32px_64px_-12px_rgba(109,82,232,0.45),0_0_0_1px_rgba(255,255,255,0.06)_inset] overflow-hidden ring-1 ring-white/10">
+        <div class="h-8 bg-fin-ink flex items-center justify-center">
             <div class="w-[88px] h-[22px] bg-black rounded-full"></div>
         </div>
         <div class="bg-[#E5DDD5] h-[540px] sm:h-[580px] flex flex-col overflow-hidden">
-            <div class="bg-gradient-to-r from-[#075E54] to-[#128C7E] px-3.5 py-3 flex items-center gap-3 shrink-0 shadow-md">
+            <div class="bg-linear-to-r from-[#075E54] to-[#128C7E] px-3.5 py-3 flex items-center gap-3 shrink-0 shadow-md">
                 <div class="w-10 h-10 rounded-full bg-white p-0.5 ring-2 ring-white/30 shrink-0 overflow-hidden">
-                    <img src="{{ asset('images/logo.png') }}" alt="TAPTAP" class="w-full h-full object-contain rounded-full">
+                    <img src="{{ asset('images/logo-64.png') }}" alt="TAPTAP" width="40" height="40" class="w-full h-full object-contain rounded-full">
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-white text-[15px] font-semibold leading-tight tracking-tight">TipTap Rafiki</p>
                     <p class="text-emerald-100/90 text-[10px] flex items-center gap-1.5 mt-0.5">
                         <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-60"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#25D366]"></span>
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-whatsapp opacity-60"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-whatsapp"></span>
                         </span>
                         online
                     </p>
@@ -100,7 +100,7 @@
 
             <div class="bg-[#F0F2F5] px-2.5 py-2.5 flex items-center gap-2 shrink-0">
                 <div class="flex-1 bg-white rounded-full px-4 py-2 text-[11px] text-gray-400 shadow-inner">Message…</div>
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#075E54] to-[#128C7E] flex items-center justify-center shadow-md">
+                <div class="w-9 h-9 rounded-full bg-linear-to-br from-[#075E54] to-[#128C7E] flex items-center justify-center shadow-md">
                     <i data-lucide="mic" class="w-4 h-4 text-white"></i>
                 </div>
             </div>

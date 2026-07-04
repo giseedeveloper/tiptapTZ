@@ -1,17 +1,17 @@
 @php
-    $logoUrl = function_exists('public_asset') ? public_asset('images/logo.png') : asset('images/logo.png');
+    $logoUrl = function_exists('public_asset') ? public_asset('images/logo-64.png') : asset('images/logo-64.png');
     $flagAsset = fn (string $path) => function_exists('public_asset') ? public_asset($path) : asset($path);
     $market = config('tiptap.market', 'tz');
     $flagPath = $market === 'za' ? 'images/flags/za.svg' : 'images/flags/tz.svg';
     $flagLabel = $market === 'za' ? 'South Africa' : 'Tanzania';
 @endphp
 
-<header id="site-nav" class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-fin-ink/[0.06] shadow-[0_1px_0_rgba(18,20,28,0.04)] transition-shadow duration-300">
+<header id="site-nav" class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-fin-ink/6 shadow-[0_1px_0_rgba(18,20,28,0.04)] transition-shadow duration-300">
     <div class="max-w-6xl mx-auto px-5 lg:px-8">
-        <div class="relative flex items-center justify-between h-16 lg:h-[4.5rem]">
+        <div class="relative flex items-center justify-between h-16 lg:h-18">
             <a href="/" class="relative z-10 flex items-center gap-2.5 shrink-0 group">
-                <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-fin-primary to-fin-primary-dark p-1.5 shadow-md shadow-fin-primary/25 group-hover:scale-105 transition-transform">
-                    <img src="{{ $logoUrl }}" alt="TIPTAP" class="h-full w-full object-contain rounded-lg bg-white">
+                <div class="h-9 w-9 rounded-xl bg-linear-to-br from-fin-primary to-fin-primary-dark p-1.5 shadow-md shadow-fin-primary/25 group-hover:scale-105 transition-transform">
+                    <img src="{{ $logoUrl }}" alt="TIPTAP" width="36" height="36" class="h-full w-full object-contain rounded-lg bg-white">
                 </div>
                 <span class="text-lg font-bold tracking-tight text-fin-ink">TIP<span class="text-fin-primary">TAP</span></span>
             </a>
@@ -36,11 +36,11 @@
                         </button>
                         <div class="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-fin-ink/5 bg-white py-2 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                             <a href="{{ route('restaurant.register') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-fin-muted hover:bg-fin-mist hover:text-fin-ink transition-colors">
-                                <span class="icon-box !w-8 !h-8"><i data-lucide="store" class="w-4 h-4 text-fin-primary"></i></span>
+                                <span class="icon-box w-8! h-8!"><i data-lucide="store" class="w-4 h-4 text-fin-primary"></i></span>
                                 <span><span class="font-semibold text-fin-ink block">Restaurant / Manager</span><span class="text-xs">Free trial</span></span>
                             </a>
                             <a href="{{ route('waiter.register') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-fin-muted hover:bg-fin-mist hover:text-fin-ink transition-colors">
-                                <span class="icon-box !w-8 !h-8"><i data-lucide="user" class="w-4 h-4 text-fin-primary"></i></span>
+                                <span class="icon-box w-8! h-8!"><i data-lucide="user" class="w-4 h-4 text-fin-primary"></i></span>
                                 <span><span class="font-semibold text-fin-ink block">Waiter</span><span class="text-xs">Get your code</span></span>
                             </a>
                             @include('partials.landing-book-demo-link', ['variant' => 'menu-item'])
@@ -66,10 +66,10 @@
     </div>
 </header>
 
-<div id="mobile-menu" class="fixed inset-0 z-[60] bg-white hidden flex-col p-8 lg:hidden">
+<div id="mobile-menu" class="fixed inset-0 z-60 bg-white hidden flex-col p-8 lg:hidden">
     <div class="flex justify-between items-center mb-10">
         <a href="/" class="flex items-center gap-2">
-            <img src="{{ $logoUrl }}" alt="TIPTAP" class="h-8 w-8 rounded-lg">
+            <img src="{{ $logoUrl }}" alt="TIPTAP" width="32" height="32" class="h-8 w-8 rounded-lg">
             <span class="text-xl font-bold text-fin-ink">TIPTAP</span>
         </a>
         <button type="button" id="mobile-menu-close" class="p-2 rounded-xl hover:bg-fin-surface" aria-label="Close menu">

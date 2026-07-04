@@ -5,39 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @include('partials.landing-seo-head')
 
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
-    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ asset('images/logo-64.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo-64.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    colors: {
-                        fin: {
-                            primary: '#8C71F6',
-                            'primary-dark': '#6D52E8',
-                            'primary-deep': '#5B3FD6',
-                            light: '#EDE9FE',
-                            lavender: '#DDD7FE',
-                            mist: '#F5F3FF',
-                            ink: '#12141C',
-                            muted: '#64708B',
-                            surface: '#F4F6FA',
-                        },
-                        whatsapp: '#25D366',
-                    },
-                },
-            },
-        };
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         :root { --fin-primary: #8C71F6; --fin-dark: #6D52E8; --fin-ink: #12141C; }
@@ -100,7 +75,7 @@
         .partners-logo:hover { filter: saturate(1); }
     </style>
 </head>
-<body class="antialiased font-sans selection:bg-fin-primary selection:text-white">
+<body class="antialiased font-sans selection:bg-fin-primary selection:text-white" data-landing-page="true">
 
     @include('partials.landing-nav-header')
 
@@ -113,7 +88,7 @@
             <div class="flex flex-col lg:flex-row items-center gap-14 lg:gap-10">
                 <div class="flex-1 text-center lg:text-left max-w-xl mx-auto lg:mx-0">
                     <div class="inline-flex items-center gap-2 rounded-full pl-1 pr-4 py-1 mb-8 bg-white/70 backdrop-blur-md border border-white shadow-sm">
-                        <span class="rounded-full bg-gradient-to-r from-fin-primary to-fin-primary-dark px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">{{ $landing['hero']['live_badge'] }}</span>
+                        <span class="rounded-full bg-linear-to-r from-fin-primary to-fin-primary-dark px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">{{ $landing['hero']['live_badge'] }}</span>
                         <span class="text-xs font-medium text-fin-muted">{{ $landing['hero']['badge_text'] }}</span>
                     </div>
                     <h1 class="text-[2rem] sm:text-[2.75rem] lg:text-[3rem] font-light leading-[1.08] tracking-tight text-fin-ink mb-6">
@@ -183,7 +158,7 @@
                     <p class="text-fin-muted leading-relaxed max-w-md text-[0.95rem]">{{ $landing['features']['rafiki_card_body'] }}</p>
                     <div class="mt-8 p-5 rounded-2xl bg-white border border-fin-primary/10 shadow-inner max-w-sm">
                         <div class="flex gap-3 items-center">
-                            <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 rounded-full object-contain bg-fin-mist p-1 ring-2 ring-fin-primary/20" alt="">
+                            <img src="{{ asset('images/logo-64.png') }}" width="40" height="40" class="w-10 h-10 rounded-full object-contain bg-fin-mist p-1 ring-2 ring-fin-primary/20" alt="">
                             <div>
                                 <p class="text-xs font-bold text-fin-ink">Menu sent &middot; Table 7</p>
                                 <p class="text-[10px] text-fin-muted mt-0.5">Ready to order</p>
@@ -192,12 +167,12 @@
                     </div>
                 </div>
                 <div class="fin-card rounded-3xl p-8 md:col-span-5 reveal">
-                    <div class="icon-box mb-6 !bg-emerald-50 !border-emerald-100"><i data-lucide="banknote" class="w-6 h-6 text-emerald-600"></i></div>
+                    <div class="icon-box mb-6 bg-emerald-50! border-emerald-100!"><i data-lucide="banknote" class="w-6 h-6 text-emerald-600"></i></div>
                     <h3 class="text-xl font-semibold text-fin-ink mb-2">Instant mobile money</h3>
                     <p class="text-fin-muted text-sm leading-relaxed">M-Pesa, TigoPesa, and Airtel Money via Selcom. Tips and bills sync to your dashboard in real time.</p>
                 </div>
                 <div class="fin-card rounded-3xl p-8 md:col-span-5 reveal">
-                    <div class="icon-box mb-6 !bg-amber-50 !border-amber-100"><i data-lucide="qr-code" class="w-6 h-6 text-amber-600"></i></div>
+                    <div class="icon-box mb-6 bg-amber-50! border-amber-100!"><i data-lucide="qr-code" class="w-6 h-6 text-amber-600"></i></div>
                     <h3 class="text-xl font-semibold text-fin-ink mb-2">QR code per table</h3>
                     <p class="text-fin-muted text-sm leading-relaxed">Every table gets its own code. Guests scan once and land straight in your branded bot flow.</p>
                 </div>
@@ -208,7 +183,7 @@
                             <h3 class="text-xl font-semibold text-fin-ink mb-2">Kitchen display & live orders</h3>
                             <p class="text-fin-muted text-sm leading-relaxed">Orders hit the kitchen screen instantly. Managers track the full pipeline from pending to served.</p>
                         </div>
-                        <div class="flex-1 rounded-2xl bg-gradient-to-br from-fin-ink to-[#2a2d3a] p-5 text-white font-mono text-xs shadow-xl">
+                        <div class="flex-1 rounded-2xl bg-linear-to-br from-fin-ink to-[#2a2d3a] p-5 text-white font-mono text-xs shadow-xl">
                             <div class="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
                                 <span class="text-fin-lavender font-bold">#1042</span>
                                 <span class="text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/15">PREPARING</span>
@@ -239,7 +214,7 @@
                     <div class="step-line text-center reveal">
                         <div class="relative inline-flex flex-col items-center">
                             <span class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-fin-primary text-white text-xs font-bold flex items-center justify-center shadow-lg">{{ $num }}</span>
-                            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-fin-mist to-fin-lavender flex items-center justify-center mb-6 shadow-md border border-fin-primary/10">
+                            <div class="w-20 h-20 rounded-2xl bg-linear-to-br from-fin-mist to-fin-lavender flex items-center justify-center mb-6 shadow-md border border-fin-primary/10">
                                 <i data-lucide="{{ $icon }}" class="w-8 h-8 text-fin-primary-dark"></i>
                             </div>
                         </div>
@@ -270,7 +245,7 @@
             <div class="grid grid-cols-2 md:grid-cols-5 gap-10 mb-14">
                 <div class="col-span-2">
                     <a href="/" class="flex items-center gap-2.5 mb-5">
-                        <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="h-9 w-9 rounded-lg bg-white p-1 object-contain">
+                        <img src="{{ asset('images/logo-64.png') }}" alt="TIPTAP" width="36" height="36" class="h-9 w-9 rounded-lg bg-white p-1 object-contain">
                         <span class="text-lg font-bold text-white">TIPTAP</span>
                     </a>
                     <p class="text-sm text-slate-400 max-w-xs leading-relaxed mb-4">{{ $landing['footer_tagline'] }}</p>
@@ -321,8 +296,6 @@
     </a>
 
     <script>
-        lucide.createIcons();
-
         const nav = document.getElementById('site-nav');
         window.addEventListener('scroll', () => nav?.classList.toggle('scrolled', window.scrollY > 24));
 

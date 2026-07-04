@@ -8,14 +8,14 @@
     $currencySample = $market === 'za' ? 'R 215.00' : 'Tsh 21,500';
 @endphp
 <div class="demo-walkthrough relative mx-auto w-full max-w-[340px]" data-demo-walkthrough>
-    <div class="absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-fin-primary/20 via-transparent to-whatsapp/10 blur-2xl pointer-events-none"></div>
-    <div class="relative rounded-[2.75rem] border-[10px] border-fin-ink bg-fin-ink shadow-[0_28px_60px_-12px_rgba(109,82,232,0.45)] overflow-hidden">
+    <div class="absolute -inset-6 rounded-[3rem] bg-linear-to-br from-fin-primary/20 via-transparent to-whatsapp/10 blur-2xl pointer-events-none"></div>
+    <div class="relative rounded-[2.75rem] border-10 border-fin-ink bg-fin-ink shadow-[0_28px_60px_-12px_rgba(109,82,232,0.45)] overflow-hidden">
         <div class="h-7 bg-fin-ink flex items-center justify-center">
             <div class="w-[72px] h-[18px] bg-black rounded-full"></div>
         </div>
         <div class="bg-[#E5DDD5] h-[420px] sm:h-[460px] flex flex-col overflow-hidden">
-            <div class="bg-gradient-to-r from-[#075E54] to-[#128C7E] px-3 py-2.5 flex items-center gap-2.5 shrink-0">
-                <img src="{{ asset('images/logo.png') }}" alt="" class="w-8 h-8 rounded-full bg-white p-0.5 object-contain">
+            <div class="bg-linear-to-r from-[#075E54] to-[#128C7E] px-3 py-2.5 flex items-center gap-2.5 shrink-0">
+                <img src="{{ asset('images/logo-64.png') }}" alt="" width="32" height="32" loading="lazy" decoding="async" class="w-8 h-8 rounded-full bg-white p-0.5 object-contain">
                 <div class="min-w-0">
                     <p class="text-white text-sm font-semibold leading-tight">TipTap Rafiki</p>
                     <p class="text-emerald-100/90 text-[9px]">demo · online</p>
@@ -23,7 +23,7 @@
             </div>
 
             <div class="flex-1 relative overflow-hidden">
-                <div class="demo-walkthrough-scene is-active absolute inset-0 flex flex-col items-center justify-center px-6 text-center bg-gradient-to-b from-[#F5F3FF] to-[#E5DDD5]" data-scene="0">
+                <div class="demo-walkthrough-scene is-active absolute inset-0 flex flex-col items-center justify-center px-6 text-center bg-linear-to-b from-fin-mist to-[#E5DDD5]" data-scene="0">
                     <div class="w-28 h-28 rounded-3xl bg-white shadow-lg border-2 border-fin-primary/20 flex items-center justify-center mb-4">
                         <i data-lucide="qr-code" class="w-14 h-14 text-fin-primary"></i>
                     </div>
@@ -73,7 +73,7 @@
                     <div class="flex justify-end">
                         <div class="max-w-[50%] bg-[#D9FDD3] rounded-lg rounded-tr-none px-2.5 py-1.5 text-[10px]">Pay now</div>
                     </div>
-                    <div class="max-w-[92%] bg-white rounded-lg rounded-tl-none px-2.5 py-2 shadow-sm text-[10px] border-l-4 border-[#25D366]">
+                    <div class="max-w-[92%] bg-white rounded-lg rounded-tl-none px-2.5 py-2 shadow-sm text-[10px] border-l-4 border-whatsapp">
                         ✅ Payment received!<br>
                         <span class="text-[#667781]">Receipt sent · Thank you 🙏</span>
                     </div>

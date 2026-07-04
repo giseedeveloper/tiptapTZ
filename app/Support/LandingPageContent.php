@@ -6,9 +6,15 @@ use App\Models\Setting;
 
 class LandingPageContent
 {
+    private static ?array $storedValues = null;
+
+    private static ?array $viewData = null;
+
     public static function value(string $key): string
     {
-        $stored = Setting::get(self::storageKey($key));
+        $storedValues = self::storedValues();
+        $storedKey = self::storageKey($key);
+        $stored = $storedValues[$storedKey] ?? null;
 
         if (filled($stored)) {
             return (string) $stored;
@@ -79,7 +85,11 @@ class LandingPageContent
      */
     public static function viewData(): array
     {
-        return [
+        if (self::$viewData !== null) {
+            return self::$viewData;
+        }
+
+        return self::$viewData = [
             'market' => (string) config('tiptap.market', 'tz'),
             'offices' => self::offices(),
             'social' => self::social(),
@@ -499,5 +509,29 @@ class LandingPageContent
     public static function storageKey(string $key): string
     {
         return 'landing_'.$key;
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    private static function storedValues(): array
+    {
+        if (self::$storedValues !== null) {
+            return self::$storedValues;
+        }
+
+        $keys = array_map(
+            fn (string $key): string => self::storageKey($key),
+            array_keys(config('tiptap.landing.fields', [])),
+        );
+
+        if ($keys === []) {
+            return self::$storedValues = [];
+        }
+
+        return self::$storedValues = Setting::query()
+            ->whereIn('key', $keys)
+            ->pluck('value', 'key')
+            ->all();
     }
 }
