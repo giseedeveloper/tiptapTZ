@@ -45,6 +45,7 @@ RUN composer install --no-dev --no-interaction --no-scripts --prefer-dist --opti
 COPY . .
 
 COPY --from=node_builder /app/public/build ./public/build
+COPY --from=node_builder /app/public/build /opt/tiptap-build-assets
 
 RUN composer run-script post-autoload-dump --no-interaction
 

@@ -37,6 +37,12 @@ if [ ! -L public/storage ]; then
     php artisan storage:link --no-interaction || true
 fi
 
+if [ -d /opt/tiptap-build-assets ]; then
+    echo "[assets] Syncing Vite build assets..."
+    mkdir -p public/build
+    cp -a /opt/tiptap-build-assets/. public/build/
+fi
+
 DB_HOST="${DB_HOST:-mysql}"
 DB_PORT="${DB_PORT:-3306}"
 DB_DATABASE="${DB_DATABASE:-taptap}"
