@@ -110,18 +110,18 @@
             <div class="login-hero-blob login-hero-blob-3"></div>
         </div>
 
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-4 sm:pt-0 px-3 sm:px-4 relative z-10">
-            <a href="/" class="flex items-center gap-2 sm:gap-3 group mb-6 sm:mb-8">
-                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#8C71F6] to-[#6D52E8] p-2 shadow-xl shadow-[#8C71F6]/30 transform group-hover:rotate-6 transition-all duration-500 animate-pulse-glow">
+        <div class="min-h-screen flex flex-col justify-center items-center py-5 sm:py-8 px-3 sm:px-4 relative z-10">
+            <a href="/" class="flex items-center gap-2 group mb-4 sm:mb-5 shrink-0">
+                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#8C71F6] to-[#6D52E8] p-1.5 shadow-lg shadow-[#8C71F6]/25 transform group-hover:rotate-6 transition-all duration-500 animate-pulse-glow">
                     <img src="{{ asset('images/logo.png') }}" alt="TIPTAP Logo" class="w-full h-full object-contain bg-white rounded-lg">
                 </div>
-                <span class="text-xl sm:text-2xl font-black text-[#12141C] tracking-tight">TIP<span class="gradient-text">TAP</span></span>
+                <span class="text-lg sm:text-xl font-black text-[#12141C] tracking-tight">TIP<span class="gradient-text">TAP</span></span>
             </a>
 
             <div @class([
-                'w-full glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl shadow-[#6D52E8]/10 relative overflow-hidden',
+                'w-full glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl shadow-[#6D52E8]/10 relative overflow-hidden shrink-0',
                 'sm:max-w-2xl' => $wide,
-                'sm:max-w-md' => ! $wide,
+                'sm:max-w-[400px]' => ! $wide,
             ])>
                 <div class="absolute -top-10 -right-10 w-32 h-32 sm:w-40 sm:h-40 bg-[#8C71F6]/10 rounded-full blur-2xl sm:blur-3xl"></div>
                 <div class="absolute -bottom-10 -left-10 w-32 h-32 sm:w-40 sm:h-40 bg-[#DDD7FE]/60 rounded-full blur-2xl sm:blur-3xl"></div>
@@ -131,13 +131,13 @@
                 </div>
             </div>
 
-            <p class="login-footer mt-6 sm:mt-8 text-[#64708B] text-xs font-medium text-center flex items-center justify-center gap-2">
+            <p class="login-footer mt-4 sm:mt-5 pb-1 text-[#64708B] text-xs font-medium text-center flex items-center justify-center gap-2 shrink-0">
                 <img
                     src="{{ asset('images/flags/tz.svg') }}"
                     alt="Tanzania flag"
-                    width="24"
-                    height="18"
-                    class="h-[18px] w-6 shrink-0 rounded-[2px] shadow-sm ring-1 ring-black/10 object-cover"
+                    width="28"
+                    height="21"
+                    class="h-5 w-7 shrink-0 rounded-[2px] shadow-sm ring-1 ring-black/10 object-cover"
                     title="Tanzania"
                 >
                 <span>&copy; {{ date('Y') }} TIPTAP. All rights reserved.</span>

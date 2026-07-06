@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
+use App\Support\SocialAuth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,16 @@ class AuthenticatedSessionController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+
+        $existing = User::query()->where('email', $credentials['email'])->first();
+
+        if ($existing?->usesOAuth()) {
+            return back()
+                ->withErrors([
+                    'email' => 'This account uses '.SocialAuth::providerLabel($existing->auth_provider).' sign-in. Use the button above.',
+                ])
+                ->onlyInput('email');
+        }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();

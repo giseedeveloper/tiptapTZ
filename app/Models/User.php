@@ -23,6 +23,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'auth_provider',
+        'auth_provider_id',
         'password',
         'restaurant_id',
         'waiter_code',
@@ -188,5 +190,15 @@ class User extends Authenticatable
     public function scopeOnline($query)
     {
         return $query->where('is_online', true);
+    }
+
+    public function usesOAuth(): bool
+    {
+        return in_array($this->auth_provider, ['google', 'facebook', 'apple'], true);
+    }
+
+    public function usesPasswordAuth(): bool
+    {
+        return ! $this->usesOAuth();
     }
 }

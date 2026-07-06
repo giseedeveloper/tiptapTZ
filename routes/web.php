@@ -3,6 +3,9 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\TiptapAnalysisController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RestaurantOAuthCompletionController;
+use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\Auth\WaiterOAuthCompletionController;
 use App\Http\Controllers\BillImageController;
 use App\Http\Controllers\Manager\DashboardController as ManagerDashboard;
 use App\Http\Controllers\RestaurantRegistrationController;
@@ -51,11 +54,25 @@ Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('l
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
+Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('social.callback');
+
 Route::get('/register-restaurant', [RestaurantRegistrationController::class, 'create'])->name('restaurant.register');
-Route::post('/register-restaurant', [RestaurantRegistrationController::class, 'store'])->name('restaurant.register.store');
+Route::post('/register-restaurant', [RestaurantRegistrationController::class, 'storeCredentials'])->name('restaurant.register.credentials');
+Route::get('/register-restaurant/details', [RestaurantRegistrationController::class, 'createDetails'])->name('restaurant.register.details');
+Route::post('/register-restaurant/details', [RestaurantRegistrationController::class, 'storeDetails'])->name('restaurant.register.details.store');
 
 Route::get('/register-waiter', [\App\Http\Controllers\WaiterRegistrationController::class, 'create'])->name('waiter.register');
-Route::post('/register-waiter', [\App\Http\Controllers\WaiterRegistrationController::class, 'store'])->name('waiter.register.store');
+Route::post('/register-waiter', [\App\Http\Controllers\WaiterRegistrationController::class, 'storeCredentials'])->name('waiter.register.credentials');
+Route::get('/register-waiter/details', [\App\Http\Controllers\WaiterRegistrationController::class, 'createDetails'])->name('waiter.register.details');
+Route::post('/register-waiter/details', [\App\Http\Controllers\WaiterRegistrationController::class, 'storeDetails'])->name('waiter.register.details.store');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/register-restaurant/complete', [RestaurantOAuthCompletionController::class, 'create'])->name('restaurant.oauth.complete');
+    Route::post('/register-restaurant/complete', [RestaurantOAuthCompletionController::class, 'store'])->name('restaurant.oauth.complete.store');
+    Route::get('/register-waiter/complete', [WaiterOAuthCompletionController::class, 'create'])->name('waiter.oauth.complete');
+    Route::post('/register-waiter/complete', [WaiterOAuthCompletionController::class, 'store'])->name('waiter.oauth.complete.store');
+});
 
 Route::middleware('auth')->group(function () {
     Route::post('/impersonate/stop', [\App\Http\Controllers\Admin\ImpersonationController::class, 'stop'])->name('impersonate.stop');

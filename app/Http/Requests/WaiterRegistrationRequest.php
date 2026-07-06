@@ -32,14 +32,14 @@ class WaiterRegistrationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'first_name.required' => 'Jina la kwanza linahitajika.',
-            'last_name.required' => 'Jina la mwisho linahitajika.',
-            'email.required' => 'Barua pepe inahitajika.',
-            'email.unique' => 'Barua pepe tayari imesajiliwa.',
-            'phone.required' => 'Nambari ya simu inahitajika.',
-            'password.required' => 'Neno la siri linahitajika.',
-            'password.min' => 'Neno la siri lazima liwe na angalau herufi 8.',
-            'password.confirmed' => 'Thibitisha neno la siri halilingani.',
+            'first_name.required' => 'First name is required.',
+            'last_name.required' => 'Last name is required.',
+            'email.required' => 'Email is required.',
+            'email.unique' => 'This email is already registered.',
+            'phone.required' => 'Phone number is required.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
         ];
     }
 }

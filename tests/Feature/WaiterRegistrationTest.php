@@ -9,25 +9,32 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
 });
 
-test('waiter registration page loads stepped wizard', function () {
+test('waiter registration page loads', function () {
     $this->get(route('waiter.register'))
         ->assertOk()
-        ->assertSee('Sajili kama Waiter')
-        ->assertSee('Hatua 1 ya 4')
-        ->assertSee('waiter-registration-form', false);
+        ->assertSee('Register as Waiter')
+        ->assertSee('Or register with email');
+});
+
+test('waiter details page requires credentials step first', function () {
+    $this->get(route('waiter.register.details'))
+        ->assertRedirect(route('waiter.register'));
 });
 
 test('guest can register waiter account', function () {
     $email = 'newwaiter'.uniqid().'@example.com';
 
-    $response = $this->post(route('waiter.register.store'), [
-        'first_name' => 'Asha',
-        'last_name' => 'Mwangi',
+    $this->post(route('waiter.register.credentials'), [
         'email' => $email,
-        'phone' => '0712345678',
-        'location' => 'Dar es Salaam',
         'password' => 'SecurePass123!',
         'password_confirmation' => 'SecurePass123!',
+    ])->assertRedirect(route('waiter.register.details'));
+
+    $response = $this->post(route('waiter.register.details.store'), [
+        'first_name' => 'Asha',
+        'last_name' => 'Mwangi',
+        'phone' => '0712345678',
+        'location' => 'Dar es Salaam',
     ]);
 
     $response->assertRedirect(route('waiter.dashboard'));
@@ -42,13 +49,16 @@ test('guest can register waiter account', function () {
 test('waiter registration allows optional location', function () {
     $email = 'nowaiterloc'.uniqid().'@example.com';
 
-    $this->post(route('waiter.register.store'), [
-        'first_name' => 'John',
-        'last_name' => 'Doe',
+    $this->post(route('waiter.register.credentials'), [
         'email' => $email,
-        'phone' => '0711111111',
         'password' => 'password123',
         'password_confirmation' => 'password123',
+    ])->assertRedirect(route('waiter.register.details'));
+
+    $this->post(route('waiter.register.details.store'), [
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'phone' => '0711111111',
     ])->assertRedirect(route('waiter.dashboard'));
 
     expect(User::where('email', $email)->first()?->location)->toBeNull();

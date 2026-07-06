@@ -20,6 +20,7 @@ class WaiterRegistrationController extends Controller
         $user = User::create([
             'name' => trim($validated['first_name'].' '.$validated['last_name']),
             'email' => $validated['email'],
+            'auth_provider' => 'email',
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'],
             'location' => $validated['location'] ?? null,
