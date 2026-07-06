@@ -1,53 +1,40 @@
-<x-guest-layout title="TIPTAP | Complete Restaurant Registration" :wide="true">
-    <div class="max-w-xl mx-auto">
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center gap-2 rounded-full bg-[#F5F3FF] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6D52E8] border border-[#DDD7FE] mb-4">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-                Account connected
+<x-guest-layout title="TIPTAP | Restaurant Details">
+    <div class="relative mx-auto w-full">
+        <div class="mb-5">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <span class="text-xs font-semibold text-[#6D52E8]">Step 2 of 2</span>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                    Google connected
+                </span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-black text-[#12141C] tracking-tight">Restaurant details</h1>
-            <p class="text-[#64708B] text-sm mt-2">Your sign-in is set up. Add your restaurant info below.</p>
+            <div class="h-1.5 rounded-full bg-[#EDE9FE] overflow-hidden mb-5">
+                <div class="h-full w-full rounded-full bg-gradient-to-r from-[#8C71F6] to-[#6D52E8]"></div>
+            </div>
+
+            <div class="text-center mb-5">
+                <h1 class="text-xl sm:text-2xl font-black text-[#12141C] tracking-tight leading-tight">Restaurant details</h1>
+                <p class="text-[#64708B] font-medium mt-1.5 text-sm">Almost done — tell us about your restaurant</p>
+            </div>
+
+            <div class="flex items-center gap-3 rounded-xl border border-[#E8E8ED] bg-white px-4 py-3 mb-5 shadow-sm">
+                <div class="h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-[#8C71F6] to-[#6D52E8] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#8C71F6]/25">
+                    {{ strtoupper(substr($user->name ?: $user->email, 0, 1)) }}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-[#12141C] truncate">{{ $user->name ?: 'Manager' }}</p>
+                    <p class="text-xs text-[#64708B] truncate">{{ $user->email }}</p>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-6 rounded-2xl border border-[#DDD7FE] bg-[#FAFAFE] p-4">
-            <p class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-1">Account email</p>
-            <p class="font-semibold text-[#12141C]">{{ $user->email }}</p>
-        </div>
-
-        <form method="POST" action="{{ route('restaurant.oauth.complete.store') }}" class="space-y-5">
-            @csrf
-
-            <div>
-                <label for="manager_name" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Manager full name</label>
-                <input id="manager_name" name="manager_name" type="text" value="{{ old('manager_name', $user->name) }}" required
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('manager_name')" class="mt-2" />
-            </div>
-
-            <div>
-                <label for="restaurant_name" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Restaurant name</label>
-                <input id="restaurant_name" name="restaurant_name" type="text" value="{{ old('restaurant_name') }}" required
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('restaurant_name')" class="mt-2" />
-            </div>
-
-            <div>
-                <label for="phone" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Restaurant phone</label>
-                <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" required
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('phone')" class="mt-2" />
-            </div>
-
-            <div>
-                <label for="location" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Location / city</label>
-                <input id="location" name="location" type="text" value="{{ old('location') }}" required placeholder="e.g. Dar es Salaam"
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('location')" class="mt-2" />
-            </div>
-
-            <button type="submit" class="btn-fin w-full py-4 text-white rounded-xl font-bold text-base">
-                Complete registration
-            </button>
-        </form>
+        @include('partials.auth-restaurant-details-form', [
+            'action' => route('restaurant.oauth.complete.store'),
+            'managerName' => old('manager_name', $user->name),
+            'locationPlaceholder' => 'e.g. Dar es Salaam',
+            'phonePlaceholder' => 'e.g. 071 234 5678',
+            'autofocusManager' => false,
+            'showBack' => false,
+        ])
     </div>
 </x-guest-layout>

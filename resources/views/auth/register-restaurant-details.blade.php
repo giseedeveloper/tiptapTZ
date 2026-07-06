@@ -1,65 +1,38 @@
-<x-guest-layout title="TIPTAP | Restaurant Details" :wide="true">
-    <div class="max-w-xl mx-auto">
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center gap-2 rounded-full bg-[#F5F3FF] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6D52E8] border border-[#DDD7FE] mb-4">
-                Step 2 of 2
+<x-guest-layout title="TIPTAP | Restaurant Details">
+    <div class="relative mx-auto w-full">
+        <div class="mb-5">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <span class="text-xs font-semibold text-[#6D52E8]">Step 2 of 2</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-black text-[#12141C] tracking-tight">Restaurant details</h1>
-            <p class="text-[#64708B] text-sm mt-2">Tell us about you and your restaurant</p>
-        </div>
+            <div class="h-1.5 rounded-full bg-[#EDE9FE] overflow-hidden mb-5">
+                <div class="h-full w-full rounded-full bg-gradient-to-r from-[#8C71F6] to-[#6D52E8]"></div>
+            </div>
 
-        <div class="mb-6 rounded-2xl border border-[#DDD7FE] bg-[#FAFAFE] p-4">
-            <p class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-1">Account email</p>
-            <p class="font-semibold text-[#12141C]">{{ $managerEmail }}</p>
-        </div>
+            <div class="text-center mb-5">
+                <h1 class="text-xl sm:text-2xl font-black text-[#12141C] tracking-tight leading-tight">Restaurant details</h1>
+                <p class="text-[#64708B] font-medium mt-1.5 text-sm">Tell us about you and your restaurant</p>
+            </div>
 
-        <form method="POST" action="{{ route('restaurant.register.details.store') }}" class="space-y-5">
-            @csrf
-
-            @if ($errors->any())
-                <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium space-y-1" role="alert">
-                    @foreach ($errors->all() as $error)
-                        <p>{{ $error }}</p>
-                    @endforeach
+            <div class="flex items-center gap-3 rounded-xl border border-[#E8E8ED] bg-white px-4 py-3 mb-5 shadow-sm">
+                <div class="h-11 w-11 shrink-0 rounded-full bg-[#F5F3FF] border border-[#DDD7FE] flex items-center justify-center text-[#6D52E8]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                    </svg>
                 </div>
-            @endif
-
-            <div>
-                <label for="manager_name" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Manager full name</label>
-                <input id="manager_name" name="manager_name" type="text" value="{{ old('manager_name') }}" required autofocus placeholder="e.g. John Doe"
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('manager_name')" class="mt-2" />
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-medium text-[#64708B]">Signing up as</p>
+                    <p class="text-sm font-semibold text-[#12141C] truncate">{{ $managerEmail }}</p>
+                </div>
             </div>
+        </div>
 
-            <div>
-                <label for="restaurant_name" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Restaurant name</label>
-                <input id="restaurant_name" name="restaurant_name" type="text" value="{{ old('restaurant_name') }}" required placeholder="e.g. TIPTAP Grill"
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('restaurant_name')" class="mt-2" />
-            </div>
-
-            <div>
-                <label for="phone" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Restaurant phone</label>
-                <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" required placeholder="e.g. 071 234 5678"
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('phone')" class="mt-2" />
-            </div>
-
-            <div>
-                <label for="location" class="text-xs font-bold uppercase tracking-wider text-[#64708B] mb-2 block">Location / city</label>
-                <input id="location" name="location" type="text" value="{{ old('location') }}" required placeholder="e.g. Dar es Salaam"
-                       class="block w-full px-4 py-3.5 bg-[#F5F3FF] border border-[#DDD7FE] rounded-xl font-medium text-[#12141C] focus:ring-2 focus:ring-[#8C71F6] focus:border-transparent">
-                <x-input-error :messages="$errors->get('location')" class="mt-2" />
-            </div>
-
-            <div class="flex items-center gap-3 pt-2">
-                <a href="{{ route('restaurant.register') }}" class="text-sm font-semibold text-[#64708B] hover:text-[#12141C] transition-colors">
-                    Back
-                </a>
-                <button type="submit" class="btn-fin flex-1 py-4 text-white rounded-xl font-bold text-base">
-                    Complete registration
-                </button>
-            </div>
-        </form>
+        @include('partials.auth-restaurant-details-form', [
+            'action' => route('restaurant.register.details.store'),
+            'managerName' => old('manager_name'),
+            'locationPlaceholder' => 'e.g. Dar es Salaam',
+            'phonePlaceholder' => 'e.g. 071 234 5678',
+            'autofocusManager' => true,
+            'showBack' => true,
+        ])
     </div>
 </x-guest-layout>
