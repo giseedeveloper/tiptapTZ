@@ -11,6 +11,15 @@ use Carbon\Carbon;
 
 class ManagerDashboardAnalytics
 {
+    public function revenueForPaidOrdersOnDate(int $restaurantId, Carbon $date): float
+    {
+        return (float) Payment::query()
+            ->where('restaurant_id', $restaurantId)
+            ->whereIn('status', ['paid', 'completed'])
+            ->whereDate('created_at', $date)
+            ->sum('amount');
+    }
+
     /**
      * @return array<string, mixed>
      */

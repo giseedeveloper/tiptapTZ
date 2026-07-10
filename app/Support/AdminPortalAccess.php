@@ -39,6 +39,65 @@ class AdminPortalAccess
     }
 
     /**
+     * Ensure restaurant-side roles exist (manager, branch_manager, etc.).
+     * Safe to call before admin user role pickers.
+     */
+    public static function bootstrapRestaurantStaffRoles(): void
+    {
+        self::bootstrapPortalAccess();
+
+        $definitions = [
+            'manager' => [
+                'manage_menu',
+                'manage_waiters',
+                'view_orders',
+                'update_orders',
+                'view_payments',
+                'confirm_payments',
+                'view_feedback',
+                'view_reports_restaurant',
+            ],
+            'branch_manager' => [
+                'manage_menu',
+                'manage_waiters',
+                'manage_branches',
+                'view_orders',
+                'update_orders',
+                'view_payments',
+                'confirm_payments',
+                'view_feedback',
+                'view_reports_restaurant',
+            ],
+            'floor_supervisor' => [
+                'view_orders',
+                'update_orders_status',
+                'view_feedback',
+            ],
+            'waiter' => [
+                'view_orders',
+                'update_orders_status',
+                'view_tips',
+            ],
+            'bot_service' => [
+                'api_restaurant_search',
+                'api_get_menu',
+                'api_create_order',
+                'api_create_payment',
+                'api_check_payment',
+                'api_submit_feedback',
+                'api_submit_tip',
+            ],
+        ];
+
+        foreach ($definitions as $roleName => $permissions) {
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $role->syncPermissions($permissions);
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
      * @return list<string>
      */
     public static function allPermissionNamesIncludingLegacy(): array
@@ -52,6 +111,7 @@ class AdminPortalAccess
                 'manage_system_settings',
                 'manage_menu',
                 'manage_waiters',
+                'manage_branches',
                 'view_orders',
                 'update_orders',
                 'view_payments',

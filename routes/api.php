@@ -118,6 +118,7 @@ Route::prefix('waiter')->middleware(['auth:sanctum', 'role:waiter'])->group(func
     Route::get('/salary-slips/{period}/download', [\App\Http\Controllers\Api\Waiter\SalarySlipController::class, 'download'])->where('period', '[0-9]{4}-[0-9]{2}');
     Route::get('/history', [\App\Http\Controllers\Api\Waiter\HistoryController::class, 'index']);
     Route::patch('/status', [\App\Http\Controllers\Api\Waiter\DashboardController::class, 'updateStatus']);
+    Route::post('/roster-notifications/dismiss', [\App\Http\Controllers\Api\Waiter\DashboardController::class, 'dismissRosterNotifications']);
 });
 
 Route::get('/user', function (Request $request) {
@@ -182,6 +183,12 @@ Route::prefix('v1/manager')->middleware(['auth:sanctum', 'role:manager'])->group
     Route::post('/wallet/withdrawals', [\App\Http\Controllers\Api\Manager\WalletController::class, 'storeWithdrawal']);
     Route::put('/wallet/payout-profile', [\App\Http\Controllers\Api\Manager\WalletController::class, 'updatePayoutProfile']);
     Route::get('/wallet/export', [\App\Http\Controllers\Api\Manager\WalletController::class, 'export']);
+
+    // Customer menu engagement alerts
+    Route::get('/menu-engagement/alerts', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'alerts']);
+    Route::post('/menu-engagement/settings', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'updateSettings']);
+    Route::post('/menu-engagement/{session}/dismiss', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'dismiss']);
+    Route::post('/menu-engagement/notifications/read', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'markNotificationsRead']);
 });
 
 // WhatsApp Bot Routes

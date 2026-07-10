@@ -20,6 +20,7 @@ use App\Models\Tip;
 use App\Models\User;
 use App\Services\BotEventService;
 use App\Services\BotFeedbackService;
+use App\Services\MenuEngagementService;
 use App\Services\FreeWaiterService;
 use App\Services\TableActiveOrderService;
 use App\Support\Money;
@@ -64,6 +65,15 @@ class WhatsAppBotController extends Controller
             waId: $request->input('wa_id'),
             customerPhone: $request->input('customer_phone') ?? $request->input('phone_number'),
             metadata: $metadata,
+        );
+    }
+
+    private function markMenuEngagementConverted(Request $request, int $restaurantId): void
+    {
+        app(MenuEngagementService::class)->markConvertedForCustomer(
+            restaurantId: $restaurantId,
+            waId: $request->input('wa_id'),
+            customerPhone: $request->input('customer_phone') ?? $request->input('phone_number'),
         );
     }
 
@@ -563,6 +573,8 @@ class WhatsAppBotController extends Controller
                     (int) $request->restaurant_id,
                     ['order_id' => $order->id],
                 );
+
+                $this->markMenuEngagementConverted($request, (int) $request->restaurant_id);
 
                 $order->load('items');
 
@@ -1150,7 +1162,7 @@ class WhatsAppBotController extends Controller
     /**
      * Call Waiter from Bot
      */
-    public function callWaiter(Request $request, FreeWaiterService $freeWaiterService)
+    public function callWaiter(Request $request, FreeWaiterService $freeWaiterService, \App\Services\WaiterRosterService $rosterService)
     {
         // Handle both 'type' and 'request_type' (from bot)
         $type = $request->input('type') ?? $request->input('request_type');
@@ -1184,7 +1196,7 @@ class WhatsAppBotController extends Controller
         $hasTableContext = ! empty($tableNumber) || $request->table_id;
 
         if (! $waiterId && $hasTableContext) {
-            $freeWaiter = $freeWaiterService->findAvailable((int) $request->restaurant_id);
+            $freeWaiter = $rosterService->resolveWaiterForTable((int) $request->restaurant_id, $table, $freeWaiterService);
 
             if ($freeWaiter === null) {
                 return response()->json([
@@ -1374,7 +1386,7 @@ class WhatsAppBotController extends Controller
     /**
      * Get Menu PDF for a Restaurant (WhatsApp document).
      */
-    public function getMenuPdf($restaurantId)
+    public function getMenuPdf(Request $request, $restaurantId)
     {
         $restaurant = Restaurant::find($restaurantId);
 
@@ -1384,6 +1396,22 @@ class WhatsAppBotController extends Controller
                 'message' => 'Restaurant not found',
             ], 404);
         }
+
+        $tableId = $request->filled('table_id') ? (int) $request->input('table_id') : null;
+        $tableNumber = $request->input('table_number');
+
+        if (! $tableNumber && $tableId) {
+            $table = Table::withoutGlobalScopes()->find($tableId);
+            $tableNumber = $table?->name;
+        }
+
+        app(MenuEngagementService::class)->recordMenuView(
+            restaurantId: (int) $restaurant->id,
+            waId: $request->input('wa_id'),
+            customerPhone: $request->input('customer_phone') ?? $request->input('phone_number'),
+            tableId: $tableId,
+            tableNumber: is_string($tableNumber) ? $tableNumber : null,
+        );
 
         if (! $restaurant->menu_pdf) {
             return response()->json([
@@ -1590,6 +1618,8 @@ class WhatsAppBotController extends Controller
                     (int) $request->restaurant_id,
                     ['order_id' => $order->id],
                 );
+
+                $this->markMenuEngagementConverted($request, (int) $request->restaurant_id);
 
                 $order->load('items');
 

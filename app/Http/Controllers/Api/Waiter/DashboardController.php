@@ -10,6 +10,9 @@ use App\Models\Payment;
 use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
+use App\Models\WaiterShift;
+use App\Notifications\TableAssignmentChanged;
+use App\Services\WaiterRosterService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,6 +94,46 @@ class DashboardController extends Controller
                 'created_at' => $order->created_at->toIso8601String(),
             ]);
 
+        $rosterService = app(WaiterRosterService::class);
+        $myTables = $isLinked
+            ? Table::with('zone')
+                ->where('waiter_id', $waiter->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($table) => [
+                    'id' => $table->id,
+                    'name' => $table->name,
+                    'zone' => $table->zone?->name,
+                ])
+            : collect();
+
+        $todayShifts = $isLinked
+            ? WaiterShift::where('user_id', $waiter->id)
+                ->whereDate('shift_date', $today)
+                ->orderBy('starts_at')
+                ->get()
+                ->map(fn ($shift) => [
+                    'id' => $shift->id,
+                    'starts_at' => substr((string) $shift->starts_at, 0, 5),
+                    'ends_at' => substr((string) $shift->ends_at, 0, 5),
+                    'label' => $shift->label,
+                ])
+            : collect();
+
+        $rosterNotifications = $waiter->unreadNotifications()
+            ->where('type', TableAssignmentChanged::class)
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(fn ($n) => [
+                'id' => $n->id,
+                'message' => $n->data['message'] ?? '',
+                'table_names' => $n->data['table_names'] ?? [],
+                'assigned_by' => $n->data['assigned_by'] ?? null,
+                'created_at' => $n->created_at->toIso8601String(),
+            ]);
+
         $waiterPayload = [
             'id' => $waiter->id,
             'name' => $waiter->name,
@@ -111,6 +154,10 @@ class DashboardController extends Controller
                 'waiter' => $waiterPayload,
                 'is_online' => $waiter->is_online,
                 'last_online_at' => $waiter->last_online_at?->toIso8601String(),
+                'is_absent_today' => $isLinked ? $rosterService->isWaiterAbsent($waiter, $today) : false,
+                'my_tables' => $myTables->values(),
+                'today_shifts' => $todayShifts->values(),
+                'roster_notifications' => $rosterNotifications->values(),
                 'stats' => [
                     'tips_today' => $tipsToday,
                     'tips_today_amount' => $tipsToday,
@@ -488,6 +535,21 @@ class DashboardController extends Controller
                 'is_online' => $waiter->is_online,
                 'last_online_at' => $waiter->last_online_at?->toIso8601String(),
             ],
+        ]);
+    }
+
+    /**
+     * Mark roster/table assignment notifications as read.
+     */
+    public function dismissRosterNotifications(): JsonResponse
+    {
+        Auth::user()->unreadNotifications()
+            ->where('type', TableAssignmentChanged::class)
+            ->update(['read_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Roster notifications marked as read.',
         ]);
     }
 }

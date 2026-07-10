@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Table extends Model
 {
-    protected $fillable = ['restaurant_id', 'waiter_id', 'name', 'qr_code', 'capacity', 'is_active', 'table_tag'];
+    protected $fillable = ['restaurant_id', 'waiter_id', 'zone_id', 'name', 'qr_code', 'capacity', 'is_active', 'table_tag'];
 
     protected static function booted()
     {
@@ -31,6 +31,11 @@ class Table extends Model
     public function waiter()
     {
         return $this->belongsTo(User::class, 'waiter_id');
+    }
+
+    public function zone()
+    {
+        return $this->belongsTo(TableZone::class, 'zone_id');
     }
 
     /**

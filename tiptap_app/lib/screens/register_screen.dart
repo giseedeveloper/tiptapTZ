@@ -1,13 +1,13 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
-import '../core/theme.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/tiptap_logo.dart';
+import '../widgets/auth_email_divider.dart';
+import '../widgets/auth_social_section.dart';
+import '../widgets/auth_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,7 +17,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -33,11 +33,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
 
-  late AnimationController _fadeController;
-  late Animation<double> _logoScale;
-  late Animation<double> _contentFade;
-  late Animation<Offset> _formSlide;
-
   @override
   void initState() {
     super.initState();
@@ -48,32 +43,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     _shakeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
     );
-
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _fadeController,
-        curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
-      ),
-    );
-    _contentFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _fadeController,
-        curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
-      ),
-    );
-    _formSlide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _fadeController,
-            curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
-
-    _fadeController.forward();
   }
 
   @override
@@ -86,30 +55,18 @@ class _RegisterScreenState extends State<RegisterScreen>
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _shakeController.dispose();
-    _fadeController.dispose();
     super.dispose();
   }
 
   void _nextStep() {
-    if (_currentStep == 0) {
-      if (_formKey.currentState!.validate()) {
-        setState(() {
-          _currentStep = 1;
-        });
-        _fadeController.reset();
-        _fadeController.forward();
-      }
-    }
+    if (_currentStep != 0) return;
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _currentStep = 1);
   }
 
   void _previousStep() {
-    if (_currentStep == 1) {
-      setState(() {
-        _currentStep = 0;
-      });
-      _fadeController.reset();
-      _fadeController.forward();
-    }
+    if (_currentStep != 1) return;
+    setState(() => _currentStep = 0);
   }
 
   Future<void> _submit() async {
@@ -142,956 +99,400 @@ class _RegisterScreenState extends State<RegisterScreen>
       barrierDismissible: false,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1A0F2E).withValues(alpha: 0.95),
-                const Color(0xFF0D1B2A).withValues(alpha: 0.95),
-              ],
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1.5,
-            ),
-          ),
+        child: AuthGlassCard(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: AppTheme.primaryGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 24,
-                      spreadRadius: 4,
-                    ),
-                  ],
+                  gradient: AuthTheme.heroGradient,
                 ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 48,
-                ),
+                child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              Text('Account created', style: AuthTheme.titleStyle(size: 20)),
+              const SizedBox(height: 8),
               Text(
-                'Success! 🎉',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                auth.registrationMessage ?? 'Your account has been created!',
+                auth.registrationMessage ??
+                    'You\'ll receive a unique waiter number instantly. A restaurant manager will link you to their team.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.7),
-                  height: 1.5,
-                ),
+                style: AuthTheme.subtitleStyle(size: 12),
               ),
               if (auth.user?.globalWaiterNumber != null) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
+                    color: AuthTheme.lavender,
                     borderRadius: BorderRadius.circular(12),
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.primary.withValues(alpha: 0.2),
-                        AppTheme.secondary.withValues(alpha: 0.2),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: AppTheme.primary.withValues(alpha: 0.3),
-                    ),
+                    border: Border.all(color: AuthTheme.lavenderSoft),
                   ),
                   child: Column(
                     children: [
                       Text(
-                        'Your Unique Number',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.5),
-                          letterSpacing: 0.5,
-                        ),
+                        'Your unique number',
+                        style: AuthTheme.subtitleStyle(size: 11),
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         auth.user!.globalWaiterNumber!,
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.primary,
-                          letterSpacing: 1,
+                          color: AuthTheme.purpleDark,
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Got it',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 18),
+              AuthTheme.primaryButton(
+                label: 'Got it',
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _passwordToggle(bool obscure, VoidCallback onTap) {
+    return IconButton(
+      icon: Icon(
+        obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+        color: AuthTheme.textSecondary.withValues(alpha: 0.55),
+        size: 18,
+      ),
+      onPressed: onTap,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F0A1E), Color(0xFF1A0F2E), Color(0xFF0D1B2A)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            _buildBackgroundArt(screenHeight),
-            SafeArea(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
-                        ),
-                        child: AnimatedBuilder(
-                          animation: _shakeAnimation,
-                          builder: (context, child) {
-                            final shake =
-                                math.sin(_shakeAnimation.value * math.pi * 6) *
-                                10;
-                            return Transform.translate(
-                              offset: Offset(shake, 0),
-                              child: child,
-                            );
-                          },
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ScaleTransition(
-                                  scale: _logoScale,
-                                  child: _buildLogo(),
-                                ),
-                                const SizedBox(height: 24),
-                                FadeTransition(
-                                  opacity: _contentFade,
-                                  child: Column(
-                                    children: [
-                                      _buildTitle(),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Create your waiter account',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.4,
-                                          ),
-                                          fontSize: 13,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      _buildStepIndicator(),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                                SlideTransition(
-                                  position: _formSlide,
-                                  child: FadeTransition(
-                                    opacity: _contentFade,
-                                    child: _currentStep == 0
-                                        ? _buildStep1Form()
-                                        : _buildStep2Form(),
-                                  ),
-                                ),
-                                _buildErrorDisplay(),
-                                const SizedBox(height: 24),
-                                SlideTransition(
-                                  position: _formSlide,
-                                  child: FadeTransition(
-                                    opacity: _contentFade,
-                                    child: _currentStep == 0
-                                        ? _buildNextButton()
-                                        : _buildRegisterButton(),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                FadeTransition(
-                                  opacity: _contentFade,
-                                  child: _buildLoginLink(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundArt(double screenHeight) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          right: -60,
-          child: Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.12),
-                  blurRadius: 120,
-                  spreadRadius: 30,
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: screenHeight * 0.15,
-          left: -80,
-          child: Container(
-            width: 220,
-            height: 220,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.secondary.withValues(alpha: 0.1),
-                  blurRadius: 100,
-                  spreadRadius: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          top: screenHeight * 0.3,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.06),
-                    blurRadius: 150,
-                    spreadRadius: 40,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Positioned.fill(child: CustomPaint(painter: _GridPatternPainter())),
-      ],
-    );
-  }
-
-  Widget _buildLogo() {
-    return const TiptapLogo(size: 80, onDark: true);
-  }
-
-  Widget _buildTitle() {
-    return ShaderMask(
-      blendMode: BlendMode.srcIn,
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6), Color(0xFFEC4899)],
-      ).createShader(bounds),
-      child: Text(
-        'JOIN US',
-        style: GoogleFonts.poppins(
-          fontSize: 32,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-          letterSpacing: 3,
-          height: 1.1,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildStepDot(0, 'Personal Info'),
-        Container(
-          width: 40,
-          height: 2,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            gradient: _currentStep >= 1 ? AppTheme.primaryGradient : null,
-            color: _currentStep >= 1
-                ? null
-                : Colors.white.withValues(alpha: 0.2),
-          ),
-        ),
-        _buildStepDot(1, 'Security'),
-      ],
-    );
-  }
-
-  Widget _buildStepDot(int step, String label) {
-    final isActive = _currentStep == step;
-    final isCompleted = _currentStep > step;
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: isActive || isCompleted ? AppTheme.primaryGradient : null,
-            color: isActive || isCompleted
-                ? null
-                : Colors.white.withValues(alpha: 0.1),
-            border: Border.all(
-              color: isActive
-                  ? AppTheme.primary
-                  : Colors.white.withValues(alpha: 0.2),
-              width: 2,
-            ),
-          ),
-          child: Center(
-            child: isCompleted
-                ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
-                : Text(
-                    '${step + 1}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: isActive
-                ? AppTheme.primary
-                : Colors.white.withValues(alpha: 0.4),
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStep1Form() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1.5,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.08),
-                Colors.white.withValues(alpha: 0.03),
-              ],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Personal Information',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                'Tell us about yourself',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInputField(
-                      controller: _firstNameController,
-                      label: 'First Name',
-                      hint: 'John',
-                      icon: Icons.person_outline_rounded,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Enter first name';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildInputField(
-                      controller: _lastNameController,
-                      label: 'Last Name',
-                      hint: 'Doe',
-                      icon: Icons.person_outline_rounded,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Enter last name';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _emailController,
-                label: 'Email Address',
-                hint: 'waiter@example.com',
-                icon: Icons.alternate_email_rounded,
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Enter email';
-                  if (!v.contains('@')) return 'Invalid email';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _phoneController,
-                label: 'Phone Number',
-                hint: '255789123456',
-                icon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Enter phone number';
-                  }
-                  if (v.trim().length < 10) {
-                    return 'Invalid phone number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _locationController,
-                label: 'Location (Optional)',
-                hint: 'Dar es Salaam',
-                icon: Icons.location_on_outlined,
-                validator: null,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep2Form() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1.5,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.08),
-                Colors.white.withValues(alpha: 0.03),
-              ],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Security',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                'Create a secure password',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildInputField(
-                controller: _passwordController,
-                label: 'Password',
-                hint: '••••••••',
-                icon: Icons.lock_outline_rounded,
-                obscure: _obscurePassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_rounded
-                        : Icons.visibility_rounded,
-                    color: Colors.white.withValues(alpha: 0.4),
-                    size: 20,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Enter password';
-                  if (v.length < 8) {
-                    return 'Password must be at least 8 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _confirmPasswordController,
-                label: 'Confirm Password',
-                hint: '••••••••',
-                icon: Icons.lock_outline_rounded,
-                obscure: _obscureConfirmPassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility_off_rounded
-                        : Icons.visibility_rounded,
-                    color: Colors.white.withValues(alpha: 0.4),
-                    size: 20,
-                  ),
-                  onPressed: () => setState(
-                    () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                  ),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) {
-                    return 'Confirm password';
-                  }
-                  if (v != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-    bool obscure = false,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.6),
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscure,
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.poppins(
-              color: Colors.white.withValues(alpha: 0.2),
-              fontSize: 13,
-            ),
-            prefixIcon: Icon(
-              icon,
-              color: Colors.white.withValues(alpha: 0.4),
-              size: 18,
-            ),
-            suffixIcon: suffixIcon,
-            filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.06),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.error, width: 1.5),
-            ),
-            errorStyle: GoogleFonts.poppins(
-              fontSize: 10,
-              color: AppTheme.error,
-            ),
-          ),
-          validator: validator,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildErrorDisplay() {
-    final error = context.watch<AuthProvider>().error;
-    if (error == null) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppTheme.error.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppTheme.error.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                color: AppTheme.error,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                error,
-                style: GoogleFonts.poppins(
-                  color: AppTheme.error,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRegisterButton() {
+    final compact = MediaQuery.of(context).size.height < 780;
     final isLoading = context.watch<AuthProvider>().isLoading;
+    final error = context.watch<AuthProvider>().error;
 
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: const Color(0xFF06B6D4).withValues(alpha: 0.2),
-                blurRadius: 16,
-                offset: const Offset(-4, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: isLoading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: EdgeInsets.zero,
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
+    return AuthPageShell(
+      showBrandHeader: _currentStep == 0,
+      leading: IconButton(
+        onPressed: () {
+          if (_currentStep == 1) {
+            _previousStep();
+          } else {
+            Navigator.pop(context);
+          }
+        },
+        icon: const Icon(Icons.arrow_back_rounded, color: AuthTheme.textPrimary),
+      ),
+      footer: Text(
+        '© ${DateTime.now().year} TIPTAP. All rights reserved.',
+        style: AuthTheme.subtitleStyle(size: 11),
+        textAlign: TextAlign.center,
+      ),
+      child: AnimatedBuilder(
+        animation: _shakeAnimation,
+        builder: (context, child) {
+          final shake = math.sin(_shakeAnimation.value * math.pi * 6) * 8;
+          return Transform.translate(offset: Offset(shake, 0), child: child);
+        },
+        child: AuthGlassCard(
+          padding: EdgeInsets.all(compact ? 18 : 22),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_currentStep == 0) ...[
+                  Text(
+                    'Register as Waiter',
+                    textAlign: TextAlign.center,
+                    style: AuthTheme.titleStyle(size: compact ? 22 : 24),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Get your unique number — a manager will link you to a restaurant',
+                    textAlign: TextAlign.center,
+                    style: AuthTheme.subtitleStyle(size: compact ? 12 : 13),
+                  ),
+                  SizedBox(height: compact ? 14 : 18),
+                  AuthSocialSection(
+                    intent: 'register',
+                    role: 'waiter',
+                    compact: compact,
+                  ),
+                  const AuthEmailDivider(label: 'Or register with email'),
+                ] else ...[
+                  Text(
+                    'Step 2 of 2',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AuthTheme.purpleDark,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: const LinearProgressIndicator(
+                      value: 1,
+                      minHeight: 6,
+                      backgroundColor: AuthTheme.lavender,
+                      valueColor: AlwaysStoppedAnimation<Color>(AuthTheme.purple),
+                    ),
+                  ),
+                  SizedBox(height: compact ? 14 : 18),
+                  Text(
+                    'Your profile',
+                    textAlign: TextAlign.center,
+                    style: AuthTheme.titleStyle(size: compact ? 20 : 22),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tell us a bit about yourself',
+                    textAlign: TextAlign.center,
+                    style: AuthTheme.subtitleStyle(size: compact ? 12 : 13),
+                  ),
+                  SizedBox(height: compact ? 12 : 16),
+                  _buildEmailBadge(),
+                  SizedBox(height: compact ? 12 : 16),
+                ],
+                if (_currentStep == 0) ..._credentialsFields(compact) else ..._profileFields(compact),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  AuthTheme.errorBanner(error),
+                ],
+                SizedBox(height: compact ? 14 : 16),
+                if (_currentStep == 0)
+                  AuthTheme.primaryButton(
+                    label: 'Continue',
+                    onPressed: _nextStep,
+                    compact: compact,
                   )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                else
+                  Row(
                     children: [
-                      Text(
-                        'CREATE ACCOUNT',
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.5,
+                      TextButton(
+                        onPressed: isLoading ? null : _previousStep,
+                        child: Text('Back', style: AuthTheme.linkStyle()),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: AuthTheme.primaryButton(
+                          label: 'Create account',
+                          onPressed: isLoading ? null : _submit,
+                          loading: isLoading,
+                          compact: compact,
+                          expanded: false,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.arrow_forward_rounded, size: 20),
                     ],
                   ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextButton.icon(
-          onPressed: _previousStep,
-          icon: const Icon(Icons.arrow_back_rounded, size: 18),
-          label: Text(
-            'Back',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNextButton() {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: const Color(0xFF06B6D4).withValues(alpha: 0.2),
-                blurRadius: 16,
-                offset: const Offset(-4, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: _nextStep,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: EdgeInsets.zero,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'NEXT',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
+                if (_currentStep == 0) ...[
+                  SizedBox(height: compact ? 14 : 16),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'Already have an account? ',
+                        style: AuthTheme.subtitleStyle(size: 12),
+                        children: [
+                          TextSpan(
+                            text: 'Sign in here',
+                            style: AuthTheme.linkStyle(size: 12),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                const Icon(Icons.arrow_forward_rounded, size: 20),
+                ],
               ],
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildLoginLink() {
-    return GestureDetector(
-      onTap: () => Navigator.pop(context),
-      child: RichText(
-        text: TextSpan(
-          text: 'Already have an account? ',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.5),
-          ),
-          children: [
-            TextSpan(
-              text: 'Sign In',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
-}
 
-class _GridPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.02)
-      ..strokeWidth = 0.5;
-
-    const spacing = 40.0;
-
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+  Widget _buildEmailBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AuthTheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: AuthTheme.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AuthTheme.lavender,
+              border: Border.all(color: AuthTheme.lavenderSoft),
+            ),
+            child: const Icon(
+              Icons.alternate_email_rounded,
+              color: AuthTheme.purpleDark,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Signing up as', style: AuthTheme.subtitleStyle(size: 11)),
+                Text(
+                  _emailController.text.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AuthTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  List<Widget> _credentialsFields(bool compact) {
+    return [
+      AuthTextField(
+        controller: _emailController,
+        label: 'Email',
+        hint: 'you@example.com',
+        icon: Icons.alternate_email_rounded,
+        keyboardType: TextInputType.emailAddress,
+        compact: compact,
+        validator: (v) {
+          if (v == null || v.trim().isEmpty) return 'Enter email';
+          if (!v.contains('@')) return 'Invalid email';
+          return null;
+        },
+      ),
+      SizedBox(height: compact ? 10 : 12),
+      AuthTextField(
+        controller: _passwordController,
+        label: 'Password',
+        hint: 'At least 8 characters',
+        icon: Icons.lock_outline_rounded,
+        obscure: _obscurePassword,
+        compact: compact,
+        suffixIcon: _passwordToggle(
+          _obscurePassword,
+          () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
+        validator: (v) {
+          if (v == null || v.isEmpty) return 'Enter password';
+          if (v.length < 8) return 'At least 8 characters';
+          return null;
+        },
+      ),
+      SizedBox(height: compact ? 10 : 12),
+      AuthTextField(
+        controller: _confirmPasswordController,
+        label: 'Confirm password',
+        hint: 'Repeat password',
+        icon: Icons.verified_user_outlined,
+        obscure: _obscureConfirmPassword,
+        compact: compact,
+        suffixIcon: _passwordToggle(
+          _obscureConfirmPassword,
+          () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+        ),
+        validator: (v) {
+          if (v == null || v.isEmpty) return 'Confirm password';
+          if (v != _passwordController.text) return 'Passwords do not match';
+          return null;
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _profileFields(bool compact) {
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: AuthTextField(
+              controller: _firstNameController,
+              label: 'First name',
+              hint: 'First name',
+              icon: Icons.person_outline_rounded,
+              compact: compact,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AuthTextField(
+              controller: _lastNameController,
+              label: 'Last name',
+              hint: 'Last name',
+              icon: Icons.person_outline_rounded,
+              compact: compact,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
+          ),
+        ],
+      ),
+      SizedBox(height: compact ? 10 : 12),
+      Row(
+        children: [
+          Expanded(
+            child: AuthTextField(
+              controller: _phoneController,
+              label: 'Phone',
+              hint: 'e.g. 071 234 5678',
+              icon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+              compact: compact,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Enter phone' : null,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AuthTextField(
+              controller: _locationController,
+              label: 'City (optional)',
+              hint: 'e.g. Dar es Salaam',
+              icon: Icons.location_on_outlined,
+              compact: compact,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Text(
+        'You\'ll receive a unique waiter number instantly. A restaurant manager will link you to their team.',
+        style: AuthTheme.subtitleStyle(size: 11),
+      ),
+    ];
+  }
 }

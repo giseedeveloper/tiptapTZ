@@ -8,7 +8,8 @@
                 <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Email, password, and role assignment</p>
             </div>
 
-            <form action="{{ route('admin.users.store') }}" method="POST" class="space-y-6">
+            <form action="{{ route('admin.users.store') }}" method="POST" class="space-y-6"
+                  x-data="{ role: '{{ old('role', '') }}' }">
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -41,7 +42,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 block">Role</label>
-                        <select name="role" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black" required>
+                        <select name="role" x-model="role" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black" required>
                             <option value="">Select role</option>
                             @foreach($roles as $role)
                                 <option value="{{ $role->name }}" {{ old('role') === $role->name ? 'selected' : '' }}>
@@ -57,12 +58,16 @@
                         <select name="restaurant_id" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black">
                             <option value="">None (System user)</option>
                             @foreach($restaurants as $restaurant)
-                                <option value="{{ $restaurant->id }}" {{ old('restaurant_id') == $restaurant->id ? 'selected' : '' }}>{{ $restaurant->name }}</option>
+                                <option value="{{ $restaurant->id }}" {{ old('restaurant_id') == $restaurant->id ? 'selected' : '' }}>
+                                    {{ $restaurant->branch_name ? $restaurant->name.' — '.$restaurant->branch_name : $restaurant->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('restaurant_id') <p class="text-rose-400 text-[10px] font-bold mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
+
+                @include('admin.partials.branch-manager-fields')
 
                 <div class="flex items-center justify-end gap-4 pt-6">
                     <a href="{{ route('admin.users.index') }}" class="px-8 py-4 glass text-white/60 rounded-xl font-bold text-sm hover:bg-white/10 transition-all">Cancel</a>

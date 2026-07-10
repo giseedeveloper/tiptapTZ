@@ -6,10 +6,10 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
+        web: __DIR__ . "/../routes/web.php",
+        api: __DIR__ . "/../routes/api.php",
+        commands: __DIR__ . "/../routes/console.php",
+        health: "/up",
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -22,14 +22,19 @@ return Application::configure(basePath: dirname(__DIR__))
             'order.portal' => \App\Http\Middleware\EnsureOrderPortalAuthenticated::class,
             'restaurant.approved' => \App\Http\Middleware\EnsureRestaurantApproved::class,
             'plan.cap' => \App\Http\Middleware\EnsurePlanCapability::class,
+            'active.branch' => \App\Http\Middleware\SetActiveBranch::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\SetActiveBranch::class,
         ]);
 
         // Order Portal API (app nje ya browser) haitumii CSRF token
-        $middleware->validateCsrfTokens(except: [
-            'api/order-portal/*',
-            'order-portal/login',
-        ]);
+        $middleware->validateCsrfTokens(
+            except: ["api/order-portal/*", "order-portal/login"],
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->create();

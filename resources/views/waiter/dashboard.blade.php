@@ -52,6 +52,70 @@
     </div>
     @endif
 
+    @if(isset($rosterNotifications) && $rosterNotifications->isNotEmpty())
+    <div class="mb-6 glass-card rounded-2xl p-5 border border-teal-500/20">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h3 class="text-sm font-bold text-teal-300 uppercase tracking-wider">Roster & Table Updates</h3>
+            <form action="{{ route('waiter.roster-notifications.dismiss') }}" method="POST">
+                @csrf
+                <button type="submit" class="text-xs font-semibold text-white/50 hover:text-white">Mark all read</button>
+            </form>
+        </div>
+        <div class="space-y-2">
+            @foreach($rosterNotifications as $n)
+                @php $data = $n->data; @endphp
+                <div class="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20">
+                    <p class="text-sm text-teal-100">{{ $data['message'] ?? 'Assignment updated.' }}</p>
+                    @if(!empty($data['assigned_by']))
+                        <p class="text-xs text-teal-300/60 mt-1">From manager: {{ $data['assigned_by'] }}</p>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    @if(isset($isAbsentToday) && $isAbsentToday)
+    <div class="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200">
+        <p class="font-semibold">Umeandikishwa kuwa absent leo na manager.</p>
+        <p class="text-sm text-rose-200/80 mt-1">Hutapokea maombi mapya hadi manager aondoe absent status.</p>
+    </div>
+    @endif
+
+    @if(isset($myTables) && Auth::user()->restaurant_id)
+    <div class="mb-8 glass-card rounded-2xl p-6 border border-violet-500/20">
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+            <div>
+                <h3 class="text-lg font-bold text-white">Meza Zangu</h3>
+                <p class="text-sm text-white/40 mt-1">Meza ulizopewa na manager leo.</p>
+            </div>
+            @if(isset($todayShifts) && $todayShifts->isNotEmpty())
+                <div class="text-right">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-teal-400">Shift leo</p>
+                    @foreach($todayShifts as $shift)
+                        <p class="text-sm font-semibold text-white">{{ $shift->timeRangeLabel() }}@if($shift->label) · {{ $shift->label }}@endif</p>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+        @if($myTables->isNotEmpty())
+            <div class="flex flex-wrap gap-2">
+                @foreach($myTables as $table)
+                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/15 border border-violet-500/25 text-violet-200 text-sm font-semibold">
+                        {{ $table->name }}
+                        @if($table->zone)
+                            <span class="text-[10px] font-normal text-white/40 uppercase">{{ $table->zone->name }}</span>
+                        @endif
+                    </span>
+                @endforeach
+            </div>
+            <p class="text-xs text-white/40 mt-4">Unapokea call-waiter na orders za meza hizi. Unaweza ku-handover kwenye <a href="{{ route('waiter.handover') }}" class="text-violet-400 underline">Handover</a> ukiondoka.</p>
+        @else
+            <p class="text-white/50 text-sm">Bado hujapewa meza. Manager ata-assign kutoka Waiter Roster.</p>
+        @endif
+    </div>
+    @endif
+
     <!-- Bento Grid Layout -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         

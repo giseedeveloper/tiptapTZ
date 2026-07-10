@@ -14,6 +14,7 @@ import '../providers/dashboard_provider.dart';
 import '../widgets/animated_counter.dart';
 import '../widgets/app_toast.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/roster_dashboard_section.dart';
 import '../widgets/shimmer_skeletons.dart';
 import '../widgets/staggered_animation.dart';
 import 'menu_screen.dart';
@@ -125,10 +126,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           index: 0,
                           child: _buildZone2Hero(stats),
                         ),
+                      const SizedBox(height: 20),
+                      StaggeredFadeSlide(
+                        index: 1,
+                        child: RosterDashboardSection(
+                          myTables: data?.myTables ?? const [],
+                          todayShifts: data?.todayShifts ?? const [],
+                          notifications: data?.rosterNotifications ?? const [],
+                          isAbsentToday: data?.isAbsentToday ?? false,
+                          isDismissing: dash.isDismissingRoster,
+                          onDismissNotifications: () async {
+                            final ok = await dash.dismissRosterNotifications(auth.api);
+                            if (!context.mounted) return;
+                            if (ok) {
+                              showAppToast(
+                                context,
+                                message: 'Roster updates marked as read',
+                                type: ToastType.success,
+                              );
+                            }
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       if ((data?.pendingRequests.length ?? 0) > 0) ...[
                         StaggeredFadeSlide(
-                          index: 1,
+                          index: 2,
                           child: _buildZone3Urgent(
                             data!.pendingRequests,
                             auth.api,
@@ -137,7 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 24),
                       ],
                       StaggeredFadeSlide(
-                        index: 2,
+                        index: 3,
                         child: _buildZone4Marketplace(
                           data?.unassignedOrders ?? [],
                           auth.api,
@@ -146,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 24),
                       if ((data?.recentFeedback.length ?? 0) > 0)
                         StaggeredFadeSlide(
-                          index: 3,
+                          index: 4,
                           child: _buildMotivationSection(data!.recentFeedback),
                         ),
                     ],

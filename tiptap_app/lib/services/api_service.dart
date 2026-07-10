@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../core/config.dart';
 import '../models/dashboard_model.dart';
 import '../models/payslip_model.dart';
+import '../models/roster_model.dart';
 import '../models/user_model.dart';
 
 num _parseNum(dynamic v) {
@@ -202,6 +203,14 @@ class ApiService {
     return data;
   }
 
+  Future<void> dismissRosterNotifications() async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/waiter/roster-notifications/dismiss'),
+      headers: _headers,
+    );
+    await _handleResponse(res);
+  }
+
   // Salary Slips
   Future<List<SalarySlipSummary>> getSalarySlips() async {
     final res = await http.get(
@@ -293,6 +302,10 @@ class DashboardData {
   final Map<String, dynamic>? waiterInfo;
   final bool isOnline;
   final bool isLinked;
+  final List<AssignedTable> myTables;
+  final List<WaiterShiftInfo> todayShifts;
+  final List<RosterNotification> rosterNotifications;
+  final bool isAbsentToday;
 
   DashboardData({
     required this.stats,
@@ -303,7 +316,41 @@ class DashboardData {
     this.waiterInfo,
     this.isOnline = true,
     this.isLinked = true,
+    this.myTables = const [],
+    this.todayShifts = const [],
+    this.rosterNotifications = const [],
+    this.isAbsentToday = false,
   });
+
+  DashboardData copyWith({
+    DashboardStats? stats,
+    List<UnassignedOrder>? unassignedOrders,
+    List<PendingRequest>? pendingRequests,
+    List<RecentFeedback>? recentFeedback,
+    List<MyOrderToday>? myOrdersToday,
+    Map<String, dynamic>? waiterInfo,
+    bool? isOnline,
+    bool? isLinked,
+    List<AssignedTable>? myTables,
+    List<WaiterShiftInfo>? todayShifts,
+    List<RosterNotification>? rosterNotifications,
+    bool? isAbsentToday,
+  }) {
+    return DashboardData(
+      stats: stats ?? this.stats,
+      unassignedOrders: unassignedOrders ?? this.unassignedOrders,
+      pendingRequests: pendingRequests ?? this.pendingRequests,
+      recentFeedback: recentFeedback ?? this.recentFeedback,
+      myOrdersToday: myOrdersToday ?? this.myOrdersToday,
+      waiterInfo: waiterInfo ?? this.waiterInfo,
+      isOnline: isOnline ?? this.isOnline,
+      isLinked: isLinked ?? this.isLinked,
+      myTables: myTables ?? this.myTables,
+      todayShifts: todayShifts ?? this.todayShifts,
+      rosterNotifications: rosterNotifications ?? this.rosterNotifications,
+      isAbsentToday: isAbsentToday ?? this.isAbsentToday,
+    );
+  }
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
@@ -329,8 +376,24 @@ class DashboardData {
               .toList() ??
           [],
       waiterInfo: json['waiter'] as Map<String, dynamic>?,
-      isOnline: json['is_online'] as bool? ?? true,
-      isLinked: json['is_linked'] as bool? ?? true,
+      isOnline: _parseBool(json['is_online']),
+      isLinked: json['is_linked'] == null ? true : _parseBool(json['is_linked']),
+      myTables:
+          (json['my_tables'] as List<dynamic>?)
+              ?.map((e) => AssignedTable.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      todayShifts:
+          (json['today_shifts'] as List<dynamic>?)
+              ?.map((e) => WaiterShiftInfo.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      rosterNotifications:
+          (json['roster_notifications'] as List<dynamic>?)
+              ?.map((e) => RosterNotification.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      isAbsentToday: _parseBool(json['is_absent_today']),
     );
   }
 }

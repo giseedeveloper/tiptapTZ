@@ -14,6 +14,8 @@ return [
         'admin' => 'Admin',
         'technical' => 'Technical',
         'manager' => 'Manager',
+        'branch_manager' => 'Branch Manager',
+        'floor_supervisor' => 'Floor Supervisor',
         'waiter' => 'Waiter',
     ],
 

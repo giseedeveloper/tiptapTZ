@@ -8,5 +8,15 @@ class AppConfig {
     defaultValue: 'https://tiptapafrica.co.tz/api',
   );
 
+  /// Web app origin (OAuth). Derived from API URL when not set.
+  static String get webBaseUrl {
+    const override = String.fromEnvironment('WEB_BASE_URL');
+    if (override.isNotEmpty) return override;
+    if (apiBaseUrl.endsWith('/api')) {
+      return apiBaseUrl.substring(0, apiBaseUrl.length - 4);
+    }
+    return apiBaseUrl;
+  }
+
   static const String appName = 'TIPTAP Wallet';
 }

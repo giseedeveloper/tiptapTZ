@@ -10,7 +10,8 @@
                 <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Update user profile and access levels</p>
             </div>
 
-            <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6">
+            <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6"
+                  x-data="{ role: '{{ old('role', $user->roles->first()?->name ?? '') }}' }">
                 @csrf
                 @method('PUT')
 
@@ -31,7 +32,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-white/40 block">System Role</label>
-                        <select name="role" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black">
+                        <select name="role" x-model="role" class="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all [&>option]:text-black">
                             @foreach($roles as $role)
                                 <option value="{{ $role->name }}" {{ $user->hasRole($role->name) ? 'selected' : '' }}>
                                     {{ \App\Support\AdminPortalAccess::assignableUserRoles()[$role->name] ?? ucwords(str_replace('_', ' ', $role->name)) }}
@@ -47,13 +48,15 @@
                             <option value="">None (System user)</option>
                             @foreach($restaurants as $restaurant)
                                 <option value="{{ $restaurant->id }}" {{ $user->restaurant_id == $restaurant->id ? 'selected' : '' }}>
-                                    {{ $restaurant->name }}
+                                    {{ $restaurant->branch_name ? $restaurant->name.' — '.$restaurant->branch_name : $restaurant->name }}
                                 </option>
                             @endforeach
                         </select>
                         @error('restaurant_id') <p class="text-rose-400 text-[10px] font-bold mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
+
+                @include('admin.partials.branch-manager-fields', ['managedBranchIds' => $managedBranchIds])
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">

@@ -10,7 +10,10 @@ use App\Models\OrderPortalPassword;
 use App\Models\Table;
 use App\Models\Tip;
 use App\Models\User;
+use App\Models\WaiterShift;
 use App\Notifications\SalaryPaymentConfirmed;
+use App\Notifications\TableAssignmentChanged;
+use App\Services\WaiterRosterService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -76,6 +79,26 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $rosterNotifications = $waiter->unreadNotifications()
+            ->where('type', TableAssignmentChanged::class)
+            ->latest()
+            ->take(10)
+            ->get();
+
+        $myTables = Table::with('zone')
+            ->where('waiter_id', $waiter->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $todayShifts = WaiterShift::where('user_id', $waiter->id)
+            ->whereDate('shift_date', $today)
+            ->orderBy('starts_at')
+            ->get();
+
+        $rosterService = app(WaiterRosterService::class);
+        $isAbsentToday = $rosterService->isWaiterAbsent($waiter, $today);
+
         $hasOrderPortalAccess = OrderPortalPassword::query()
             ->where('user_id', $waiter->id)
             ->where('restaurant_id', $waiter->restaurant_id)
@@ -94,9 +117,22 @@ class DashboardController extends Controller
             'recentFeedback',
             'myOrders',
             'salaryNotifications',
+            'rosterNotifications',
+            'myTables',
+            'todayShifts',
+            'isAbsentToday',
             'hasOrderPortalAccess',
             'orderPortalLoginUrl'
         ));
+    }
+
+    public function dismissRosterNotifications()
+    {
+        Auth::user()->unreadNotifications()
+            ->where('type', TableAssignmentChanged::class)
+            ->update(['read_at' => now()]);
+
+        return back()->with('success', 'Roster notifications marked as read.');
     }
 
     public function claimOrder($id)

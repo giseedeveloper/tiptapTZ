@@ -15,6 +15,11 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        AdminPortalAccess::bootstrapRestaurantStaffRoles();
+    }
+
     public function index(Request $request): View
     {
         abort_unless(AdminPortalAccess::can($request->user(), 'admin.manage_users'), 403);
@@ -49,7 +54,7 @@ class UserController extends Controller
             ->whereIn('name', array_keys(AdminPortalAccess::assignableUserRoles()))
             ->orderBy('name')
             ->get();
-        $restaurants = \App\Models\Restaurant::query()->orderBy('name')->get(['id', 'name']);
+        $restaurants = \App\Models\Restaurant::query()->orderBy('name')->get(['id', 'name', 'branch_name']);
 
         return view('admin.users.create', compact('roles', 'restaurants'));
     }
@@ -66,6 +71,8 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles($validated['role']);
+
+        $this->syncBranchAccess($user, $validated['branch_ids'] ?? null);
 
         AdminActivityLog::log(
             'user.created',
@@ -94,13 +101,14 @@ class UserController extends Controller
         abort_unless(AdminPortalAccess::can(auth()->user(), 'admin.manage_users'), 403);
 
         $user = User::query()->findOrFail($id);
-        $restaurants = \App\Models\Restaurant::query()->orderBy('name')->get();
         $roles = Role::query()
             ->whereIn('name', array_keys(AdminPortalAccess::assignableUserRoles()))
             ->orderBy('name')
             ->get();
+        $restaurants = \App\Models\Restaurant::query()->orderBy('name')->get(['id', 'name', 'branch_name']);
+        $managedBranchIds = $user->managedBranches()->pluck('restaurants.id')->all();
 
-        return view('admin.users.edit', compact('user', 'restaurants', 'roles'));
+        return view('admin.users.edit', compact('user', 'restaurants', 'roles', 'managedBranchIds'));
     }
 
     public function update(UpdateAdminUserRequest $request, User $user): RedirectResponse
@@ -122,6 +130,8 @@ class UserController extends Controller
         }
 
         $user->syncRoles($validated['role']);
+
+        $this->syncBranchAccess($user, $validated['branch_ids'] ?? null);
 
         AdminActivityLog::log(
             'user.updated',
@@ -157,5 +167,32 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * @param  list<int>|null  $branchIds
+     */
+    private function syncBranchAccess(User $user, ?array $branchIds): void
+    {
+        if (! $user->hasRole('branch_manager')) {
+            $user->managedBranches()->detach();
+
+            return;
+        }
+
+        $branchIds = array_values(array_unique(array_map('intval', $branchIds ?? [])));
+
+        if ($user->restaurant_id && ! in_array((int) $user->restaurant_id, $branchIds, true)) {
+            $branchIds[] = (int) $user->restaurant_id;
+        }
+
+        $sync = [];
+        foreach ($branchIds as $branchId) {
+            $sync[$branchId] = [
+                'is_primary' => (int) $branchId === (int) $user->restaurant_id,
+            ];
+        }
+
+        $user->managedBranches()->sync($sync);
     }
 }
