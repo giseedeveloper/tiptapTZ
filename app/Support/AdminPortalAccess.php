@@ -78,6 +78,11 @@ class AdminPortalAccess
                 'update_orders_status',
                 'view_tips',
             ],
+            'barista' => [
+                'view_orders',
+                'update_orders_status',
+                'view_tips',
+            ],
             'bot_service' => [
                 'api_restaurant_search',
                 'api_get_menu',

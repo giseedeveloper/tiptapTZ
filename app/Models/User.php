@@ -37,6 +37,7 @@ class User extends Authenticatable
         "profile_photo_path",
         "is_online",
         "last_online_at",
+        "digital_tips_enabled",
     ];
 
     /**
@@ -121,6 +122,28 @@ class User extends Authenticatable
                         Carbon::today()->toDateString(),
                     );
             });
+    }
+
+    /**
+     * Front-of-house tip recipients (waiters / baristas).
+     */
+    public function scopeTipStaffRoles($query)
+    {
+        return $query->role(["waiter", "barista"]);
+    }
+
+    public function scopeDigitalTipsEnabled($query)
+    {
+        return $query->where("digital_tips_enabled", true);
+    }
+
+    public function canReceiveDigitalTips(): bool
+    {
+        if (! $this->digital_tips_enabled) {
+            return false;
+        }
+
+        return $this->hasAnyRole(["waiter", "barista"]);
     }
 
     public function restaurant()
@@ -249,6 +272,7 @@ class User extends Authenticatable
             "linked_until" => "date",
             "password" => "hashed",
             "is_online" => "boolean",
+            "digital_tips_enabled" => "boolean",
             "last_online_at" => "datetime",
         ];
     }

@@ -17,9 +17,10 @@ class WaiterController extends Controller
     public function index()
     {
         $restaurantId = Auth::user()->restaurant_id;
-        $waiters = User::role('waiter')
+        $waiters = User::role(['waiter', 'barista'])
             ->activeAtRestaurant($restaurantId)
             ->withCount('orders')
+            ->withSum('tips', 'amount')
             ->get();
 
         $waiterIdsWithOrderPortal = OrderPortalPassword::query()
@@ -99,7 +100,7 @@ class WaiterController extends Controller
             ->first();
 
         if (! $waiter) {
-            return response()->json(['success' => false, 'message' => 'Waiter hajapatikana. Angalia nambari ya pekee (TIPTAP-W-xxxxx).']);
+            return response()->json(['success' => false, 'message' => 'Waiter not found. Check the unique number (TIPTAP-W-xxxxx).']);
         }
 
         $workHistory = WaiterRestaurantAssignment::query()
@@ -116,6 +117,8 @@ class WaiterController extends Controller
                 'is_active' => $a->unlinked_at === null,
             ]);
 
+        $managerRestaurantId = Auth::user()->restaurant_id;
+
         return response()->json([
             'success' => true,
             'waiter' => [
@@ -129,6 +132,8 @@ class WaiterController extends Controller
                 'feedback_count' => $waiter->feedback_count,
                 'current_restaurant' => $waiter->restaurant?->name,
                 'is_linked' => (bool) $waiter->restaurant_id,
+                'is_linked_to_my_restaurant' => $waiter->restaurant_id !== null
+                    && $waiter->restaurant_id === $managerRestaurantId,
                 'work_history' => $workHistory,
                 'profile_photo_url' => $waiter->profilePhotoUrl(),
             ],
@@ -145,12 +150,16 @@ class WaiterController extends Controller
         }
 
         if ($waiter->restaurant_id !== null) {
-            return back()->with('error', 'Waiter tayari ameunganishwa na restaurant nyingine. Manager wa restaurant ile anafaa kum-unlink kwanza.');
+            if ($waiter->restaurant_id === Auth::user()->restaurant_id) {
+                return back()->with('error', 'This waiter is already linked to your restaurant.');
+            }
+
+            return back()->with('error', "Waiter is already linked to another restaurant. That restaurant's manager must unlink them first.");
         }
 
         $restaurant = Auth::user()->restaurant;
         if (! $restaurant || ! $restaurant->tag_prefix) {
-            return back()->with('error', 'Restaurant yako haijaweka tag prefix. Wasiliana na msaada.');
+            return back()->with('error', 'Your restaurant has no tag prefix configured. Contact support.');
         }
 
         $currentWaiters = User::role('waiter')->where('restaurant_id', $restaurant->id)->count();
@@ -164,6 +173,8 @@ class WaiterController extends Controller
         $waiter->linked_until = $request->validated('employment_type') === 'temporary'
             ? $request->validated('linked_until')
             : null;
+        // New staff start with tips off — manager enables for specific baristas/waiters.
+        $waiter->digital_tips_enabled = false;
         $waiter->save();
 
         WaiterRestaurantAssignment::create([
@@ -174,9 +185,9 @@ class WaiterController extends Controller
             'linked_until' => $waiter->linked_until,
         ]);
 
-        $msg = "Waiter {$waiter->name} ameunganishwa na restaurant yako. Code: {$waiter->waiter_code}";
+        $msg = "Waiter {$waiter->name} has been linked to your restaurant. Code: {$waiter->waiter_code}";
         if ($waiter->employment_type === 'temporary' && $waiter->linked_until) {
-            $msg .= ' (muda mpaka '.$waiter->linked_until->format('d/m/Y').')';
+            $msg .= ' (until '.$waiter->linked_until->format('d/m/Y').')';
         }
 
         return back()->with('success', $msg);
@@ -199,6 +210,7 @@ class WaiterController extends Controller
         $waiter->waiter_code = null;
         $waiter->employment_type = null;
         $waiter->linked_until = null;
+        $waiter->digital_tips_enabled = false;
         $waiter->save();
 
         $updated = WaiterRestaurantAssignment::query()
@@ -224,7 +236,29 @@ class WaiterController extends Controller
             ->whereNull('revoked_at')
             ->update(['revoked_at' => now()]);
 
-        return back()->with('success', "{$name} ameondolewa kwenye restaurant yako. History yake (orders, ratings) imebaki. Anaweza kuungwa na restaurant nyingine.");
+        return back()->with('success', "{$name} has been unlinked from your restaurant. Their history (orders, ratings) is preserved. They can be linked to another restaurant.");
+    }
+
+    /**
+     * Enable or disable digital tipping for a linked waiter/barista.
+     */
+    public function updateDigitalTips(Request $request, User $waiter): RedirectResponse
+    {
+        if ($waiter->restaurant_id !== Auth::user()->restaurant_id
+            || ! $waiter->hasAnyRole(['waiter', 'barista'])) {
+            return back()->with('error', 'Unauthorized.');
+        }
+
+        $request->validate([
+            'digital_tips_enabled' => 'required|boolean',
+        ]);
+
+        $enabled = $request->boolean('digital_tips_enabled');
+        $waiter->forceFill(['digital_tips_enabled' => $enabled])->save();
+
+        $label = $enabled ? 'enabled' : 'disabled';
+
+        return back()->with('success', "Digital tipping {$label} for {$waiter->name}.");
     }
 
     /**
@@ -261,7 +295,7 @@ class WaiterController extends Controller
         }
 
         return back()
-            ->with('success', 'Order Portal password imetengenezwa. Mwambie waiter nambari yake ya pekee na password hii.')
+            ->with('success', 'Order Portal password created. Give the waiter their unique number and this password.')
             ->with('order_portal_password_generated', $plainPassword)
             ->with('order_portal_waiter_name', $waiter->name)
             ->with('order_portal_waiter_number', $waiter->global_waiter_number);

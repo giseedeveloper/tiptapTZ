@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\MenuItem;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class MenuController extends Controller
 {
@@ -14,10 +15,11 @@ class MenuController extends Controller
      */
     public function index(): JsonResponse
     {
+        $restaurant = Auth::user()?->restaurant;
         $categories = Category::orderBy('sort_order')->get();
         $menuItems = MenuItem::with('category')->latest()->get();
 
-        $categoriesData = $categories->map(function ($cat) use ($menuItems) {
+        $categoriesData = $categories->map(function ($cat) use ($menuItems, $restaurant) {
             $items = $menuItems->where('category_id', $cat->id)->values()->map(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
@@ -26,6 +28,8 @@ class MenuController extends Controller
                 'image' => $item->image ? asset('storage/'.$item->image) : null,
                 'is_available' => $item->is_available,
                 'preparation_time' => $item->preparation_time ?? 15,
+                'eta_minutes' => $item->effectivePreparationMinutes($restaurant),
+                'eta_label' => 'Ready in ~'.$item->effectivePreparationMinutes($restaurant).' min',
             ]);
 
             return [
@@ -45,6 +49,8 @@ class MenuController extends Controller
             'image' => $item->image ? asset('storage/'.$item->image) : null,
             'is_available' => $item->is_available,
             'preparation_time' => $item->preparation_time ?? 15,
+            'eta_minutes' => $item->effectivePreparationMinutes($restaurant),
+            'eta_label' => 'Ready in ~'.$item->effectivePreparationMinutes($restaurant).' min',
         ]);
 
         return response()->json([

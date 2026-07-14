@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MenuItemEta;
 use Illuminate\Database\Eloquent\Model;
 
 class MenuItem extends Model
@@ -11,6 +12,25 @@ class MenuItem extends Model
     protected static function booted()
     {
         static::addGlobalScope(new \App\Models\Scopes\RestaurantScope);
+    }
+
+    public function effectivePreparationMinutes(?Restaurant $restaurant = null): int
+    {
+        $base = MenuItemEta::minutes($this->preparation_time !== null ? (int) $this->preparation_time : null);
+
+        $restaurant = $restaurant
+            ?? ($this->relationLoaded('restaurant') ? $this->restaurant : null);
+
+        if ($restaurant && $restaurant->isBusy()) {
+            return MenuItemEta::applyBusy($base, $restaurant->busyEtaMultiplier());
+        }
+
+        return $base;
+    }
+
+    public function withEta(?Restaurant $restaurant = null): self
+    {
+        return MenuItemEta::decorate($this, $restaurant);
     }
 
     public function restaurant()

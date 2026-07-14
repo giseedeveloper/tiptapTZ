@@ -31,6 +31,7 @@ class WaiterController extends Controller
                 'employment_type' => $w->employment_type,
                 'linked_until' => $w->linked_until?->format('Y-m-d'),
                 'orders_count' => $w->orders_count,
+                'digital_tips_enabled' => (bool) $w->digital_tips_enabled,
                 'profile_photo_url' => $w->profilePhotoUrl(),
             ]);
 
@@ -58,7 +59,7 @@ class WaiterController extends Controller
         if (! $waiter) {
             return response()->json([
                 'success' => false,
-                'message' => 'Waiter hajapatikana. Angalia nambari ya pekee (TIPTAP-W-xxxxx).',
+                'message' => 'Waiter not found. Check the unique number (TIPTAP-W-xxxxx).',
             ], 404);
         }
 
@@ -76,6 +77,8 @@ class WaiterController extends Controller
                 'is_active' => $a->unlinked_at === null,
             ]);
 
+        $managerRestaurantId = Auth::user()->restaurant_id;
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -89,6 +92,8 @@ class WaiterController extends Controller
                 'feedback_count' => $waiter->feedback_count,
                 'current_restaurant' => $waiter->restaurant?->name,
                 'is_linked' => (bool) $waiter->restaurant_id,
+                'is_linked_to_my_restaurant' => $waiter->restaurant_id !== null
+                    && $waiter->restaurant_id === $managerRestaurantId,
                 'work_history' => $workHistory,
                 'profile_photo_url' => $waiter->profilePhotoUrl(),
             ],
@@ -105,9 +110,16 @@ class WaiterController extends Controller
         }
 
         if ($waiter->restaurant_id !== null) {
+            if ($waiter->restaurant_id === Auth::user()->restaurant_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This waiter is already linked to your restaurant.',
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Waiter tayari ameunganishwa na restaurant nyingine. Manager wa restaurant ile anafaa kum-unlink kwanza.',
+                'message' => "Waiter is already linked to another restaurant. That restaurant's manager must unlink them first.",
             ], 422);
         }
 
@@ -115,7 +127,7 @@ class WaiterController extends Controller
         if (! $restaurant || ! $restaurant->tag_prefix) {
             return response()->json([
                 'success' => false,
-                'message' => 'Restaurant yako haijaweka tag prefix. Wasiliana na msaada.',
+                'message' => 'Your restaurant has no tag prefix configured. Contact support.',
             ], 422);
         }
 
@@ -133,6 +145,7 @@ class WaiterController extends Controller
         $waiter->linked_until = $request->validated('employment_type') === 'temporary'
             ? $request->validated('linked_until')
             : null;
+        $waiter->digital_tips_enabled = false;
         $waiter->save();
 
         WaiterRestaurantAssignment::create([
@@ -143,10 +156,11 @@ class WaiterController extends Controller
             'linked_until' => $waiter->linked_until,
         ]);
 
-        $message = "Waiter {$waiter->name} ameunganishwa na restaurant yako. Code: {$waiter->waiter_code}";
+        $message = "Waiter {$waiter->name} has been linked to your restaurant. Code: {$waiter->waiter_code}";
         if ($waiter->employment_type === 'temporary' && $waiter->linked_until) {
-            $message .= ' (muda mpaka '.$waiter->linked_until->format('d/m/Y').')';
+            $message .= ' (until '.$waiter->linked_until->format('d/m/Y').')';
         }
+        $message .= ' Enable digital tipping from Waiters & Staff when ready.';
 
         return response()->json([
             'success' => true,
@@ -157,8 +171,36 @@ class WaiterController extends Controller
                 'waiter_code' => $waiter->waiter_code,
                 'employment_type' => $waiter->employment_type,
                 'linked_until' => $waiter->linked_until?->format('Y-m-d'),
+                'digital_tips_enabled' => false,
             ],
         ], 201);
+    }
+
+    /**
+     * Enable or disable digital tipping for a linked waiter/barista.
+     */
+    public function updateDigitalTips(Request $request, User $waiter): JsonResponse
+    {
+        if ($waiter->restaurant_id !== Auth::user()->restaurant_id
+            || ! $waiter->hasAnyRole(['waiter', 'barista'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate([
+            'digital_tips_enabled' => 'required|boolean',
+        ]);
+
+        $enabled = $request->boolean('digital_tips_enabled');
+        $waiter->forceFill(['digital_tips_enabled' => $enabled])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Digital tipping '.($enabled ? 'enabled' : 'disabled').' for '.$waiter->name.'.',
+            'data' => [
+                'waiter_id' => $waiter->id,
+                'digital_tips_enabled' => $enabled,
+            ],
+        ]);
     }
 
     /**
@@ -178,6 +220,7 @@ class WaiterController extends Controller
         $waiter->waiter_code = null;
         $waiter->employment_type = null;
         $waiter->linked_until = null;
+        $waiter->digital_tips_enabled = false;
         $waiter->save();
 
         $updated = WaiterRestaurantAssignment::query()
@@ -199,7 +242,7 @@ class WaiterController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "{$name} ameondolewa kwenye restaurant yako. History yake (orders, ratings) imebaki. Anaweza kuungwa na restaurant nyingine.",
+            'message' => "{$name} has been unlinked from your restaurant. Their history (orders, ratings) is preserved. They can be linked to another restaurant.",
         ]);
     }
 

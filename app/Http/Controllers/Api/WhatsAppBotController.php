@@ -17,13 +17,17 @@ use App\Models\Restaurant;
 use App\Models\Setting;
 use App\Models\Table;
 use App\Models\Tip;
+use App\Models\TipPool;
 use App\Models\User;
 use App\Services\BotEventService;
 use App\Services\BotFeedbackService;
 use App\Services\MenuEngagementService;
 use App\Services\FreeWaiterService;
+use App\Services\OrderWorkflowService;
 use App\Services\TableActiveOrderService;
+use App\Services\TipPoolService;
 use App\Support\Money;
+use App\Support\OrderWorkflow;
 use App\Support\WhatsAppBotBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -432,11 +436,15 @@ class WhatsAppBotController extends Controller
      */
     public function getCategoryItems($categoryId)
     {
+        $category = Category::withoutGlobalScopes()->find($categoryId);
+        $restaurant = $category ? Restaurant::find($category->restaurant_id) : null;
+
         $items = MenuItem::withoutGlobalScopes()->where('category_id', $categoryId)
             ->where('is_available', true)
-            ->get(['id', 'name', 'price', 'description', 'image'])
-            ->map(function ($item) {
+            ->get(['id', 'name', 'price', 'description', 'image', 'preparation_time', 'restaurant_id'])
+            ->map(function ($item) use ($restaurant) {
                 $item->imageUrl = $item->imageUrl();
+                $item->withEta($restaurant);
 
                 return $item;
             });
@@ -461,6 +469,7 @@ class WhatsAppBotController extends Controller
         }
 
         $item->imageUrl = $item->imageUrl();
+        $item->withEta(Restaurant::find($item->restaurant_id));
 
         return response()->json([
             'success' => true,
@@ -473,12 +482,15 @@ class WhatsAppBotController extends Controller
      */
     public function getFullMenu($restaurantId)
     {
+        $restaurant = Restaurant::find($restaurantId);
+
         $categories = Category::withoutGlobalScopes()->with(['menuItems' => function ($query) {
             $query->withoutGlobalScopes()->where('is_available', true);
-        }])->where('restaurant_id', $restaurantId)->get()->map(function ($category) {
+        }])->where('restaurant_id', $restaurantId)->get()->map(function ($category) use ($restaurant) {
             $category->imageUrl = $category->imageUrl();
-            $category->menuItems->map(function ($item) {
+            $category->menuItems->map(function ($item) use ($restaurant) {
                 $item->imageUrl = $item->imageUrl();
+                $item->withEta($restaurant);
 
                 return $item;
             });
@@ -495,7 +507,7 @@ class WhatsAppBotController extends Controller
     /**
      * Create Order from Bot
      */
-    public function createOrder(Request $request)
+    public function createOrder(Request $request, OrderWorkflowService $workflow)
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
@@ -518,7 +530,7 @@ class WhatsAppBotController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request, $tableNumber) {
+            return DB::transaction(function () use ($request, $tableNumber, $workflow) {
                 $totalAmount = 0;
                 $orderItems = [];
 
@@ -544,12 +556,14 @@ class WhatsAppBotController extends Controller
                     'customer_name' => $request->customer_name,
                     'whatsapp_jid' => Order::normalizeWhatsAppJid($request->whatsapp_jid, $request->customer_phone),
                     'total_amount' => $totalAmount,
-                    'status' => 'pending',
+                    'status' => OrderWorkflow::RECEIVED,
                 ]);
 
                 foreach ($orderItems as $item) {
                     $order->items()->create($item);
                 }
+
+                $workflow->markReceived($order, null, 'whatsapp_bot');
 
                 Activity::create([
                     'description' => "New WhatsApp order #{$order->id} from {$request->customer_phone}",
@@ -597,7 +611,7 @@ class WhatsAppBotController extends Controller
      * Check Order & Payment Status (Polling)
      * Bot calls this repeatedly to check if payment is complete
      */
-    public function getOrderStatus($orderId)
+    public function getOrderStatus($orderId, OrderWorkflowService $workflow)
     {
         $order = Order::withoutGlobalScopes()->with(['restaurant', 'items.menuItem' => function ($query) {
             $query->withoutGlobalScopes();
@@ -620,6 +634,7 @@ class WhatsAppBotController extends Controller
                 'success' => true,
                 'order_id' => $order->id,
                 'order_status' => $order->status,
+                'workflow_label' => $order->workflowLabel(),
                 'payment_status' => $payment->status,
                 'is_paid' => $payment->status === 'paid',
                 'is_failed' => in_array($payment->status, ['failed', 'cancelled']),
@@ -643,7 +658,7 @@ class WhatsAppBotController extends Controller
 
                 if ($paymentStatus === 'paid') {
                     $payment->update(['status' => 'paid']);
-                    $order->update(['status' => 'paid']);
+                    $workflow->completeFromPayment($order, 'whatsapp_ussd');
 
                     // Log successful payment
                     Activity::create([
@@ -678,6 +693,7 @@ class WhatsAppBotController extends Controller
             'success' => true,
             'order_id' => $order->id,
             'order_status' => $order->status,
+            'workflow_label' => $order->workflowLabel(),
             'payment_status' => $payment ? $payment->status : 'unpaid',
             'is_paid' => $payment && $payment->status === 'paid',
             'is_failed' => $payment && in_array($payment->status, ['failed', 'cancelled']),
@@ -767,7 +783,7 @@ class WhatsAppBotController extends Controller
     /**
      * Initiate USSD Payment
      */
-    public function initiatePayment(Request $request)
+    public function initiatePayment(Request $request, OrderWorkflowService $workflow)
     {
         $request->validate([
             'order_id' => 'required|exists:orders,id',
@@ -791,7 +807,7 @@ class WhatsAppBotController extends Controller
                 'status' => 'paid',
                 'transaction_reference' => $transactionId,
             ]);
-            $order->update(['status' => 'paid']);
+            $workflow->completeFromPayment($order, 'whatsapp_demo');
 
             $this->recordBotEngagement(
                 $request,
@@ -861,7 +877,7 @@ class WhatsAppBotController extends Controller
      * Initiate Quick Payment (without order)
      * Allows payment of any amount with a description
      */
-    public function initiateQuickPayment(Request $request)
+    public function initiateQuickPayment(Request $request, TipPoolService $tipPools)
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
@@ -870,7 +886,31 @@ class WhatsAppBotController extends Controller
             'description' => 'required|string|max:500',
             'network' => 'nullable|string',
             'waiter_id' => 'nullable|exists:users,id',
+            'tip_pool_id' => 'nullable|exists:tip_pools,id',
         ]);
+
+        if ($request->filled('waiter_id')) {
+            $tipStaff = User::query()->find($request->waiter_id);
+            if (! $tipStaff || ! $tipStaff->canReceiveDigitalTips() || (int) $tipStaff->restaurant_id !== (int) $request->restaurant_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Digital tipping is not enabled for this staff member. Ask the restaurant manager to enable tips for them.',
+                ], 422);
+            }
+        }
+
+        if ($request->filled('tip_pool_id')) {
+            $pool = TipPool::query()
+                ->whereKey($request->tip_pool_id)
+                ->where('restaurant_id', $request->restaurant_id)
+                ->first();
+            if (! $pool || ! $pool->isTippable()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This tip pool is not available. Ask the restaurant to enable the kitchen tip pool and add staff.',
+                ], 422);
+            }
+        }
 
         $restaurant = Restaurant::find($request->restaurant_id);
 
@@ -897,24 +937,13 @@ class WhatsAppBotController extends Controller
             if (Schema::hasColumn('payments', 'waiter_id') && $request->waiter_id) {
                 $paymentData['waiter_id'] = $request->waiter_id;
             }
+            if (Schema::hasColumn('payments', 'tip_pool_id') && $request->tip_pool_id) {
+                $paymentData['tip_pool_id'] = $request->tip_pool_id;
+            }
             $payment = Payment::create($paymentData);
 
-            if ($payment->waiter_id) {
-                $tipData = [
-                    'restaurant_id' => $payment->restaurant_id,
-                    'waiter_id' => $payment->waiter_id,
-                    'order_id' => null,
-                    'amount' => $payment->amount,
-                ];
-                if (Schema::hasColumn('tips', 'payment_id')) {
-                    $tipData['payment_id'] = $payment->id;
-                    Tip::withoutGlobalScopes()->firstOrCreate(
-                        ['payment_id' => $payment->id],
-                        $tipData
-                    );
-                } else {
-                    Tip::withoutGlobalScopes()->create($tipData);
-                }
+            if ($payment->waiter_id || $payment->tip_pool_id) {
+                $tipPools->settleQuickTipPayment($payment);
             }
 
             Activity::create([
@@ -972,6 +1001,9 @@ class WhatsAppBotController extends Controller
             ];
             if (Schema::hasColumn('payments', 'waiter_id') && $request->waiter_id) {
                 $paymentData['waiter_id'] = $request->waiter_id;
+            }
+            if (Schema::hasColumn('payments', 'tip_pool_id') && $request->tip_pool_id) {
+                $paymentData['tip_pool_id'] = $request->tip_pool_id;
             }
             $payment = Payment::create($paymentData);
 
@@ -1056,23 +1088,8 @@ class WhatsAppBotController extends Controller
                 if ($paymentStatus === 'paid') {
                     $payment->update(['status' => 'paid']);
 
-                    // If this quick payment was a tip (waiter_id set), create Tip so waiter sees it in API
-                    if ($payment->waiter_id) {
-                        $tipData = [
-                            'restaurant_id' => $payment->restaurant_id,
-                            'waiter_id' => $payment->waiter_id,
-                            'order_id' => null,
-                            'amount' => $payment->amount,
-                        ];
-                        if (Schema::hasColumn('tips', 'payment_id')) {
-                            $tipData['payment_id'] = $payment->id;
-                            Tip::withoutGlobalScopes()->firstOrCreate(
-                                ['payment_id' => $payment->id],
-                                $tipData
-                            );
-                        } else {
-                            Tip::withoutGlobalScopes()->create($tipData);
-                        }
+                    if ($payment->waiter_id || $payment->tip_pool_id) {
+                        app(TipPoolService::class)->settleQuickTipPayment($payment->fresh());
                     }
 
                     // Log successful payment
@@ -1265,11 +1282,25 @@ class WhatsAppBotController extends Controller
     /**
      * Get Waiters for a Restaurant
      */
-    public function getWaiters($restaurantId)
+    public function getWaiters(Request $request, $restaurantId)
     {
-        $waiters = User::role('waiter')
-            ->where('restaurant_id', $restaurantId)
-            ->get(['id', 'name', 'is_online']);
+        $tippableOnly = $request->boolean('tippable_only');
+        $staffRole = strtolower(trim((string) $request->query('role', '')));
+
+        $roles = match ($staffRole) {
+            'waiter' => ['waiter'],
+            'barista' => ['barista'],
+            default => ['waiter', 'barista'],
+        };
+
+        $query = User::role($roles)
+            ->activeAtRestaurant((int) $restaurantId);
+
+        if ($tippableOnly) {
+            $query->digitalTipsEnabled();
+        }
+
+        $waiters = $query->orderBy('name')->get(['id', 'name', 'is_online', 'digital_tips_enabled']);
 
         return response()->json([
             'success' => true,
@@ -1277,7 +1308,46 @@ class WhatsAppBotController extends Controller
                 'id' => $w->id,
                 'name' => $w->name,
                 'is_online' => (bool) $w->is_online,
+                'digital_tips_enabled' => (bool) $w->digital_tips_enabled,
+                'can_receive_tips' => $w->canReceiveDigitalTips(),
+                'roles' => $w->getRoleNames()->values()->all(),
             ]),
+        ]);
+    }
+
+    /**
+     * Options for optional post-payment tipping screen.
+     */
+    public function getPostPaymentTipOptions(Request $request, $restaurantId, TipPoolService $tipPools)
+    {
+        $preferredWaiterId = $request->filled('waiter_id') ? (int) $request->waiter_id : null;
+
+        return response()->json([
+            'success' => true,
+            'data' => $tipPools->postPaymentTipOptions((int) $restaurantId, $preferredWaiterId),
+        ]);
+    }
+
+    /**
+     * Active tip pools customers can tip (e.g. kitchen pool).
+     */
+    public function getTipPools($restaurantId, TipPoolService $tipPools)
+    {
+        $kitchen = $tipPools->findTippableKitchenPool((int) $restaurantId);
+        $data = [];
+        if ($kitchen) {
+            $data[] = [
+                'id' => $kitchen->id,
+                'name' => $kitchen->name,
+                'code' => $kitchen->code,
+                'distribution_method' => $kitchen->distribution_method,
+                'member_count' => $kitchen->activeMembers->count(),
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
         ]);
     }
 
@@ -1324,6 +1394,7 @@ class WhatsAppBotController extends Controller
                 'id' => $order->id,
                 'total' => $order->total_amount,
                 'status' => $order->status,
+                'workflow_label' => $order->workflowLabel(),
                 'waiter_id' => $order->waiter_id,
                 'waiter_name' => $order->waiter?->name,
                 'payment_status' => $latestPayment?->status ?? 'unpaid',
@@ -1443,7 +1514,7 @@ class WhatsAppBotController extends Controller
      * Create Order from Text (Natural Language)
      * table_id/table_number is optional - order can be created via waiter QR scan
      */
-    public function createOrderByText(Request $request)
+    public function createOrderByText(Request $request, OrderWorkflowService $workflow)
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
@@ -1512,7 +1583,7 @@ class WhatsAppBotController extends Controller
         // If no items matched, create a custom order with the raw text
         if (empty($matchedItems)) {
             try {
-                return DB::transaction(function () use ($request, $tableNumber) {
+                return DB::transaction(function () use ($request, $tableNumber, $workflow) {
                     $order = Order::withoutGlobalScopes()->create([
                         'restaurant_id' => $request->restaurant_id,
                         'waiter_id' => $request->waiter_id,
@@ -1521,7 +1592,7 @@ class WhatsAppBotController extends Controller
                         'customer_name' => $request->customer_name,
                         'whatsapp_jid' => Order::normalizeWhatsAppJid($request->whatsapp_jid, $request->customer_phone),
                         'total_amount' => 0,
-                        'status' => 'pending',
+                        'status' => OrderWorkflow::RECEIVED,
                         'notes' => 'Order from text: '.$request->order_text,
                     ]);
 
@@ -1532,6 +1603,8 @@ class WhatsAppBotController extends Controller
                         'price' => 0,
                         'total' => 0,
                     ]);
+
+                    $workflow->markReceived($order, null, 'whatsapp_bot_text');
 
                     Activity::create([
                         'description' => "New WhatsApp text order #{$order->id} from {$request->customer_phone}: \"{$request->order_text}\" (Unmatched)",
@@ -1574,7 +1647,7 @@ class WhatsAppBotController extends Controller
 
         // Create Order with matched items
         try {
-            return DB::transaction(function () use ($request, $matchedItems, $totalAmount, $tableNumber) {
+            return DB::transaction(function () use ($request, $matchedItems, $totalAmount, $tableNumber, $workflow) {
                 $order = Order::withoutGlobalScopes()->create([
                     'restaurant_id' => $request->restaurant_id,
                     'waiter_id' => $request->waiter_id,
@@ -1583,7 +1656,7 @@ class WhatsAppBotController extends Controller
                     'customer_name' => $request->customer_name,
                     'whatsapp_jid' => Order::normalizeWhatsAppJid($request->whatsapp_jid, $request->customer_phone),
                     'total_amount' => $totalAmount,
-                    'status' => 'pending',
+                    'status' => OrderWorkflow::RECEIVED,
                 ]);
 
                 foreach ($matchedItems as $item) {
@@ -1595,6 +1668,8 @@ class WhatsAppBotController extends Controller
                         'total' => $item['subtotal'],
                     ]);
                 }
+
+                $workflow->markReceived($order, null, 'whatsapp_bot_text');
 
                 Activity::create([
                     'description' => "New WhatsApp text order #{$order->id} from {$request->customer_phone}: \"{$request->order_text}\"",
@@ -1642,7 +1717,7 @@ class WhatsAppBotController extends Controller
     /**
      * Build the nested `order` payload the WhatsApp bot expects.
      *
-     * @return array{id:int, total:float, status:string, table_number:?string, whatsapp_jid:?string, items:array<int,array{name:string,quantity:int,price:float,total:float}>}
+     * @return array{id:int, total:float, status:string, workflow_label:string, table_number:?string, whatsapp_jid:?string, items:array<int,array{name:string,quantity:int,price:float,total:float}>}
      */
     protected function formatOrderForBot(Order $order): array
     {
@@ -1650,6 +1725,7 @@ class WhatsAppBotController extends Controller
             'id' => $order->id,
             'total' => (float) $order->total_amount,
             'status' => $order->status,
+            'workflow_label' => $order->workflowLabel(),
             'table_number' => $order->table_number,
             'whatsapp_jid' => $order->whatsapp_jid,
             'items' => $order->items->map(fn ($item) => [

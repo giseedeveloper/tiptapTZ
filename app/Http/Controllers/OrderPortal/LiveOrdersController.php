@@ -8,9 +8,11 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\Table;
-use App\Services\OrderBillNotification;
+use App\Models\User;
+use App\Services\OrderWorkflowService;
 use App\Services\SelcomService;
 use App\Services\WhatsAppBillDelivery;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +22,10 @@ use Illuminate\View\View;
 
 class LiveOrdersController extends Controller
 {
+    public function __construct(private OrderWorkflowService $workflow)
+    {
+    }
+
     private function restaurantId(): int
     {
         return (int) session('order_portal_restaurant_id');
@@ -50,23 +56,31 @@ class LiveOrdersController extends Controller
         $today = Carbon::today();
         $restaurantId = $this->restaurantId();
 
+        // Received + accepted orders are grouped under "Pending" (kitchen hasn't started/queued yet).
         $pendingOrders = $this->orderQuery()->with('items.menuItem')
-            ->where('status', 'pending')
+            ->whereIn('status', array_merge(
+                OrderWorkflow::storageVariants(OrderWorkflow::RECEIVED),
+                OrderWorkflow::storageVariants(OrderWorkflow::ACCEPTED),
+            ))
             ->latest()
             ->get();
 
+        // Preparing + ready orders are grouped under "Preparing" (still in the kitchen queue).
         $preparingOrders = $this->orderQuery()->with('items.menuItem')
-            ->where('status', 'preparing')
+            ->whereIn('status', array_merge(
+                OrderWorkflow::storageVariants(OrderWorkflow::PREPARING),
+                OrderWorkflow::storageVariants(OrderWorkflow::READY),
+            ))
             ->latest()
             ->get();
 
         $servedOrders = $this->orderQuery()->with('items.menuItem')
-            ->where('status', 'served')
+            ->whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::SERVED))
             ->latest()
             ->get();
 
         $paidOrders = $this->orderQuery()->with('items.menuItem')
-            ->where('status', 'paid')
+            ->whereIn('status', OrderWorkflow::terminalStatuses())
             ->whereDate('created_at', $today)
             ->latest()
             ->take(20)
@@ -139,10 +153,11 @@ class LiveOrdersController extends Controller
             'is_whatsapp_order' => $isWhatsAppOrder,
             'bill_image_pushed_at' => $order->bill_image_pushed_at?->toIso8601String(),
             'bill_already_sent' => $billAlreadySent,
-            'can_send_whatsapp_bill' => $order->status === 'served' && $isWhatsAppOrder,
-            'can_resend_whatsapp_bill' => $order->status === 'served' && $isWhatsAppOrder && $billAlreadySent,
+            'can_send_whatsapp_bill' => $order->isBillStage() && $isWhatsAppOrder,
+            'can_resend_whatsapp_bill' => $order->isBillStage() && $isWhatsAppOrder && $billAlreadySent,
             'total_amount' => $order->total_amount,
             'status' => $order->status,
+            'workflow_label' => $order->workflowLabel(),
             'created_at' => $order->created_at->toIso8601String(),
             'items' => $order->items->map(fn ($i) => [
                 'id' => $i->id,
@@ -191,12 +206,14 @@ class LiveOrdersController extends Controller
             'customer_phone' => $request->customer_phone ?? '',
             'customer_name' => $request->customer_name ?? '',
             'total_amount' => $totalAmount,
-            'status' => 'pending',
+            'status' => OrderWorkflow::RECEIVED,
         ]);
 
         foreach ($orderItems as $item) {
             $order->items()->create($item);
         }
+
+        $this->workflow->markReceived($order, User::find($this->waiterId()), 'order_portal');
 
         if ($request->expectsJson()) {
             $order->load('items.menuItem');
@@ -215,13 +232,18 @@ class LiveOrdersController extends Controller
         $orderModel = $this->orderQuery()->findOrFail($order);
 
         if ($request->has('status')) {
-            $request->validate(['status' => 'in:pending,preparing,served,paid']);
-            $previousStatus = $orderModel->status;
-            $orderModel->update(['status' => $request->status]);
+            $request->validate(['status' => OrderWorkflow::validationRule()]);
 
-            if ($request->status === 'served' && $previousStatus !== 'served') {
-                OrderBillNotification::maybePushBillImage($orderModel);
-            }
+            $target = OrderWorkflow::normalize($request->status);
+            $this->workflow->transition(
+                $orderModel,
+                $target,
+                User::find($this->waiterId()),
+                'order_portal',
+                [],
+                ensurePaymentOnComplete: $target === OrderWorkflow::COMPLETED,
+            );
+            $orderModel->refresh();
         }
 
         if ($request->has('table_number')) {
@@ -391,7 +413,7 @@ class LiveOrdersController extends Controller
 
         if ($paymentStatus === 'paid') {
             $payment->update(['status' => 'paid']);
-            $order->update(['status' => 'paid']);
+            $this->workflow->completeFromPayment($order, 'ussd');
 
             return response()->json(['status' => 'paid', 'message' => 'Payment completed successfully!']);
         }

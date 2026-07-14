@@ -7,10 +7,18 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Restaurant;
+use App\Services\OrderWorkflowService;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 
 class ManagerDashboardAnalytics
 {
+    public function __construct(
+        private OrderWorkflowService $workflow,
+        private WaitTimeAnalyticsService $waitTimes,
+    ) {
+    }
+
     public function revenueForPaidOrdersOnDate(int $restaurantId, Carbon $date): float
     {
         return (float) Payment::query()
@@ -34,6 +42,11 @@ class ManagerDashboardAnalytics
         $weekComparison = $this->weekComparison($restaurantId, $today);
         $topMenuItems = $this->topMenuItems($restaurantId, $today->copy()->subDays(6), $today->copy()->endOfDay());
         $ratingHistogram = $this->ratingHistogram($restaurantId);
+        $waitFrom = $today->copy()->subDays(6)->startOfDay();
+        $waitTo = $today->copy()->endOfDay();
+        $waitTime = $this->waitTimes->summarize($restaurantId, $waitFrom, $waitTo);
+        $waitTrend = $this->waitTimes->dailyTrend($restaurantId, $waitFrom, $waitTo);
+        $waiterSpeed = $this->waitTimes->waiterSpeedMetrics($restaurantId, $waitFrom, $waitTo);
 
         return [
             'restaurant_name' => $restaurant?->name ?? 'Your Restaurant',
@@ -43,7 +56,10 @@ class ManagerDashboardAnalytics
             'week_comparison' => $weekComparison,
             'top_menu_items' => $topMenuItems,
             'rating_histogram' => $ratingHistogram,
-            'insights' => $this->buildInsights($weeklyTrend, $hourlyActivity, $statusCycle, $weekComparison),
+            'wait_time' => $waitTime,
+            'wait_trend' => $waitTrend,
+            'waiter_speed' => array_slice($waiterSpeed, 0, 5),
+            'insights' => $this->buildInsights($weeklyTrend, $hourlyActivity, $statusCycle, $weekComparison, $waitTime),
         ];
     }
 
@@ -111,7 +127,7 @@ class ManagerDashboardAnalytics
         }
 
         $hours = [];
-        for ($h = 8; $h <= 23; $h++) {
+        for ($h = 0; $h <= 23; $h++) {
             $hours[] = [
                 'hour' => (string) $h,
                 'label' => sprintf('%02d:00', $h),
@@ -123,47 +139,21 @@ class ManagerDashboardAnalytics
     }
 
     /**
-     * @return array{segments: list<array{key: string, label: string, count: int, color: string}>, total: int}
+     * Delegates to OrderWorkflowService::dashboardMetrics for the canonical
+     * received→accepted→preparing→ready→served→completed pipeline, including
+     * per-stage average times and bottleneck detection.
+     *
+     * @return array{
+     *     segments: list<array{key: string, label: string, count: int, color: string, avg_minutes: float|null}>,
+     *     total: int,
+     *     stage_times: list<array{key: string, label: string, avg_minutes: float, sample_size: int, threshold_minutes: int, is_bottleneck: bool}>,
+     *     bottlenecks: list<array{key: string, label: string, avg_minutes: float, threshold_minutes: int, severity: string}>,
+     *     avg_total_minutes: float|null
+     * }
      */
     private function statusCycle(int $restaurantId, Carbon $today): array
     {
-        $statuses = [
-            'pending' => ['label' => 'Pending', 'color' => '#f43f5e'],
-            'preparing' => ['label' => 'Preparing', 'color' => '#f59e0b'],
-            'served' => ['label' => 'Served', 'color' => '#10b981'],
-            'paid' => ['label' => 'Paid', 'color' => '#06b6d4'],
-        ];
-
-        $liveCounts = Order::query()
-            ->where('restaurant_id', $restaurantId)
-            ->whereIn('status', ['pending', 'preparing', 'served'])
-            ->get(['status'])
-            ->countBy('status');
-
-        $paidToday = Order::query()
-            ->where('restaurant_id', $restaurantId)
-            ->where('status', 'paid')
-            ->whereDate('created_at', $today)
-            ->count();
-
-        $segments = [];
-        $total = 0;
-
-        foreach ($statuses as $key => $meta) {
-            $count = $key === 'paid'
-                ? (int) $paidToday
-                : (int) ($liveCounts[$key] ?? 0);
-
-            $segments[] = [
-                'key' => $key,
-                'label' => $meta['label'],
-                'count' => $count,
-                'color' => $meta['color'],
-            ];
-            $total += $count;
-        }
-
-        return ['segments' => $segments, 'total' => $total];
+        return $this->workflow->dashboardMetrics($restaurantId, $today);
     }
 
     /**
@@ -261,12 +251,18 @@ class ManagerDashboardAnalytics
     /**
      * @param  list<array{date: string, day: string, revenue: float, orders: int}>  $weeklyTrend
      * @param  list<array{hour: string, label: string, orders: int}>  $hourlyActivity
-     * @param  array{segments: list<array{key: string, label: string, count: int, color: string}>, total: int}  $statusCycle
+     * @param  array{segments: list<array{key: string, label: string, count: int, color: string, avg_minutes: float|null}>, total: int, stage_times: array, bottlenecks: array, avg_total_minutes: float|null}  $statusCycle
      * @param  array{current: float, previous: float, change_pct: float, current_orders: int, previous_orders: int}  $weekComparison
+     * @param  array{avg_to_served_minutes: float|null, avg_to_ready_minutes: float|null, sample_to_served: int}|null  $waitTime
      * @return list<array{label: string, value: string, tone: string}>
      */
-    private function buildInsights(array $weeklyTrend, array $hourlyActivity, array $statusCycle, array $weekComparison): array
-    {
+    private function buildInsights(
+        array $weeklyTrend,
+        array $hourlyActivity,
+        array $statusCycle,
+        array $weekComparison,
+        ?array $waitTime = null,
+    ): array {
         $insights = [];
 
         $peakHour = collect($hourlyActivity)->sortByDesc('orders')->first();
@@ -296,7 +292,7 @@ class ManagerDashboardAnalytics
         }
 
         $activePipeline = collect($statusCycle['segments'])
-            ->whereIn('key', ['pending', 'preparing', 'served'])
+            ->whereIn('key', OrderWorkflow::liveStatuses())
             ->sum('count');
 
         if ($activePipeline > 0) {
@@ -307,6 +303,24 @@ class ManagerDashboardAnalytics
             ];
         }
 
-        return array_slice($insights, 0, 4);
+        if (($waitTime['avg_to_served_minutes'] ?? null) !== null) {
+            $avgWait = (float) $waitTime['avg_to_served_minutes'];
+            $insights[] = [
+                'label' => 'Avg customer wait',
+                'value' => $avgWait.'m to served · n='.((int) ($waitTime['sample_to_served'] ?? 0)),
+                'tone' => $avgWait > 30 ? 'rose' : ($avgWait > 20 ? 'amber' : 'emerald'),
+            ];
+        } else {
+            $bottleneck = collect($statusCycle['bottlenecks'] ?? [])->first();
+            if ($bottleneck) {
+                $insights[] = [
+                    'label' => 'Bottleneck stage',
+                    'value' => $bottleneck['label'].' · '.$bottleneck['avg_minutes'].'m avg',
+                    'tone' => $bottleneck['severity'] === 'critical' ? 'rose' : 'amber',
+                ];
+            }
+        }
+
+        return array_slice($insights, 0, 5);
     }
 }

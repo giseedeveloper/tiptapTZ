@@ -64,4 +64,20 @@ return [
 
     'welcome_image_url' => env('WHATSAPP_WELCOME_IMAGE_URL'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cross-region webhook routing (shared Meta app callback on TZ Laravel)
+    |--------------------------------------------------------------------------
+    |
+    | When SA shares the TipTap Tanzania Meta app, Meta may still POST to the TZ
+    | Laravel webhook. Route those phone_number_id values to the SA bot inbound.
+    |
+    */
+
+    'sa_phone_number_id' => env('WHATSAPP_SA_PHONE_NUMBER_ID'),
+
+    'sa_bot_inbound_url' => env('WHATSAPP_SA_BOT_INBOUND_URL'),
+
+    'sa_bot_notify_secret' => env('WHATSAPP_SA_BOT_NOTIFY_SECRET'),
+
 ];

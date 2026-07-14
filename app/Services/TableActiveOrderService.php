@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Table;
+use App\Support\OrderWorkflow;
 
 class TableActiveOrderService
 {
     /**
-     * Latest open order for a table (pending through served).
+     * Latest open order for a table (received through served).
      */
     public function findForTable(int $restaurantId, ?string $tableNumber = null, ?int $tableId = null): ?Order
     {
@@ -28,7 +29,7 @@ class TableActiveOrderService
         return Order::withoutGlobalScopes()
             ->where('restaurant_id', $restaurantId)
             ->where('table_number', $tableNumber)
-            ->whereIn('status', ['pending', 'preparing', 'ready', 'served'])
+            ->whereIn('status', OrderWorkflow::activeTableStatuses())
             ->latest('id')
             ->first();
     }

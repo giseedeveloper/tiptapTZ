@@ -168,6 +168,7 @@ Route::prefix('v1/manager')->middleware(['auth:sanctum', 'role:manager'])->group
     Route::get('/waiters/history', [\App\Http\Controllers\Api\Manager\WaiterController::class, 'history']);
     Route::post('/waiters/{waiter}/link', [\App\Http\Controllers\Api\Manager\WaiterController::class, 'link']);
     Route::post('/waiters/{waiter}/unlink', [\App\Http\Controllers\Api\Manager\WaiterController::class, 'unlink']);
+    Route::post('/waiters/{waiter}/digital-tips', [\App\Http\Controllers\Api\Manager\WaiterController::class, 'updateDigitalTips']);
 
     // Payroll
     Route::get('/payroll', [\App\Http\Controllers\Api\Manager\PayrollController::class, 'index']);
@@ -189,6 +190,13 @@ Route::prefix('v1/manager')->middleware(['auth:sanctum', 'role:manager'])->group
     Route::post('/menu-engagement/settings', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'updateSettings']);
     Route::post('/menu-engagement/{session}/dismiss', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'dismiss']);
     Route::post('/menu-engagement/notifications/read', [\App\Http\Controllers\Manager\MenuEngagementController::class, 'markNotificationsRead']);
+
+    // Daily reports (PDF / Excel)
+    Route::get('/daily-reports', [\App\Http\Controllers\Manager\DailyReportController::class, 'apiIndex']);
+    Route::get('/daily-reports/{date}', [\App\Http\Controllers\Manager\DailyReportController::class, 'show']);
+    Route::post('/daily-reports/generate', [\App\Http\Controllers\Manager\DailyReportController::class, 'generate']);
+    Route::get('/daily-reports/{date}/export/{format}', [\App\Http\Controllers\Manager\DailyReportController::class, 'download'])
+        ->where('format', 'pdf|excel');
 });
 
 // WhatsApp Bot Routes
@@ -213,6 +221,8 @@ Route::prefix('bot')->middleware('auth:sanctum')->group(function () {
     Route::get('/waiter/{waiterId}/status', [App\Http\Controllers\Api\WhatsAppBotController::class, 'waiterStatus']);
     Route::post('/call-waiter', [App\Http\Controllers\Api\WhatsAppBotController::class, 'callWaiter']);
     Route::get('/restaurant/{restaurantId}/waiters', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getWaiters']);
+    Route::get('/restaurant/{restaurantId}/tip-pools', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getTipPools']);
+    Route::get('/restaurant/{restaurantId}/post-payment-tip-options', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getPostPaymentTipOptions']);
     Route::get('/active-order', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getActiveOrder']);
     Route::get('/restaurant/{restaurantId}/menu-pdf', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getMenuPdf']);
     Route::get('/restaurant/{restaurantId}/menu-image', [App\Http\Controllers\Api\WhatsAppBotController::class, 'getMenuPdf']);

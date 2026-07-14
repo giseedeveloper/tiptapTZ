@@ -48,6 +48,26 @@ class Restaurant extends Model
         "subscription_package_id",
         "plan_selected_at",
         "trial_ends_at",
+        "tip_settings",
+        "busy_mode",
+        "busy_eta_multiplier",
+    ];
+
+    /**
+     * Default tip configuration merged over stored tip_settings.
+     *
+     * @var array<string, mixed>
+     */
+    public const TIP_SETTINGS_DEFAULTS = [
+        "categories" => [
+            "waiter" => true,
+            "barista" => true,
+            "kitchen" => true,
+        ],
+        "suggestion_mode" => "percent", // percent | fixed
+        "percentages" => [5, 10, 15],
+        "fixed_amounts" => [500, 1000, 2000, 5000],
+        "value_visible" => true,
     ];
 
     /**
@@ -65,7 +85,106 @@ class Restaurant extends Model
             "plan_selected_at" => "datetime",
             "trial_ends_at" => "datetime",
             "kitchen_token_generated_at" => "datetime",
+            "tip_settings" => "array",
+            "busy_mode" => "boolean",
+            "busy_eta_multiplier" => "float",
         ];
+    }
+
+    /**
+     * Tip configuration with defaults applied.
+     *
+     * @return array<string, mixed>
+     */
+    public function tipSettings(): array
+    {
+        $stored = is_array($this->tip_settings) ? $this->tip_settings : [];
+
+        $categories = array_merge(
+            self::TIP_SETTINGS_DEFAULTS["categories"],
+            is_array($stored["categories"] ?? null) ? $stored["categories"] : [],
+        );
+
+        $mode = in_array($stored["suggestion_mode"] ?? null, ["percent", "fixed"], true)
+            ? $stored["suggestion_mode"]
+            : self::TIP_SETTINGS_DEFAULTS["suggestion_mode"];
+
+        $percentages = $this->sanitizeNumberList(
+            $stored["percentages"] ?? null,
+            self::TIP_SETTINGS_DEFAULTS["percentages"],
+            1,
+            100,
+        );
+
+        $fixed = $this->sanitizeNumberList(
+            $stored["fixed_amounts"] ?? null,
+            self::TIP_SETTINGS_DEFAULTS["fixed_amounts"],
+            1,
+            10_000_000,
+        );
+
+        return [
+            "categories" => [
+                "waiter" => (bool) $categories["waiter"],
+                "barista" => (bool) $categories["barista"],
+                "kitchen" => (bool) $categories["kitchen"],
+            ],
+            "suggestion_mode" => $mode,
+            "percentages" => $percentages,
+            "fixed_amounts" => $fixed,
+            "value_visible" => array_key_exists("value_visible", $stored)
+                ? (bool) $stored["value_visible"]
+                : self::TIP_SETTINGS_DEFAULTS["value_visible"],
+        ];
+    }
+
+    public function tipCategoryEnabled(string $category): bool
+    {
+        return (bool) ($this->tipSettings()["categories"][$category] ?? false);
+    }
+
+    public function tipsValueVisible(): bool
+    {
+        return (bool) $this->tipSettings()["value_visible"];
+    }
+
+    public function isBusy(): bool
+    {
+        return (bool) $this->busy_mode;
+    }
+
+    public function busyEtaMultiplier(): float
+    {
+        $multiplier = (float) ($this->busy_eta_multiplier ?? 1.5);
+
+        return $multiplier >= 1.0 ? $multiplier : 1.0;
+    }
+
+    /**
+     * @param  mixed  $value
+     * @param  list<int>  $default
+     * @return list<int>
+     */
+    private function sanitizeNumberList($value, array $default, int $min, int $max): array
+    {
+        if (! is_array($value)) {
+            return $default;
+        }
+
+        $clean = [];
+        foreach ($value as $item) {
+            if (! is_numeric($item)) {
+                continue;
+            }
+            $n = (int) round((float) $item);
+            if ($n >= $min && $n <= $max) {
+                $clean[] = $n;
+            }
+        }
+
+        $clean = array_values(array_unique($clean));
+
+        return $clean !== [] ? $clean : $default;
     }
 
     /**

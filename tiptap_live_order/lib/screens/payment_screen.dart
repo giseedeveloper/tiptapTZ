@@ -176,7 +176,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
     if (confirmed == true) {
       try {
-        await _api.updateOrderStatus(widget.order.id, 'paid');
+        await _api.updateOrderStatus(widget.order.id, 'completed');
         widget.onPaid();
         HapticFeedback.heavyImpact();
         if (mounted) Navigator.pop(context);

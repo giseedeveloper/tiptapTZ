@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Table;
 use App\Models\TableZone;
 use App\Models\User;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -42,7 +43,7 @@ class DashboardController extends Controller
         $liveOrders = Order::withoutGlobalScopes()
             ->where('restaurant_id', $restaurantId)
             ->whereIn('table_number', $tableNames)
-            ->whereIn('status', ['pending', 'preparing', 'served'])
+            ->whereIn('status', OrderWorkflow::activeTableStatuses())
             ->with(['items.menuItem', 'waiter'])
             ->latest()
             ->get();
@@ -61,7 +62,7 @@ class DashboardController extends Controller
         $stats = [
             'live_orders'    => $liveOrders->count(),
             'orders_today'   => (clone $allZoneOrders)->count(),
-            'revenue_today'  => (float) (clone $allZoneOrders)->where('status', 'paid')->sum('total_amount'),
+            'revenue_today'  => (float) (clone $allZoneOrders)->whereIn('status', OrderWorkflow::terminalStatuses())->sum('total_amount'),
             'waiters_active' => $waiters->where('is_online', true)->count(),
             'avg_rating'     => round((float) (Feedback::withoutGlobalScopes()
                                     ->where('restaurant_id', $restaurantId)
@@ -93,7 +94,7 @@ class DashboardController extends Controller
             'live_orders'  => Order::withoutGlobalScopes()
                                 ->where('restaurant_id', $restaurantId)
                                 ->whereIn('table_number', $tableNames)
-                                ->whereIn('status', ['pending', 'preparing', 'served'])
+                                ->whereIn('status', OrderWorkflow::activeTableStatuses())
                                 ->count(),
             'orders_today' => Order::withoutGlobalScopes()
                                 ->where('restaurant_id', $restaurantId)

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\BranchComparisonService;
 use App\Services\BranchOverviewService;
 use App\Services\ManagerDashboardAnalytics;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -35,16 +36,24 @@ class DashboardController extends Controller
         $today = Carbon::today();
 
         $totalOrdersToday = Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->count();
-        $revenueToday = Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->where('status', 'paid')->sum('total_amount');
+        $revenueToday = Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->whereIn('status', OrderWorkflow::terminalStatuses())->sum('total_amount');
         $avgRating = Feedback::query()->forService()->whereHas('order', function ($q) use ($restaurantId) {
             $q->where('restaurant_id', $restaurantId);
         })->avg('rating') ?? 0;
         $waitersOnline = User::role('waiter')->where('restaurant_id', $restaurantId)->where('is_online', true)->count();
 
-        $pendingOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)->where('status', 'pending')->latest()->get();
-        $preparingOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)->where('status', 'preparing')->latest()->get();
-        $servedOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)->where('status', 'served')->latest()->get();
-        $paidOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)->where('status', 'paid')->whereDate('created_at', $today)->latest()->take(10)->get();
+        $pendingOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)
+            ->whereIn('status', array_merge(OrderWorkflow::storageVariants(OrderWorkflow::RECEIVED), OrderWorkflow::storageVariants(OrderWorkflow::ACCEPTED)))
+            ->latest()->get();
+        $preparingOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)
+            ->whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::PREPARING))
+            ->latest()->get();
+        $servedOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)
+            ->whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::SERVED))
+            ->latest()->get();
+        $paidOrders = Order::with('items.menuItem')->where('restaurant_id', $restaurantId)
+            ->whereIn('status', OrderWorkflow::terminalStatuses())
+            ->whereDate('created_at', $today)->latest()->take(10)->get();
 
         $recentFeedback = Feedback::query()->forService()->with('order')->whereHas('order', function ($q) use ($restaurantId) {
             $q->where('restaurant_id', $restaurantId);
@@ -75,7 +84,7 @@ class DashboardController extends Controller
 
         $stats = [
             'total_orders_today' => Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->count(),
-            'revenue_today' => Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->where('status', 'paid')->sum('total_amount'),
+            'revenue_today' => Order::where('restaurant_id', $restaurantId)->whereDate('created_at', $today)->whereIn('status', OrderWorkflow::terminalStatuses())->sum('total_amount'),
             'avg_rating' => number_format(Feedback::query()->forService()->whereHas('order', function ($q) use ($restaurantId) {
                 $q->where('restaurant_id', $restaurantId);
             })->avg('rating') ?? 0, 1),
@@ -95,9 +104,9 @@ class DashboardController extends Controller
             'hourly_activity' => $analytics['hourly_activity'],
             'week_comparison' => $analytics['week_comparison'],
             'insights' => $analytics['insights'],
-            'top_items' => $analytics['top_items'],
+            'top_items' => $analytics['top_menu_items'],
             'rating_histogram' => $analytics['rating_histogram'],
-            'order_status_cycle' => $analytics['order_status_cycle'],
+            'order_status_cycle' => $analytics['status_cycle'],
         ]);
     }
 }

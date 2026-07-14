@@ -8,16 +8,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
-        :root{--bg:#0a0514;--card:rgba(20,15,40,0.8);--border:rgba(255,255,255,0.08);--primary:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444}
+        :root{--bg:#0a0514;--card:rgba(20,15,40,0.8);--border:rgba(255,255,255,0.08);--primary:#8C71F6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444}
         body{background:linear-gradient(135deg,var(--bg) 0%,#120a24 50%,#080310 100%);min-height:100vh;color:white}
         .orb{position:fixed;border-radius:50%;filter:blur(100px);opacity:0.15;pointer-events:none}
         .orb-1{width:600px;height:600px;background:var(--primary);top:-200px;right:-200px;animation:float 20s ease-in-out infinite}
-        .orb-2{width:400px;height:400px;background:#06b6d4;bottom:-100px;left:-100px;animation:float 15s ease-in-out infinite reverse}
+        .orb-2{width:400px;height:400px;background:#6D52E8;bottom:-100px;left:-100px;animation:float 15s ease-in-out infinite reverse}
         @keyframes float{0%,100%{transform:translate(0,0)scale(1)}50%{transform:translate(30px,-30px)scale(1.1)}}
         .header{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(10,5,20,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100;display:flex;align-items:center;padding:0 24px}
         .header-content{width:100%;max-width:1920px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
         .brand{display:flex;align-items:center;gap:12px}
-        .brand-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary) 0%,#06b6d4 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(139,92,246,0.4);font-size:1.5rem}
+        .brand-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary) 0%,#6D52E8 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(140, 113, 246,0.4);font-size:1.5rem}
         .brand h1{font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.7) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .brand span{font-size:0.65rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.15em}
         .stats{display:flex;gap:12px}
@@ -27,11 +27,11 @@
         .stat-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem}
         .stat.urgent .stat-icon{background:rgba(239,68,68,0.3)}
         .stat.active .stat-icon{background:rgba(245,158,11,0.3)}
-        .stat.pending .stat-icon{background:rgba(139,92,246,0.3)}
+        .stat.pending .stat-icon{background:rgba(140, 113, 246,0.3)}
         .stat-value{font-size:1.25rem;font-weight:800}
         .stat-label{font-size:0.65rem;color:rgba(255,255,255,0.5);text-transform:uppercase}
         .clock{text-align:right}
-        .clock-time{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--primary) 0%,#06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .clock-time{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--primary) 0%,#6D52E8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .clock-date{font-size:0.7rem;color:rgba(255,255,255,0.4);text-transform:uppercase}
         .main{padding:88px 24px 24px;position:relative;z-index:1}
         .grid{max-width:1920px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:24px}
@@ -52,7 +52,7 @@
         /* Compact Card Header */
         .compact-header{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
         .compact-left{display:flex;align-items:center;gap:10px;flex:1}
-        .table-num{width:40px;height:40px;background:linear-gradient(135deg,var(--primary) 0%,#06b6d4 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;box-shadow:0 4px 12px rgba(139,92,246,0.3);flex-shrink:0}
+        .table-num{width:40px;height:40px;background:linear-gradient(135deg,var(--primary) 0%,#6D52E8 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;box-shadow:0 4px 12px rgba(140, 113, 246,0.3);flex-shrink:0}
         .card.vip .table-num{background:linear-gradient(135deg,var(--warning) 0%,var(--danger) 100%)}
         .compact-info{flex:1;min-width:0}
         .compact-info h4{font-size:0.9rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -72,7 +72,7 @@
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .card-body .item{display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all 0.2s ease}
         .card-body .item:hover{background:rgba(255,255,255,0.06)}
-        .card-body .item-qty{width:28px;height:28px;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#c4b5fd;flex-shrink:0}
+        .card-body .item-qty{width:28px;height:28px;background:rgba(140, 113, 246,0.2);border:1px solid rgba(140, 113, 246,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#c4b5fd;flex-shrink:0}
         .card-body .item-name{font-size:0.8rem;font-weight:600;flex:1}
         .card-body .item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
         .card-body .item-dot.pending{background:var(--primary)}
@@ -81,19 +81,21 @@
         
         .compact-actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
         .btn-compact{flex:1;padding:8px;border:none;border-radius:8px;font-size:0.7rem;font-weight:700;text-transform:uppercase;cursor:pointer;transition:all 0.2s ease}
-        .btn-compact.primary{background:linear-gradient(135deg,var(--primary) 0%,#7c3aed 100%);color:white}
+        .btn-compact.primary{background:linear-gradient(135deg,var(--primary) 0%,#6D52E8 100%);color:white}
         .btn-compact.success{background:linear-gradient(135deg,var(--success) 0%,#059669 100%);color:white}
         .btn-compact.secondary{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1)}
         .tab-btn{padding:10px 20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.6);font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s ease}
         .tab-btn:hover{background:rgba(255,255,255,0.1);color:white}
-        .tab-btn.active{background:linear-gradient(135deg,var(--primary) 0%,#7c3aed 100%);color:white;border-color:transparent;box-shadow:0 4px 15px rgba(139,92,246,0.3)}
+        .tab-btn.active{background:linear-gradient(135deg,var(--primary) 0%,#6D52E8 100%);color:white;border-color:transparent;box-shadow:0 4px 15px rgba(140, 113, 246,0.3)}
         .history-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all 0.2s ease}
         .history-card:hover{border-color:rgba(255,255,255,0.15);transform:translateY(-2px)}
         .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
         .history-table{width:36px;height:36px;background:linear-gradient(135deg,var(--success) 0%,#059669 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:800}
         .history-status{padding:4px 12px;border-radius:20px;font-size:0.7rem;font-weight:700;text-transform:uppercase}
+        .history-status.received{background:rgba(244,63,94,0.15);color:#fb7185;border:1px solid rgba(244,63,94,0.3)}
+        .history-status.accepted{background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3)}
         .history-status.ready{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)}
-        .history-status.served{background:rgba(6,182,212,0.15);color:#67e8f9;border:1px solid rgba(6,182,212,0.3)}
+        .history-status.served{background:rgba(109, 82, 232,0.15);color:#67e8f9;border:1px solid rgba(109, 82, 232,0.3)}
         .history-status.completed{background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3)}
         .history-items{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
         .history-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:0.8rem;color:rgba(255,255,255,0.8)}
@@ -108,14 +110,14 @@
         .ready-info span{font-size:0.7rem;color:rgba(255,255,255,0.5)}
         .ready-time{font-size:0.75rem;font-weight:700;color:var(--success);margin-left:auto}
         .empty{grid-column:1 / -1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;text-align:center}
-        .empty-icon{width:100px;height:100px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.2);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;color:rgba(139,92,246,0.5);font-size:3rem}
+        .empty-icon{width:100px;height:100px;background:rgba(140, 113, 246,0.1);border:2px solid rgba(140, 113, 246,0.2);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;color:rgba(140, 113, 246,0.5);font-size:3rem}
         .empty h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}
         .empty p{color:rgba(255,255,255,0.5)}
         .connection{position:fixed;bottom:20px;right:20px;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:100px;backdrop-filter:blur(10px);z-index:100}
         .connection-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:pulse 2s ease-in-out infinite}
         .connection.disconnected .connection-dot{background:var(--danger);animation:none}
         .connection span{font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.7)}
-        .toast{position:fixed;top:80px;right:24px;padding:16px 20px;background:linear-gradient(135deg,rgba(139,92,246,0.95) 0%,rgba(6,182,212,0.95) 100%);border-radius:12px;display:flex;align-items:center;gap:12px;z-index:200;transform:translateX(400px);transition:transform 0.4s ease;box-shadow:0 10px 40px rgba(139,92,246,0.4)}
+        .toast{position:fixed;top:80px;right:24px;padding:16px 20px;background:linear-gradient(135deg,rgba(140, 113, 246,0.95) 0%,rgba(109, 82, 232,0.95) 100%);border-radius:12px;display:flex;align-items:center;gap:12px;z-index:200;transform:translateX(400px);transition:transform 0.4s ease;box-shadow:0 10px 40px rgba(140, 113, 246,0.4)}
         .toast.show{transform:translateX(0)}
         @media(max-width:1200px){.grid{grid-template-columns:1fr}.sidebar{display:none}}
         @media(max-width:768px){.stats{display:none}.orders-row{grid-template-columns:1fr}}
@@ -265,7 +267,7 @@
                         <div style="font-size:0.75rem;color:#fcd34d;text-transform:uppercase;margin-bottom:4px">Ready</div>
                         <div id="stat-ready" style="font-size:1.5rem;font-weight:800;color:#fbbf24">0</div>
                     </div>
-                    <div class="stat-card" style="background:linear-gradient(135deg,rgba(6,182,212,0.15) 0%,rgba(6,182,212,0.05) 100%);border:1px solid rgba(6,182,212,0.3);border-radius:12px;padding:16px;text-align:center">
+                    <div class="stat-card" style="background:linear-gradient(135deg,rgba(109, 82, 232,0.15) 0%,rgba(109, 82, 232,0.05) 100%);border:1px solid rgba(109, 82, 232,0.3);border-radius:12px;padding:16px;text-align:center">
                         <div style="font-size:0.75rem;color:#67e8f9;text-transform:uppercase;margin-bottom:4px">Served</div>
                         <div id="stat-served" style="font-size:1.5rem;font-weight:800;color:#22d3ee">0</div>
                     </div>
@@ -497,7 +499,7 @@
         function renderOrders(orders){
             const urgent=orders.filter(o=>o.sla_status==='red');
             const cooking=orders.filter(o=>o.status==='preparing');
-            const pending=orders.filter(o=>o.status==='pending'||o.status==='confirmed');
+            const pending=orders.filter(o=>o.status==='pending'||o.status==='confirmed'||o.status==='received'||o.status==='accepted');
             const ready=orders.filter(o=>o.status==='ready');
 
             const currentIds=orders.map(o=>o.id);
@@ -569,7 +571,7 @@
                         </div>`).join('')}
                     </div>
                     <div class="compact-actions">
-                        ${order.status==='pending'||order.status==='confirmed'?`<button class="btn-compact primary" onclick="event.stopPropagation();updateOrderStatus(${order.id},'preparing')">▶ Start</button>`:''}
+                        ${order.status==='pending'||order.status==='confirmed'||order.status==='received'||order.status==='accepted'?`<button class="btn-compact primary" onclick="event.stopPropagation();updateOrderStatus(${order.id},'preparing')">▶ Start</button>`:''}
                         ${order.status==='preparing'?`<button class="btn-compact success" onclick="event.stopPropagation();updateOrderStatus(${order.id},'ready')">✓ Ready</button>`:''}
                         <button class="btn-compact secondary" onclick="event.stopPropagation();updateOrderStatus(${order.id},'cancelled')">✕</button>
                     </div>

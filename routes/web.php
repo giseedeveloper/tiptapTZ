@@ -605,6 +605,10 @@ Route::middleware(["auth", "role:manager|branch_manager", "restaurant.approved"]
             \App\Http\Controllers\Manager\MenuController::class,
             "index",
         ])->name("menu.index");
+        Route::post("/menu/busy-mode", [
+            \App\Http\Controllers\Manager\MenuController::class,
+            "updateBusyMode",
+        ])->name("menu.busy-mode");
         Route::post("/menu", [
             \App\Http\Controllers\Manager\MenuController::class,
             "store",
@@ -651,6 +655,10 @@ Route::middleware(["auth", "role:manager|branch_manager", "restaurant.approved"]
             \App\Http\Controllers\Manager\WaiterController::class,
             "unlink",
         ])->name("waiters.unlink");
+        Route::post("/waiters/{waiter}/digital-tips", [
+            \App\Http\Controllers\Manager\WaiterController::class,
+            "updateDigitalTips",
+        ])->name("waiters.digital-tips");
         Route::post("/waiters/{waiter}/generate-order-portal-password", [
             \App\Http\Controllers\Manager\WaiterController::class,
             "generateOrderPortalPassword",
@@ -833,6 +841,34 @@ Route::middleware(["auth", "role:manager|branch_manager", "restaurant.approved"]
             \App\Http\Controllers\Manager\TipController::class,
             "index",
         ])->name("tips.index");
+        Route::post("/tips/settings", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "updateSettings",
+        ])->name("tips.settings.update");
+        Route::get("/tips/reports", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "reports",
+        ])->name("tips.reports");
+        Route::get("/tips/reports/export", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "exportReports",
+        ])->name("tips.reports.export");
+        Route::post("/tips/pool", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "updatePool",
+        ])->name("tips.pool.update");
+        Route::post("/tips/members", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "addMember",
+        ])->name("tips.members.store");
+        Route::put("/tips/members/{member}", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "updateMember",
+        ])->name("tips.members.update");
+        Route::delete("/tips/members/{member}", [
+            \App\Http\Controllers\Manager\TipController::class,
+            "removeMember",
+        ])->name("tips.members.destroy");
         Route::get("/api", [
             \App\Http\Controllers\Manager\ApiController::class,
             "index",
@@ -859,6 +895,14 @@ Route::middleware(["auth", "role:manager|branch_manager", "restaurant.approved"]
             "menu-image.index",
         );
 
+        Route::get("/tables/occupancy", [
+            \App\Http\Controllers\Manager\TableOccupancyController::class,
+            "index",
+        ])->name("tables.occupancy");
+        Route::get("/tables/occupancy/feed", [
+            \App\Http\Controllers\Manager\TableOccupancyController::class,
+            "feed",
+        ])->name("tables.occupancy.feed");
         Route::resource(
             "tables",
             \App\Http\Controllers\Manager\TableController::class,
@@ -867,6 +911,21 @@ Route::middleware(["auth", "role:manager|branch_manager", "restaurant.approved"]
             \App\Http\Controllers\Manager\HelpController::class,
             "index",
         ])->name("help.index");
+
+        Route::get("/reports/daily", [
+            \App\Http\Controllers\Manager\DailyReportController::class,
+            "index",
+        ])->name("reports.daily");
+        Route::post("/reports/daily/generate", [
+            \App\Http\Controllers\Manager\DailyReportController::class,
+            "generate",
+        ])->name("reports.daily.generate");
+        Route::get("/reports/daily/{date}/download/{format}", [
+            \App\Http\Controllers\Manager\DailyReportController::class,
+            "download",
+        ])
+            ->where("format", "pdf|excel")
+            ->name("reports.daily.download");
 
         Route::get("/reports/performance", [
             \App\Http\Controllers\Manager\ReportController::class,

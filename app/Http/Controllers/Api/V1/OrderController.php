@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\MenuItem;
+use App\Services\OrderWorkflowService;
+use App\Support\OrderWorkflow;
+use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function __construct(private OrderWorkflowService $workflow)
+    {
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -25,7 +31,7 @@ class OrderController extends Controller
             'restaurant_id' => $validated['restaurant_id'],
             'table_number' => $validated['table_number'],
             'notes' => $validated['notes'] ?? null,
-            'status' => 'pending',
+            'status' => OrderWorkflow::RECEIVED,
             'total_amount' => 0,
         ]);
 
@@ -35,7 +41,7 @@ class OrderController extends Controller
             $menuItem = MenuItem::find($item['menu_item_id']);
             $price = $menuItem->price;
             $total = $price * $item['quantity'];
-            
+
             OrderItem::create([
                 'order_id' => $order->id,
                 'menu_item_id' => $menuItem->id,
@@ -49,6 +55,7 @@ class OrderController extends Controller
         }
 
         $order->update(['total_amount' => $totalAmount]);
+        $this->workflow->markReceived($order, $request->user(), 'api_v1');
 
         return response()->json($order->load('orderItems.menuItem'), 201);
     }
@@ -60,17 +67,33 @@ class OrderController extends Controller
 
     public function status(Order $order)
     {
-        return response()->json(['status' => $order->status]);
+        return response()->json([
+            'status' => $order->status,
+            'workflow_label' => $order->workflowLabel(),
+        ]);
     }
 
     public function updateStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,preparing,served,paid',
+            'status' => OrderWorkflow::validationRule(),
         ]);
 
-        $order->update(['status' => $validated['status']]);
+        $target = OrderWorkflow::normalize($validated['status']);
 
-        return response()->json($order);
+        $order = $this->workflow->transition(
+            $order,
+            $target,
+            $request->user(),
+            'api_v1',
+            [],
+            ensurePaymentOnComplete: $target === OrderWorkflow::COMPLETED,
+        );
+
+        return response()->json([
+            'status' => $order->status,
+            'workflow_label' => $order->workflowLabel(),
+            'order' => $order,
+        ]);
     }
 }

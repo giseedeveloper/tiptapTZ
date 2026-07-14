@@ -14,10 +14,32 @@ class MenuController extends Controller
     public function index()
     {
         $restaurantId = Auth::user()->restaurant_id;
+        $restaurant = Auth::user()->restaurant;
         $categories = Category::where('restaurant_id', $restaurantId)->get();
         $menuItems = MenuItem::with('category')->where('restaurant_id', $restaurantId)->latest()->get();
 
-        return view('manager.menu.index', compact('categories', 'menuItems'));
+        return view('manager.menu.index', compact('categories', 'menuItems', 'restaurant'));
+    }
+
+    public function updateBusyMode(Request $request)
+    {
+        $request->validate([
+            'busy_mode' => 'nullable|boolean',
+            'busy_eta_multiplier' => 'nullable|numeric|min:1|max:5',
+        ]);
+
+        $restaurant = Auth::user()->restaurant;
+
+        $restaurant->update([
+            'busy_mode' => $request->boolean('busy_mode'),
+            'busy_eta_multiplier' => $request->filled('busy_eta_multiplier')
+                ? round((float) $request->input('busy_eta_multiplier'), 1)
+                : $restaurant->busyEtaMultiplier(),
+        ]);
+
+        return back()->with('success', $restaurant->isBusy()
+            ? 'Busy mode ON — customer ETAs are extended.'
+            : 'Busy mode OFF — ETAs back to normal.');
     }
 
     public function store(Request $request)
@@ -28,10 +50,16 @@ class MenuController extends Controller
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'preparation_time' => 'nullable|integer|min:1',
+            'preparation_time' => 'nullable|integer|min:1|max:240',
         ]);
 
-        $data = $request->all();
+        $data = $request->only([
+            'name',
+            'category_id',
+            'price',
+            'description',
+            'preparation_time',
+        ]);
         $data['restaurant_id'] = Auth::user()->restaurant_id;
         $data['is_available'] = $request->has('is_available') ? 1 : 0;
 
@@ -52,12 +80,24 @@ class MenuController extends Controller
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'preparation_time' => 'nullable|integer|min:1',
+            'preparation_time' => 'nullable|integer|min:1|max:240',
             'is_available' => 'boolean',
         ]);
 
-        $data = $request->all();
+        $data = $request->only([
+            'name',
+            'category_id',
+            'price',
+            'description',
+            'preparation_time',
+        ]);
         $data['is_available'] = $request->has('is_available') ? 1 : 0;
+
+        if ($request->filled('preparation_time')) {
+            $data['preparation_time'] = (int) $request->input('preparation_time');
+        } elseif ($request->exists('preparation_time') && $request->input('preparation_time') === '') {
+            $data['preparation_time'] = null;
+        }
 
         if ($request->hasFile('image')) {
             if ($menuItem->image) {

@@ -41,16 +41,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       (!_order.isWhatsAppOrder || _order.billAlreadySent);
 
   List<String> get _nextStatuses {
+    // Canonical: received → accepted → preparing → ready → served → completed
+    // Legacy aliases still accepted from older API payloads.
     switch (_order.status) {
       case 'pending':
+      case 'received':
+        return ['accepted'];
+      case 'confirmed':
+      case 'accepted':
         return ['preparing'];
       case 'preparing':
+        return ['ready'];
+      case 'ready':
         return ['served'];
       case 'served':
         if (_order.isWhatsAppOrder && !_order.billAlreadySent) {
           return [];
         }
-        return ['paid'];
+        return ['completed'];
       default:
         return [];
     }

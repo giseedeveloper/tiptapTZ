@@ -8,12 +8,17 @@
             <h2 class="text-3xl font-bold text-white tracking-tight">Table Management</h2>
             <p class="text-sm font-medium text-white/40 uppercase tracking-wider">Manage your tables and QR codes</p>
         </div>
-        <button type="button" onclick="openAddTableModal()" class="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"/><path d="M12 5v14"/>
-            </svg>
-            Add New Table
-        </button>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ route('manager.tables.occupancy') }}" class="min-h-[44px] inline-flex items-center justify-center gap-2 glass text-white/80 hover:text-white px-5 py-3 rounded-xl font-semibold transition-all">
+                Floor occupancy
+            </a>
+            <button type="button" onclick="openAddTableModal()" class="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-[#0f0a1e]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"/><path d="M12 5v14"/>
+                </svg>
+                Add New Table
+            </button>
+        </div>
     </div>
 
     <!-- Official Restaurant QR -->

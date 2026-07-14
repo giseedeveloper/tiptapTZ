@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Services\OrderWorkflowService;
+use App\Support\OrderWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class KitchenController extends Controller
 {
@@ -27,15 +30,21 @@ class KitchenController extends Controller
     {
         $restaurant = Restaurant::where('kitchen_token', $token)->firstOrFail();
         
+        $receivedVariants = OrderWorkflow::storageVariants(OrderWorkflow::RECEIVED);
+        $acceptedVariants = OrderWorkflow::storageVariants(OrderWorkflow::ACCEPTED);
+        $preparingVariants = OrderWorkflow::storageVariants(OrderWorkflow::PREPARING);
+
         $orders = Order::with(['items.menuItem', 'waiter'])
             ->where('restaurant_id', $restaurant->id)
-            ->whereIn('status', ['pending', 'confirmed', 'preparing'])
-            ->orderByRaw("CASE 
-                WHEN status = 'pending' THEN 1 
-                WHEN status = 'confirmed' THEN 2 
-                WHEN status = 'preparing' THEN 3 
-                ELSE 4 
-            END")
+            ->whereIn('status', OrderWorkflow::kitchenActiveStatuses())
+            ->orderByRaw(
+                "CASE
+                WHEN status IN ('".implode("','", $receivedVariants)."') THEN 1
+                WHEN status IN ('".implode("','", $acceptedVariants)."') THEN 2
+                WHEN status IN ('".implode("','", $preparingVariants)."') THEN 3
+                ELSE 4
+            END"
+            )
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($order) {
@@ -54,7 +63,8 @@ class KitchenController extends Controller
                 return [
                     'id' => $order->id,
                     'table_number' => $order->table_number,
-                    'status' => $order->status,
+                    'status' => OrderWorkflow::normalize($order->status),
+                    'workflow_label' => OrderWorkflow::label($order->status),
                     'is_vip' => $order->is_vip ?? false,
                     'waiter_name' => $order->waiter?->name ?? 'Unassigned',
                     'elapsed_minutes' => $elapsedMinutes,
@@ -72,13 +82,16 @@ class KitchenController extends Controller
                     })
                 ];
             });
-        
+
+        $pendingCount = $orders->whereIn('status', [OrderWorkflow::RECEIVED, OrderWorkflow::ACCEPTED])->count();
+        $preparingCount = $orders->where('status', OrderWorkflow::PREPARING)->count();
+
         return response()->json([
             'success' => true,
             'orders' => $orders,
             'stats' => [
-                'pending' => $orders->where('status', 'pending')->count(),
-                'preparing' => $orders->where('status', 'preparing')->count(),
+                'pending' => $pendingCount,
+                'preparing' => $preparingCount,
                 'total' => $orders->count(),
                 'overdue' => $orders->where('sla_status', 'red')->count()
             ],
@@ -89,39 +102,44 @@ class KitchenController extends Controller
     /**
      * Update order status from kitchen
      */
-    public function updateStatus(Request $request, $token)
+    public function updateStatus(Request $request, $token, OrderWorkflowService $workflow)
     {
         $restaurant = Restaurant::where('kitchen_token', $token)->firstOrFail();
-        
+
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'status' => 'required|in:preparing,ready,served,completed'
+            // Kitchen-specific subset: only forward stages it can drive, plus cancel.
+            'status' => ['required', Rule::in([
+                OrderWorkflow::ACCEPTED,
+                OrderWorkflow::PREPARING,
+                OrderWorkflow::READY,
+                OrderWorkflow::SERVED,
+                OrderWorkflow::COMPLETED,
+                OrderWorkflow::CANCELLED,
+            ])],
         ]);
-        
+
         $order = Order::where('id', $request->order_id)
             ->where('restaurant_id', $restaurant->id)
             ->with('waiter')
             ->firstOrFail();
-        
-        $order->update(['status' => $request->status]);
-        
-        // Notify waiter when order is ready
-        if ($request->status === 'ready' && $order->waiter) {
-            $order->waiter->notify(new \App\Notifications\OrderReadyNotification($order));
-        }
-        
+
+        $target = OrderWorkflow::normalize($request->status);
+        $order = $workflow->transition($order, $target, null, 'kitchen_display');
+
         return response()->json([
             'success' => true,
             'message' => 'Order status updated',
             'order_id' => $order->id,
-            'new_status' => $request->status
+            'new_status' => $order->status,
+            'workflow_label' => $order->workflowLabel(),
         ]);
     }
 
     /**
      * Mark individual item as cooking/ready
      */
-    public function updateItemStatus(Request $request, $token)
+    public function updateItemStatus(Request $request, $token, OrderWorkflowService $workflow)
     {
         $restaurant = Restaurant::where('kitchen_token', $token)->firstOrFail();
         
@@ -138,16 +156,12 @@ class KitchenController extends Controller
         
         $item->update(['status' => $request->status]);
         
-        // If all items are ready, mark order as ready
+        // If all items are ready, mark order as ready (waiter notification handled by the workflow service).
         $order = $item->order()->with('waiter')->first();
         $allReady = $order->items()->where('status', '!=', 'ready')->count() === 0;
-        if ($allReady) {
-            $order->update(['status' => 'ready']);
-            
-            // Notify waiter when order is ready
-            if ($order->waiter) {
-                $order->waiter->notify(new \App\Notifications\OrderReadyNotification($order));
-            }
+        $preReadyStatuses = [OrderWorkflow::RECEIVED, OrderWorkflow::ACCEPTED, OrderWorkflow::PREPARING, OrderWorkflow::READY];
+        if ($allReady && in_array(OrderWorkflow::normalize($order->status), $preReadyStatuses, true)) {
+            $order = $workflow->transition($order, OrderWorkflow::READY, null, 'kitchen_display_item');
         }
         
         return response()->json([
@@ -200,9 +214,15 @@ class KitchenController extends Controller
         
         // 'ready' orders should appear in BOTH active orders (ready sidebar) AND history
         // so chefs can see orders waiting to be served
+        $historyStatuses = array_merge(
+            OrderWorkflow::storageVariants(OrderWorkflow::READY),
+            OrderWorkflow::storageVariants(OrderWorkflow::SERVED),
+            OrderWorkflow::terminalStatuses(),
+        );
+
         $query = Order::with(['items.menuItem', 'waiter'])
             ->where('restaurant_id', $restaurant->id)
-            ->whereIn('status', ['ready', 'served', 'completed', 'paid'])
+            ->whereIn('status', $historyStatuses)
             ->orderBy('updated_at', 'desc');
         
         // Filter by date - show all by default, or filter if date provided
@@ -216,7 +236,7 @@ class KitchenController extends Controller
         
         // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            $query->whereIn('status', OrderWorkflow::storageVariants($request->status));
         }
         
         // Filter by table
@@ -228,7 +248,8 @@ class KitchenController extends Controller
             return [
                 'id' => $order->id,
                 'table_number' => $order->table_number,
-                'status' => $order->status,
+                'status' => OrderWorkflow::normalize($order->status),
+                'workflow_label' => OrderWorkflow::label($order->status),
                 'is_vip' => $order->is_vip ?? false,
                 'waiter_name' => $order->waiter?->name ?? 'Unassigned',
                 'total_amount' => $order->total_amount,
@@ -247,7 +268,7 @@ class KitchenController extends Controller
         
         // Get unique tables for filter - use same date logic
         $tablesQuery = Order::where('restaurant_id', $restaurant->id)
-            ->whereIn('status', ['ready', 'served', 'completed', 'paid']);
+            ->whereIn('status', $historyStatuses);
             
         if ($request->has('date') && $request->date) {
             $tablesQuery->whereDate('updated_at', $request->date);
@@ -267,9 +288,9 @@ class KitchenController extends Controller
             'tables' => $tables,
             'stats' => [
                 'total' => $orders->count(),
-                'ready' => $orders->where('status', 'ready')->count(),
-                'served' => $orders->where('status', 'served')->count(),
-                'completed' => $orders->whereIn('status', ['completed', 'paid'])->count()
+                'ready' => $orders->where('status', OrderWorkflow::READY)->count(),
+                'served' => $orders->where('status', OrderWorkflow::SERVED)->count(),
+                'completed' => $orders->where('status', OrderWorkflow::COMPLETED)->count()
             ],
             'date' => $request->date ?? today()->toDateString()
         ]);

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\OrderWorkflowService;
 use App\Services\SelcomService;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +16,7 @@ class PaymentController extends Controller
 {
     protected SelcomService $selcom;
 
-    public function __construct(SelcomService $selcom)
+    public function __construct(SelcomService $selcom, private OrderWorkflowService $workflow)
     {
         $this->selcom = $selcom;
     }
@@ -52,7 +54,7 @@ class PaymentController extends Controller
         $totalTips = $tips->sum('amount');
 
         $totalOrders = Order::where('restaurant_id', $restaurant->id)
-            ->where('status', 'paid')
+            ->whereIn('status', OrderWorkflow::terminalStatuses())
             ->whereBetween('created_at', [$start, $end])
             ->count();
 
@@ -251,7 +253,7 @@ class PaymentController extends Controller
 
         if ($paymentStatus === 'paid') {
             $payment->update(['status' => 'paid']);
-            $order->update(['status' => 'paid']);
+            $this->workflow->completeFromPayment($order, 'ussd');
 
             return response()->json([
                 'status' => 'paid',

@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Support\OrderWorkflow;
 
 class FreeWaiterService
 {
     /**
-     * Waiters currently tied to an open order (pending through served).
+     * Waiters currently tied to an open order (received through served).
      *
      * @return list<int>
      */
@@ -16,7 +17,7 @@ class FreeWaiterService
     {
         return Order::withoutGlobalScopes()
             ->where('restaurant_id', $restaurantId)
-            ->whereIn('status', ['pending', 'preparing', 'ready', 'served'])
+            ->whereIn('status', OrderWorkflow::activeTableStatuses())
             ->whereNotNull('waiter_id')
             ->pluck('waiter_id')
             ->unique()

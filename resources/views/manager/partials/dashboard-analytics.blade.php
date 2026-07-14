@@ -1,10 +1,14 @@
 @php
     $weeklyTrend = $analytics['weekly_trend'] ?? [];
     $hourlyActivity = $analytics['hourly_activity'] ?? [];
-    $statusCycle = $analytics['status_cycle'] ?? ['segments' => [], 'total' => 0];
+    $statusCycle = $analytics['status_cycle'] ?? ['segments' => [], 'total' => 0, 'stage_times' => [], 'bottlenecks' => [], 'avg_total_minutes' => null];
+    $stageTimes = $statusCycle['stage_times'] ?? [];
+    $bottlenecks = $statusCycle['bottlenecks'] ?? [];
+    $avgTotalMinutes = $statusCycle['avg_total_minutes'] ?? null;
     $weekComparison = $analytics['week_comparison'] ?? ['current' => 0, 'previous' => 0, 'change_pct' => 0, 'current_orders' => 0, 'previous_orders' => 0];
     $topMenuItems = $analytics['top_menu_items'] ?? [];
     $ratingHistogram = $analytics['rating_histogram'] ?? [];
+    $maxStageMinutes = max(collect($stageTimes)->max('avg_minutes') ?: 1, 1);
     $maxWeeklyRevenue = max(collect($weeklyTrend)->max('revenue') ?: 1, 1);
     $maxWeeklyOrders = max(collect($weeklyTrend)->max('orders') ?: 1, 1);
     $maxHourlyOrders = max(collect($hourlyActivity)->max('orders') ?: 1, 1);
@@ -67,9 +71,79 @@
         <div>
             <p class="text-[10px] font-bold text-fin-primary uppercase tracking-[0.2em] mb-1">Smart Analytics</p>
             <h3 class="text-2xl font-bold text-white tracking-tight">{{ $analytics['restaurant_name'] ?? 'Restaurant' }} Insights</h3>
-            <p class="text-sm text-white/60 mt-1">7-day cycles, live pipeline, and performance histograms</p>
+            <p class="text-sm text-white/60 mt-1">7-day cycles, customer wait-time, and performance histograms</p>
         </div>
     </div>
+
+    @php
+        $waitTimeSummary = $analytics['wait_time'] ?? [];
+        $waitTrend = $analytics['wait_trend'] ?? [];
+        $waiterSpeed = $analytics['waiter_speed'] ?? [];
+        $maxWaitTrend = max(collect($waitTrend)->max('avg_to_served_minutes') ?: 1, 1);
+    @endphp
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="glass-card rounded-2xl p-5">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2">Avg customer wait</p>
+            <p class="text-3xl font-bold text-cyan-300">{{ ($waitTimeSummary['avg_to_served_minutes'] ?? null) !== null ? number_format($waitTimeSummary['avg_to_served_minutes'], 1).'m' : '—' }}</p>
+            <p class="text-xs text-white/40 mt-1">Received → served · n={{ $waitTimeSummary['sample_to_served'] ?? 0 }}</p>
+        </div>
+        <div class="glass-card rounded-2xl p-5">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2">Median wait</p>
+            <p class="text-3xl font-bold text-white">{{ ($waitTimeSummary['median_to_served_minutes'] ?? null) !== null ? number_format($waitTimeSummary['median_to_served_minutes'], 1).'m' : '—' }}</p>
+        </div>
+        <div class="glass-card rounded-2xl p-5">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2">Avg kitchen ready</p>
+            <p class="text-3xl font-bold text-amber-300">{{ ($waitTimeSummary['avg_to_ready_minutes'] ?? null) !== null ? number_format($waitTimeSummary['avg_to_ready_minutes'], 1).'m' : '—' }}</p>
+            <p class="text-xs text-white/40 mt-1">Received → ready</p>
+        </div>
+        <div class="glass-card rounded-2xl p-5">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2">Full cycle</p>
+            <p class="text-3xl font-bold text-violet-300">{{ ($waitTimeSummary['avg_cycle_minutes'] ?? null) !== null ? number_format($waitTimeSummary['avg_cycle_minutes'], 1).'m' : '—' }}</p>
+            <p class="text-xs text-white/40 mt-1">Received → completed</p>
+        </div>
+    </div>
+
+    @if(count($waitTrend) > 0 || count($waiterSpeed) > 0)
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        <div class="analytics-shell glass-card rounded-2xl p-6">
+            <h4 class="text-lg font-bold text-white mb-1">Customer wait trend</h4>
+            <p class="text-xs text-white/55 mb-5">Avg minutes to served · last 7 days</p>
+            <div class="flex items-end gap-2 h-32">
+                @forelse($waitTrend as $day)
+                    @php
+                        $mins = $day['avg_to_served_minutes'];
+                        $h = $mins !== null ? max(($mins / $maxWaitTrend) * 100, 8) : 4;
+                    @endphp
+                    <div class="flex-1 flex flex-col items-center justify-end gap-1">
+                        <span class="text-[10px] tabular-nums text-cyan-300/90">{{ $mins !== null ? number_format($mins, 0) : '—' }}</span>
+                        <div class="w-full rounded-t-md {{ $mins !== null ? 'bg-gradient-to-t from-cyan-700 to-fin-primary' : 'bg-white/10' }} analytics-bar-v" style="height: {{ $h }}%"></div>
+                        <span class="text-[9px] text-white/40">{{ $day['label'] }}</span>
+                    </div>
+                @empty
+                    <p class="text-sm text-white/40 w-full text-center py-8">Serve orders to build wait-time trend</p>
+                @endforelse
+            </div>
+        </div>
+        <div class="analytics-shell glass-card rounded-2xl p-6">
+            <h4 class="text-lg font-bold text-white mb-1">Waiter speed</h4>
+            <p class="text-xs text-white/55 mb-5">Fastest avg customer wait · last 7 days</p>
+            <div class="space-y-3">
+                @forelse($waiterSpeed as $row)
+                    <div class="flex items-center justify-between gap-3 text-sm">
+                        <span class="font-medium text-white/85">{{ $row['name'] }}</span>
+                        <span class="tabular-nums text-cyan-300 font-semibold">
+                            {{ $row['avg_to_served_minutes'] !== null ? number_format($row['avg_to_served_minutes'], 1).'m' : '—' }}
+                            <span class="text-white/35 font-normal text-xs">· {{ $row['orders_count'] }} orders</span>
+                        </span>
+                    </div>
+                @empty
+                    <p class="text-sm text-white/40 text-center py-6">Assign waiters to orders to compare speed</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+    @endif
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
         <div class="analytics-shell glass-card rounded-2xl p-6 xl:col-span-2">
@@ -115,26 +189,86 @@
 
         <div class="analytics-shell glass-card rounded-2xl p-6 flex flex-col">
             <h4 class="text-lg font-bold text-white mb-1">Order Pipeline</h4>
-            <p class="text-xs text-white/55 mb-6">Today's status cycle</p>
+            <p class="text-xs text-white/55 mb-6">Received → Completed · live counts</p>
             <div class="flex-1 flex flex-col items-center justify-center">
                 <div class="relative w-44 h-44 cycle-ring rounded-full mb-6">
                     <div class="absolute inset-0 flex flex-col items-center justify-center z-10 text-center">
                         <span class="text-3xl font-black text-white">{{ $statusCycle['total'] ?? 0 }}</span>
                         <span class="text-[10px] uppercase tracking-wider text-white/55">orders</span>
+                        @if($avgTotalMinutes !== null)
+                            <span class="text-[10px] text-cyan-400/90 mt-1">~{{ $avgTotalMinutes }}m total</span>
+                        @endif
                     </div>
                 </div>
-                <div class="w-full space-y-2">
+                <div class="w-full space-y-2 max-h-56 overflow-y-auto pr-1">
                     @foreach($statusCycle['segments'] ?? [] as $segment)
-                        @php $segPct = $statusTotal > 0 ? round(($segment['count'] / $statusTotal) * 100) : 0; @endphp
                         <div class="flex items-center justify-between gap-2 text-xs">
                             <span class="inline-flex items-center gap-2 text-white/70">
                                 <span class="w-2.5 h-2.5 rounded-full" style="background: {{ $segment['color'] }}"></span>
                                 {{ $segment['label'] }}
                             </span>
-                            <span class="font-semibold text-white">{{ $segment['count'] }} <span class="text-white/35">({{ $segPct }}%)</span></span>
+                            <span class="font-semibold text-white tabular-nums">
+                                {{ $segment['count'] }}
+                                @if(!empty($segment['avg_minutes']))
+                                    <span class="text-white/35 font-normal">· {{ $segment['avg_minutes'] }}m</span>
+                                @endif
+                            </span>
                         </div>
                     @endforeach
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        <div class="analytics-shell glass-card rounded-2xl p-6">
+            <h4 class="text-lg font-bold text-white mb-1">Time spent by stage</h4>
+            <p class="text-xs text-white/55 mb-5">Average minutes · last 7 days</p>
+            <div class="space-y-3">
+                @forelse($stageTimes as $index => $stage)
+                    @php $barW = max(($stage['avg_minutes'] / $maxStageMinutes) * 100, $stage['avg_minutes'] > 0 ? 8 : 0); @endphp
+                    <div>
+                        <div class="flex justify-between text-xs mb-1 gap-2">
+                            <span class="text-white/80 font-medium">{{ $stage['label'] }}</span>
+                            <span class="tabular-nums {{ !empty($stage['is_bottleneck']) ? 'text-rose-400 font-bold' : 'text-white/70' }}">
+                                {{ number_format($stage['avg_minutes'], 1) }}m
+                                <span class="text-white/35 font-normal">(n={{ $stage['sample_size'] }})</span>
+                            </span>
+                        </div>
+                        <div class="h-2.5 rounded-full bg-surface-900/5 overflow-hidden">
+                            <div class="h-full rounded-full {{ !empty($stage['is_bottleneck']) ? 'bg-gradient-to-r from-rose-600 to-amber-400' : 'bg-gradient-to-r from-cyan-600 to-fin-primary' }} analytics-bar-h"
+                                 style="width: {{ $barW }}%; animation-delay: {{ $index * 0.06 }}s;"></div>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-white/40 text-center py-6">Move orders through the pipeline to build timing data</p>
+                @endforelse
+            </div>
+        </div>
+        <div class="analytics-shell glass-card rounded-2xl p-6">
+            <h4 class="text-lg font-bold text-white mb-1">Bottlenecks</h4>
+            <p class="text-xs text-white/55 mb-5">Stages slower than their threshold</p>
+            <div class="space-y-3">
+                @forelse($bottlenecks as $bn)
+                    <div class="glass p-4 rounded-xl border {{ $bn['severity'] === 'critical' ? 'border-rose-500/40' : 'border-amber-500/30' }}">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-sm font-bold text-white">{{ $bn['label'] }}</p>
+                                <p class="text-[11px] text-white/50 mt-0.5">
+                                    Avg {{ number_format($bn['avg_minutes'], 1) }}m · threshold {{ $bn['threshold_minutes'] }}m
+                                </p>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full {{ $bn['severity'] === 'critical' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300' }}">
+                                {{ $bn['severity'] }}
+                            </span>
+                        </div>
+                    </div>
+                @empty
+                    <div class="glass p-5 rounded-xl text-center">
+                        <p class="text-sm font-medium text-emerald-400">No bottlenecks detected</p>
+                        <p class="text-xs text-white/40 mt-1">All stages are within expected times</p>
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>

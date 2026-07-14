@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendBillImageToCustomer;
 use App\Models\Order;
-use App\Services\OrderBillNotification;
-use Carbon\Carbon;
+use App\Services\OrderWorkflowService;
+use App\Support\OrderWorkflow;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
@@ -14,41 +14,45 @@ use Throwable;
 
 class LiveOrderController extends Controller
 {
+    public function __construct(private OrderWorkflowService $workflow)
+    {
+    }
+
     public function index()
     {
-        $today = Carbon::today();
         $restaurantId = auth()->user()->restaurant_id;
+        $board = $this->workflow->boardForRestaurant($restaurantId);
 
-        $pendingOrders = Order::with(['items.menuItem', 'waiter'])
-            ->where('restaurant_id', $restaurantId)
-            ->where('status', 'pending')
-            ->latest()
-            ->get();
+        $receivedOrders = $board[OrderWorkflow::RECEIVED];
+        $acceptedOrders = $board[OrderWorkflow::ACCEPTED];
+        $preparingOrders = $board[OrderWorkflow::PREPARING];
+        $readyOrders = $board[OrderWorkflow::READY];
+        $servedOrders = $board[OrderWorkflow::SERVED];
+        $completedOrders = $board[OrderWorkflow::COMPLETED];
 
-        $preparingOrders = Order::with(['items.menuItem', 'waiter'])
-            ->where('restaurant_id', $restaurantId)
-            ->where('status', 'preparing')
-            ->latest()
-            ->get();
-
-        $servedOrders = Order::with(['items.menuItem', 'waiter'])
-            ->where('restaurant_id', $restaurantId)
-            ->where('status', 'served')
-            ->latest()
-            ->get();
-
-        $paidOrders = Order::with(['items.menuItem', 'waiter'])
-            ->where('restaurant_id', $restaurantId)
-            ->where('status', 'paid')
-            ->whereDate('created_at', $today)
-            ->latest()
-            ->take(20)
-            ->get();
+        // Backward-compatible aliases for any older partials.
+        $pendingOrders = $receivedOrders;
+        $paidOrders = $completedOrders;
 
         $tables = \App\Models\Table::where('restaurant_id', $restaurantId)->get();
         $menuItems = \App\Models\MenuItem::where('restaurant_id', $restaurantId)->where('is_available', true)->get();
+        $pipeline = OrderWorkflow::PIPELINE;
+        $workflowMeta = OrderWorkflow::META;
 
-        return view('manager.orders.live', compact('pendingOrders', 'preparingOrders', 'servedOrders', 'paidOrders', 'tables', 'menuItems'));
+        return view('manager.orders.live', compact(
+            'receivedOrders',
+            'acceptedOrders',
+            'preparingOrders',
+            'readyOrders',
+            'servedOrders',
+            'completedOrders',
+            'pendingOrders',
+            'paidOrders',
+            'tables',
+            'menuItems',
+            'pipeline',
+            'workflowMeta',
+        ));
     }
 
     public function store(Request $request)
@@ -83,12 +87,14 @@ class LiveOrderController extends Controller
             'customer_phone' => $request->customer_phone,
             'customer_name' => $request->customer_name,
             'total_amount' => $totalAmount,
-            'status' => 'pending',
+            'status' => OrderWorkflow::RECEIVED,
         ]);
 
         foreach ($orderItems as $item) {
             $order->items()->create($item);
         }
+
+        $this->workflow->markReceived($order, auth()->user(), 'manager_live');
 
         return redirect()->back()->with('success', 'Order created successfully');
     }
@@ -98,31 +104,17 @@ class LiveOrderController extends Controller
         $order = Order::findOrFail($id);
 
         if ($request->has('status')) {
-            $request->validate(['status' => 'in:pending,preparing,served,paid']);
+            $request->validate(['status' => OrderWorkflow::validationRule()]);
 
-            if ($request->status === 'paid' && $order->status !== 'paid') {
-                $order->update(['status' => 'paid']);
-
-                if (! $order->payments()->exists()) {
-                    \App\Models\Payment::create([
-                        'order_id' => $order->id,
-                        'restaurant_id' => $order->restaurant_id,
-                        'waiter_id' => $order->waiter_id,
-                        'customer_phone' => $order->customer_phone,
-                        'amount' => $order->total_amount,
-                        'method' => 'manual',
-                        'status' => 'paid',
-                        'description' => 'Marked paid from live orders board',
-                    ]);
-                }
-            } else {
-                $previousStatus = $order->status;
-                $order->update(['status' => $request->status]);
-
-                if ($request->status === 'served' && $previousStatus !== 'served') {
-                    OrderBillNotification::maybePushBillImage($order);
-                }
-            }
+            $target = OrderWorkflow::normalize($request->status);
+            $this->workflow->transition(
+                $order,
+                $target,
+                auth()->user(),
+                'manager_live',
+                [],
+                ensurePaymentOnComplete: $target === OrderWorkflow::COMPLETED,
+            );
         }
 
         if ($request->has('table_number')) {
@@ -146,7 +138,7 @@ class LiveOrderController extends Controller
             abort(403);
         }
 
-        if ($order->status !== 'served') {
+        if (! OrderWorkflow::isBillStage($order->status)) {
             return redirect()->back()->with('error', 'Bill can only be sent when the order is in Served status.');
         }
 
@@ -223,7 +215,12 @@ class LiveOrderController extends Controller
             );
         }
 
-        return redirect()->back()->with('success', 'Bill image push was sent to the customer\'s WhatsApp.');
+        $recipient = Order::whatsAppRecipientId($order->whatsapp_jid, $order->customer_phone);
+
+        return redirect()->back()->with(
+            'success',
+            'Bill image was sent to WhatsApp '.($recipient ?? 'customer').'. Ask them to open the chat with the TipTap business number ('.config('tiptap.phone_international_prefix').' …) and scroll to the latest message.'
+        );
     }
 
     public function destroy($id)

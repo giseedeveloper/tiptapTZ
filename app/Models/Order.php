@@ -2,23 +2,78 @@
 
 namespace App\Models;
 
+use App\Support\OrderWorkflow;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
-    protected $fillable = ['restaurant_id', 'waiter_id', 'table_number', 'customer_phone', 'customer_name', 'whatsapp_jid', 'status', 'payment_reference', 'total_amount', 'notes', 'is_vip', 'bill_image_pushed_at'];
+    protected $fillable = [
+        'restaurant_id',
+        'waiter_id',
+        'table_number',
+        'customer_phone',
+        'customer_name',
+        'whatsapp_jid',
+        'status',
+        'payment_reference',
+        'total_amount',
+        'notes',
+        'is_vip',
+        'bill_image_pushed_at',
+        'received_at',
+        'accepted_at',
+        'preparing_at',
+        'ready_at',
+        'served_at',
+        'completed_at',
+    ];
 
     protected function casts(): array
     {
         return [
             'bill_image_pushed_at' => 'datetime',
             'is_vip' => 'boolean',
+            'received_at' => 'datetime',
+            'accepted_at' => 'datetime',
+            'preparing_at' => 'datetime',
+            'ready_at' => 'datetime',
+            'served_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
     protected static function booted()
     {
         static::addGlobalScope(new \App\Models\Scopes\RestaurantScope);
+
+        static::creating(function (Order $order) {
+            $order->status = OrderWorkflow::normalize($order->status ?: OrderWorkflow::RECEIVED);
+            if (empty($order->received_at) && $order->status !== OrderWorkflow::CANCELLED) {
+                $order->received_at = now();
+            }
+        });
+
+        static::updating(function (Order $order) {
+            if ($order->isDirty('status')) {
+                $order->status = OrderWorkflow::normalize($order->status);
+            }
+        });
+    }
+
+    public function statusEvents(): HasMany
+    {
+        return $this->hasMany(OrderStatusEvent::class);
+    }
+
+    public function workflowStatus(): string
+    {
+        return OrderWorkflow::normalize($this->status);
+    }
+
+    public function workflowLabel(): string
+    {
+        return OrderWorkflow::label($this->status);
     }
 
     public function restaurant()
@@ -34,6 +89,11 @@ class Order extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
     }
 
     public function feedback()
@@ -53,7 +113,7 @@ class Order extends Model
 
     public function isBillStage(): bool
     {
-        return in_array($this->status, ['served'], true);
+        return OrderWorkflow::isBillStage($this->status);
     }
 
     public function billImageSignature(): string
@@ -135,11 +195,11 @@ class Order extends Model
     }
 
     /**
-     * Build {msisdn}@s.whatsapp.net from digits. Maps local 0 + 9 digits to country code.
+     * Build {msisdn}@s.whatsapp.net from digits. Maps SA local 0 + 9 digits to 27…
      */
     protected static function whatsappJidFromDigits(string $digits): string
     {
-        $countryCode = (string) config('tiptap.country_code', '255');
+        $countryCode = (string) config('tiptap.country_code', '27');
 
         if (preg_match('/^0(\d{9})$/', $digits, $matches) === 1) {
             return $countryCode.$matches[1].'@s.whatsapp.net';

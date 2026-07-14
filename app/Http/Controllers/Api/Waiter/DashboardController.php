@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\WaiterShift;
 use App\Notifications\TableAssignmentChanged;
 use App\Services\WaiterRosterService;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,19 +29,23 @@ class DashboardController extends Controller
         $waiter = Auth::user();
         $today = Carbon::today();
         $isLinked = $waiter->restaurant_id !== null;
+        $preServeStatuses = array_merge(
+            OrderWorkflow::kitchenActiveStatuses(),
+            OrderWorkflow::storageVariants(OrderWorkflow::READY),
+        );
 
         $tipsToday = Tip::where('waiter_id', $waiter->id)->whereDate('created_at', $today)->sum('amount');
         $tipsThisWeek = Tip::where('waiter_id', $waiter->id)->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->sum('amount');
 
-        $myActiveOrders = Order::where('waiter_id', $waiter->id)->whereIn('status', ['pending', 'preparing', 'ready'])->count();
-        $restaurantActiveOrders = $isLinked ? Order::where('restaurant_id', $waiter->restaurant_id)->whereIn('status', ['pending', 'preparing', 'ready'])->count() : 0;
-        $readyToServeOrders = $isLinked ? Order::where('restaurant_id', $waiter->restaurant_id)->where('status', 'ready')->count() : 0;
+        $myActiveOrders = Order::where('waiter_id', $waiter->id)->whereIn('status', $preServeStatuses)->count();
+        $restaurantActiveOrders = $isLinked ? Order::where('restaurant_id', $waiter->restaurant_id)->whereIn('status', $preServeStatuses)->count() : 0;
+        $readyToServeOrders = $isLinked ? Order::where('restaurant_id', $waiter->restaurant_id)->whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::READY))->count() : 0;
 
         $unassignedOrders = $isLinked && $waiter->is_online
             ? Order::with('items.menuItem')
                 ->where('restaurant_id', $waiter->restaurant_id)
                 ->whereNull('waiter_id')
-                ->whereIn('status', ['pending', 'preparing', 'ready'])
+                ->whereIn('status', $preServeStatuses)
                 ->latest()
                 ->get()
                 ->map(fn ($order) => [
@@ -187,8 +192,12 @@ class DashboardController extends Controller
         $isLinked = $waiter->restaurant_id !== null;
 
         $tipsTodayAmount = Tip::where('waiter_id', $waiter->id)->whereDate('created_at', $today)->sum('amount');
+        $preServeStatuses = array_merge(
+            OrderWorkflow::kitchenActiveStatuses(),
+            OrderWorkflow::storageVariants(OrderWorkflow::READY),
+        );
 
-        $readyToServe = $isLinked ? Order::where('restaurant_id', $waiter->restaurant_id)->where('status', 'ready')->count() : 0;
+        $readyToServe = $isLinked ? Order::where('restaurant_id', $waiter->restaurant_id)->whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::READY))->count() : 0;
         $pendingRequestsCount = $isLinked && $waiter->is_online
             ? CustomerRequest::where('restaurant_id', $waiter->restaurant_id)->where('status', 'pending')
                 ->where(fn ($q) => $q->whereNull('waiter_id')->orWhere('waiter_id', $waiter->id))
@@ -203,7 +212,7 @@ class DashboardController extends Controller
                 'tips_today' => $tipsTodayAmount,
                 'tips_today_amount' => $tipsTodayAmount,
                 'total_tips_received' => Tip::where('waiter_id', $waiter->id)->sum('amount'),
-                'my_active_orders' => Order::where('waiter_id', $waiter->id)->whereIn('status', ['pending', 'preparing', 'ready'])->count(),
+                'my_active_orders' => Order::where('waiter_id', $waiter->id)->whereIn('status', $preServeStatuses)->count(),
                 'ready_to_serve' => $readyToServe,
                 'pending_requests' => $pendingRequestsCount,
             ],

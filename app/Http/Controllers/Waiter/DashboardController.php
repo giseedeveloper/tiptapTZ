@@ -14,6 +14,7 @@ use App\Models\WaiterShift;
 use App\Notifications\SalaryPaymentConfirmed;
 use App\Notifications\TableAssignmentChanged;
 use App\Services\WaiterRosterService;
+use App\Support\OrderWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,10 @@ class DashboardController extends Controller
         }
 
         $today = Carbon::today();
+        $preServeStatuses = array_merge(
+            OrderWorkflow::kitchenActiveStatuses(),
+            OrderWorkflow::storageVariants(OrderWorkflow::READY),
+        );
 
         // Tips
         $tipsToday = Tip::where('waiter_id', $waiter->id)->whereDate('created_at', $today)->sum('amount');
@@ -36,19 +41,19 @@ class DashboardController extends Controller
 
         // Orders Stats
         // 1. My Active Orders (Assigned to me)
-        $myActiveOrders = Order::where('waiter_id', $waiter->id)->whereIn('status', ['pending', 'preparing', 'ready'])->count();
+        $myActiveOrders = Order::where('waiter_id', $waiter->id)->whereIn('status', $preServeStatuses)->count();
 
         // 2. All Active Restaurant Orders (To show workload)
-        $restaurantActiveOrders = Order::whereIn('status', ['pending', 'preparing', 'ready'])->count();
+        $restaurantActiveOrders = Order::whereIn('status', $preServeStatuses)->count();
 
         // 3. Orders Ready to Serve (High priority)
-        $readyToServeOrders = Order::where('status', 'ready')->count();
+        $readyToServeOrders = Order::whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::READY))->count();
 
         // 4. Unassigned Orders (only visible to online waiters)
         $unassignedOrders = $waiter->is_online
             ? Order::with('items.menuItem')
                 ->whereNull('waiter_id')
-                ->whereIn('status', ['pending', 'preparing', 'ready'])
+                ->whereIn('status', $preServeStatuses)
                 ->latest()
                 ->get()
             : collect();
@@ -200,10 +205,15 @@ class DashboardController extends Controller
         $waiter = Auth::user();
         $today = Carbon::today();
 
+        $preServeStatuses = array_merge(
+            OrderWorkflow::kitchenActiveStatuses(),
+            OrderWorkflow::storageVariants(OrderWorkflow::READY),
+        );
+
         $stats = [
             'tips_today' => Tip::where('waiter_id', $waiter->id)->whereDate('created_at', $today)->sum('amount'),
-            'my_active_orders' => Order::where('waiter_id', $waiter->id)->whereIn('status', ['pending', 'preparing', 'ready'])->count(),
-            'ready_to_serve' => Order::where('status', 'ready')->count(),
+            'my_active_orders' => Order::where('waiter_id', $waiter->id)->whereIn('status', $preServeStatuses)->count(),
+            'ready_to_serve' => Order::whereIn('status', OrderWorkflow::storageVariants(OrderWorkflow::READY))->count(),
             'pending_requests' => $waiter->is_online ? CustomerRequest::where('status', 'pending')->count() : 0,
         ];
 

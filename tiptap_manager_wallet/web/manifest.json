@@ -3,7 +3,7 @@
     "short_name": "TIPTAP",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFFFFF",
+    "background_color": "#4B2C7F",
     "theme_color": "#4B2C7F",
     "description": "TIPTAP Manager Wallet — balance and withdrawals for restaurant managers.",
     "orientation": "portrait-primary",

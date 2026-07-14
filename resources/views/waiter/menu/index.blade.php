@@ -50,7 +50,7 @@
                                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                                 </svg>
                             </div>
-                            <span class="text-[11px] font-semibold text-white/40 uppercase tracking-wider">{{ $item->preparation_time ?? '15' }} min</span>
+                            <span class="text-[11px] font-semibold text-white/40 uppercase tracking-wider">ETA {{ $item->preparation_time ?? '15' }} min</span>
                         </div>
                         
                         @if($item->is_available)

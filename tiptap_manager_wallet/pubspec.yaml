@@ -31,7 +31,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/images/logo.png
-  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_background: "#4B2C7F"
   adaptive_icon_foreground: assets/images/logo.png
   remove_alpha_ios: true
   android_rounded_icon: true
@@ -39,7 +39,7 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: assets/images/logo.png
-    background_color: "#FFFFFF"
+    background_color: "#4B2C7F"
     theme_color: "#4B2C7F"
     rounded_icon: true
 

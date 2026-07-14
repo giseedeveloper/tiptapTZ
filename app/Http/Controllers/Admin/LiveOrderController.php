@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Restaurant;
 use App\Support\Money;
+use App\Support\OrderWorkflow;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -50,16 +51,25 @@ class LiveOrderController extends Controller
             ->with(['restaurant', 'waiter'])
             ->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId));
 
-        $pending = (clone $baseQuery)->where('status', 'pending')->latest()->limit(50)->get();
-        $preparing = (clone $baseQuery)->where('status', 'preparing')->latest()->limit(50)->get();
-        $ready = (clone $baseQuery)->where('status', 'ready')->latest()->limit(50)->get();
-        $served = (clone $baseQuery)->where('status', 'served')->latest()->limit(50)->get();
+        // Received + accepted orders are grouped under "Pending" (kitchen hasn't started/queued yet).
+        $pendingStatuses = array_merge(
+            OrderWorkflow::storageVariants(OrderWorkflow::RECEIVED),
+            OrderWorkflow::storageVariants(OrderWorkflow::ACCEPTED),
+        );
+        $preparingStatuses = OrderWorkflow::storageVariants(OrderWorkflow::PREPARING);
+        $readyStatuses = OrderWorkflow::storageVariants(OrderWorkflow::READY);
+        $servedStatuses = OrderWorkflow::storageVariants(OrderWorkflow::SERVED);
+
+        $pending = (clone $baseQuery)->whereIn('status', $pendingStatuses)->latest()->limit(50)->get();
+        $preparing = (clone $baseQuery)->whereIn('status', $preparingStatuses)->latest()->limit(50)->get();
+        $ready = (clone $baseQuery)->whereIn('status', $readyStatuses)->latest()->limit(50)->get();
+        $served = (clone $baseQuery)->whereIn('status', $servedStatuses)->latest()->limit(50)->get();
 
         $counts = [
-            'pending' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->where('status', 'pending')->count(),
-            'preparing' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->where('status', 'preparing')->count(),
-            'ready' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->where('status', 'ready')->count(),
-            'served' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->where('status', 'served')->count(),
+            'pending' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->whereIn('status', $pendingStatuses)->count(),
+            'preparing' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->whereIn('status', $preparingStatuses)->count(),
+            'ready' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->whereIn('status', $readyStatuses)->count(),
+            'served' => Order::query()->when($restaurantId, fn ($q) => $q->where('restaurant_id', $restaurantId))->whereIn('status', $servedStatuses)->count(),
         ];
 
         $columns = [

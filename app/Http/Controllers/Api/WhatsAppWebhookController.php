@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Support\WhatsAppBotUrls;
+use App\Support\WhatsAppWebhookForwarder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -46,10 +47,14 @@ class WhatsAppWebhookController extends Controller
             return response()->json(['status' => 'invalid_signature'], 401);
         }
 
-        $forwardUrl = WhatsAppBotUrls::inboundForwardUrl();
+        $forwardTarget = WhatsAppWebhookForwarder::resolve($payload);
 
-        if ($forwardUrl !== null) {
-            $this->forwardToBot($forwardUrl, $payload);
+        if ($forwardTarget !== null) {
+            Log::info('WhatsApp webhook forwarding to bot.', [
+                'phone_number_id' => WhatsAppWebhookForwarder::extractPhoneNumberId($payload),
+                'url' => $forwardTarget['url'],
+            ]);
+            $this->forwardToBot($forwardTarget['url'], $forwardTarget['secret'], $payload);
         } else {
             Log::info('WhatsApp webhook payload received (no bot forward URL set).', [
                 'payload_keys' => array_keys($payload),
@@ -78,9 +83,8 @@ class WhatsAppWebhookController extends Controller
         return hash_equals($expected, $header);
     }
 
-    protected function forwardToBot(string $url, array $payload): void
+    protected function forwardToBot(string $url, string $secret, array $payload): void
     {
-        $secret = (string) config('whatsapp.bot_notify_secret', '');
         $timeout = (int) config('whatsapp.bot_notify_timeout', 10);
 
         try {
