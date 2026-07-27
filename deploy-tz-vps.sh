@@ -18,6 +18,8 @@ ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "
     git pull origin ${BRANCH}
     test -f .env.docker || cp .env.docker.example .env.docker
     docker compose build --no-cache app queue
+    # Always recreate PHP containers so the newly-built image is actually used.
+    docker compose up -d --force-recreate app queue
     docker compose up -d
     # app_public volume keeps old Vite assets after rebuild — sync from host git checkout
     docker cp public/build/. tiptap_tz_app:/var/www/html/public/build/
@@ -31,6 +33,17 @@ ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "
     docker exec tiptap_tz_app php artisan config:cache
     docker exec tiptap_tz_app php artisan route:cache
     docker exec tiptap_tz_app php artisan view:cache
+
+    echo '--- Restarting PHP-FPM to reset OPcache ---'
+    # PHP runs with opcache.validate_timestamps=0, so files copied into a
+    # running container are not picked up until the app process is restarted.
+    docker compose restart app
+
+    echo '--- Verifying the current portal theme ---'
+    docker exec tiptap_tz_app sh -lc \
+        \"grep -q 'portal-light' /var/www/html/resources/views/layouts/manager.blade.php \
+        && test -f /var/www/html/resources/views/partials/portal-theme.blade.php\"
+
     docker ps --format '{{.Names}} {{.Status}}'
 "
 
