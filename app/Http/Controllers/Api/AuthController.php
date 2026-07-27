@@ -30,7 +30,7 @@ class AuthController extends Controller
 
         $user->tokens()->delete();
 
-        $token = $user->createToken('api-login')->plainTextToken;
+        $token = $user->createToken('api-login', ['app'])->plainTextToken;
 
         $isLinked = $user->restaurant_id !== null;
         $userPayload = [

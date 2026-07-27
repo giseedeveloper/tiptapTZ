@@ -127,7 +127,7 @@ it('lets manager configure pool enable members and rules then shows tippable poo
         ->and($pool->distribution_method)->toBe('weighted')
         ->and($pool->isTippable())->toBeTrue();
 
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
     $this->getJson("/api/bot/restaurant/{$this->restaurant->id}/tip-pools")
         ->assertOk()
         ->assertJsonPath('data.0.id', $pool->id)
@@ -141,7 +141,7 @@ it('distributes a paid kitchen pool tip to members and creates tip rows', functi
     TipPoolMember::create(['tip_pool_id' => $pool->id, 'user_id' => $this->chefB->id, 'weight' => 1, 'is_active' => true]);
 
     Setting::set('demo_push', '1');
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $response = $this->postJson('/api/bot/payment/quick', [
         'restaurant_id' => $this->restaurant->id,

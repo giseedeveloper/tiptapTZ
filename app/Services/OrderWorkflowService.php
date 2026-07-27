@@ -9,11 +9,16 @@ use App\Models\User;
 use App\Notifications\OrderReadyNotification;
 use App\Support\OrderWorkflow;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderWorkflowService
 {
+    public const MAX_STAGE_DURATION_MINUTES = 12 * 60;
+
+    public const MAX_CYCLE_DURATION_MINUTES = 24 * 60;
+
     /**
      * Advance or set order status with timestamps, event history, and side effects.
      *
@@ -28,20 +33,23 @@ class OrderWorkflowService
         bool $ensurePaymentOnComplete = false,
     ): Order {
         $to = OrderWorkflow::normalize($toStatus);
-        $from = OrderWorkflow::normalize($order->status);
 
-        if ($from === $to) {
-            return $order;
-        }
+        return DB::transaction(function () use ($order, $to, $actor, $source, $meta, $ensurePaymentOnComplete) {
+            $order = Order::withoutGlobalScopes()
+                ->whereKey($order->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+            $from = OrderWorkflow::normalize($order->status);
 
-        if (! OrderWorkflow::canTransition($from, $to)) {
-            throw ValidationException::withMessages([
-                'status' => "Cannot move order from {$from} to {$to}.",
-            ]);
-        }
+            if ($from === $to) {
+                return $order->fresh(['items.menuItem', 'waiter', 'payments']);
+            }
 
-        return DB::transaction(function () use ($order, $from, $to, $actor, $source, $meta, $ensurePaymentOnComplete) {
-            $order->refresh();
+            if (! OrderWorkflow::canTransition($from, $to)) {
+                throw ValidationException::withMessages([
+                    'status' => "Cannot move order from {$from} to {$to}.",
+                ]);
+            }
 
             $durationSeconds = null;
             $lastEvent = OrderStatusEvent::query()
@@ -299,7 +307,12 @@ class OrderWorkflowService
             ->whereNotNull('completed_at')
             ->whereBetween('completed_at', [$day->copy()->subDays(6)->startOfDay(), $day->copy()->endOfDay()])
             ->get(['received_at', 'completed_at'])
-            ->map(fn (Order $o) => $o->received_at->diffInSeconds($o->completed_at) / 60)
+            ->map(fn (Order $o) => $this->analyticsDurationMinutes(
+                $o->received_at,
+                $o->completed_at,
+                self::MAX_CYCLE_DURATION_MINUTES,
+            ))
+            ->filter(fn (?float $minutes) => $minutes !== null)
             ->avg();
 
         return [
@@ -329,11 +342,23 @@ class OrderWorkflowService
             if (! in_array($stage, OrderWorkflow::liveStatuses(), true)) {
                 continue;
             }
-            $buckets[$stage][] = (int) $event->duration_seconds;
+
+            $durationSeconds = (int) $event->duration_seconds;
+            if ($durationSeconds < 0 || $durationSeconds > self::MAX_STAGE_DURATION_MINUTES * 60) {
+                continue;
+            }
+
+            $buckets[$stage][] = $durationSeconds;
         }
 
-        // Fallback: use timestamp deltas on completed orders when events are sparse.
-        if (count($buckets) < 2) {
+        // Fill stages without trustworthy events from the canonical order clocks.
+        // This keeps legacy/outlier events from hiding otherwise healthy demo data.
+        $missingStages = array_values(array_filter(
+            OrderWorkflow::liveStatuses(),
+            fn (string $stage): bool => empty($buckets[$stage]),
+        ));
+
+        if ($missingStages !== []) {
             $orders = Order::query()
                 ->where('restaurant_id', $restaurantId)
                 ->whereBetween('created_at', [$from, $to])
@@ -351,10 +376,18 @@ class OrderWorkflowService
 
             foreach ($orders as $order) {
                 foreach ($pairs as $stage => [$startCol, $endCol]) {
-                    $start = $order->{$startCol};
-                    $end = $order->{$endCol};
-                    if ($start && $end && $end->greaterThan($start)) {
-                        $buckets[$stage][] = $start->diffInSeconds($end);
+                    if (! in_array($stage, $missingStages, true)) {
+                        continue;
+                    }
+
+                    $minutes = $this->analyticsDurationMinutes(
+                        $order->{$startCol},
+                        $order->{$endCol},
+                        self::MAX_STAGE_DURATION_MINUTES,
+                    );
+
+                    if ($minutes !== null) {
+                        $buckets[$stage][] = (int) round($minutes * 60);
                     }
                 }
             }
@@ -372,6 +405,26 @@ class OrderWorkflowService
         }
 
         return $result;
+    }
+
+    /**
+     * Return a dashboard-safe duration, excluding reversed and stale legacy clocks.
+     */
+    public function analyticsDurationMinutes(
+        ?CarbonInterface $start,
+        ?CarbonInterface $end,
+        int $maxMinutes = self::MAX_CYCLE_DURATION_MINUTES,
+    ): ?float {
+        if (! $start || ! $end || $maxMinutes <= 0 || ! $end->greaterThan($start)) {
+            return null;
+        }
+
+        $seconds = $start->diffInSeconds($end, true);
+        if ($seconds > $maxMinutes * 60) {
+            return null;
+        }
+
+        return $seconds / 60;
     }
 
     public function timeInCurrentStageSeconds(Order $order): int

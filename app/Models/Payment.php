@@ -18,8 +18,20 @@ class Payment extends Model
         'payment_type',
         'status',
         'transaction_reference',
+        'idempotency_key',
+        'is_demo',
+        'settled_at',
         'description',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'is_demo' => 'boolean',
+            'settled_at' => 'datetime',
+        ];
+    }
 
     public function order()
     {

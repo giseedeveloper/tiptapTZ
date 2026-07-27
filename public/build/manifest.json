@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-BS1qTt5f.css",
+    "file": "assets/app-Y3Dsppah.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/landing.css": {
-    "file": "assets/landing-DD04gM-I.css",
+    "file": "assets/landing-BRbNnZ58.css",
     "src": "resources/css/landing.css",
     "isEntry": true,
     "name": "landing",
@@ -18,7 +18,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-CAiCLEjY.js",
+    "file": "assets/app-CIomGrQN.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

@@ -43,7 +43,7 @@ beforeEach(function (): void {
 
     $this->botUser->assignRole('bot_service');
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 });
 
 test('call waiter from table assigns a free waiter not busy on another order', function (): void {

@@ -32,7 +32,7 @@ class WaiterRegistrationController extends Controller
         $user->assignRole('waiter');
 
         // Create Sanctum token for immediate API access
-        $token = $user->createToken('api-registration')->plainTextToken;
+        $token = $user->createToken('api-registration', ['app'])->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -49,7 +49,7 @@ class WaiterRegistrationController extends Controller
                 'restaurant_id' => null,
                 'waiter_code' => null,
                 'roles' => $user->getRoleNames()->toArray(),
-            ]
+            ],
         ], 201);
     }
 }

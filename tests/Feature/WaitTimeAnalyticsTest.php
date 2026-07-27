@@ -117,6 +117,39 @@ it('computes customer wait-time averages and waiter speed', function (): void {
     expect($ordered[0]['waiter_id'])->toBe($this->waiterFast->id);
 });
 
+it('ignores implausibly old wait-time samples', function (): void {
+    $base = now()->subHours(2);
+
+    makeTimedOrder([
+        'waiter_id' => $this->waiterFast->id,
+        'created_at' => $base,
+        'received_at' => $base,
+        'ready_at' => $base->copy()->addMinutes(10),
+        'served_at' => $base->copy()->addMinutes(15),
+        'completed_at' => $base->copy()->addMinutes(20),
+    ]);
+
+    makeTimedOrder([
+        'waiter_id' => $this->waiterSlow->id,
+        'created_at' => $base->copy()->addMinutes(30),
+        'received_at' => $base->copy()->subDays(3),
+        'ready_at' => $base->copy()->addMinutes(35),
+        'served_at' => $base->copy()->addMinutes(40),
+        'completed_at' => $base->copy()->addMinutes(45),
+    ]);
+
+    $summary = $this->waitTimes->summarize(
+        $this->restaurant->id,
+        $base->copy()->startOfDay(),
+        now()->endOfDay(),
+    );
+
+    expect($summary['avg_to_ready_minutes'])->toBe(10.0)
+        ->and($summary['avg_to_served_minutes'])->toBe(15.0)
+        ->and($summary['avg_cycle_minutes'])->toBe(20.0)
+        ->and($summary['sample_to_served'])->toBe(1);
+});
+
 it('shows wait-time analytics on performance report and dashboard', function (): void {
     $base = now()->startOfDay()->addHours(11);
 

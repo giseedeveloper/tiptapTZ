@@ -12,38 +12,35 @@ BRANCH="${TIPTAP_TZ_BRANCH:-main}"
 
 echo "=== TIPTAP TZ DEPLOY ==="
 
-ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "
+ssh -o StrictHostKeyChecking=accept-new "${USER}@${HOST}" "
     set -e
     cd ${PROJECT_PATH}
     git pull origin ${BRANCH}
-    test -f .env.docker || cp .env.docker.example .env.docker
+    test -f .env.docker || {
+        echo 'ERROR: .env.docker is missing. Create it from the example and set production secrets.'
+        exit 1
+    }
+    grep -Eq '^MYSQL_ROOT_PASSWORD=.{24,}$' .env.docker \
+        && ! grep -Eqi '^MYSQL_ROOT_PASSWORD=.*(change_me|password)' .env.docker || {
+        echo 'ERROR: Set a unique MYSQL_ROOT_PASSWORD of at least 24 characters in .env.docker.'
+        exit 1
+    }
+    grep -Eq '^WHATSAPP_APP_SECRET=.+$' .env.docker || {
+        echo 'ERROR: WHATSAPP_APP_SECRET is required for production webhook verification.'
+        exit 1
+    }
     docker compose build --no-cache app queue
-    # Always recreate PHP containers so the newly-built image is actually used.
-    docker compose up -d --force-recreate app queue
-    docker compose up -d
-    # app_public volume keeps old Vite assets after rebuild — sync from host git checkout
-    docker cp public/build/. tiptap_tz_app:/var/www/html/public/build/
-    echo '--- Syncing app code into running container ---'
-    docker cp resources/. tiptap_tz_app:/var/www/html/resources/
-    docker cp app/. tiptap_tz_app:/var/www/html/app/
-    docker cp routes/. tiptap_tz_app:/var/www/html/routes/
-    docker cp config/. tiptap_tz_app:/var/www/html/config/
-    docker exec tiptap_tz_app php artisan migrate --force --no-interaction
-    docker exec tiptap_tz_app php artisan optimize:clear
-    docker exec tiptap_tz_app php artisan config:cache
-    docker exec tiptap_tz_app php artisan route:cache
-    docker exec tiptap_tz_app php artisan view:cache
-
-    echo '--- Restarting PHP-FPM to reset OPcache ---'
-    # PHP runs with opcache.validate_timestamps=0, so files copied into a
-    # running container are not picked up until the app process is restarted.
-    docker compose restart app
+    docker compose up -d --force-recreate --remove-orphans
 
     echo '--- Verifying the current portal theme ---'
     docker exec tiptap_tz_app sh -lc \
         \"grep -q 'portal-light' /var/www/html/resources/views/layouts/manager.blade.php \
         && test -f /var/www/html/resources/views/partials/portal-theme.blade.php\"
 
+    curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+        https://tiptapafrica.co.tz/up >/dev/null
+    test \"\$(curl --silent --output /dev/null --write-out '%{http_code}' https://tiptapafrica.co.tz/run_migrations.php)\" = '404'
+    test \"\$(curl --silent --output /dev/null --write-out '%{http_code}' https://tiptapafrica.co.tz/database/)\" = '404'
     docker ps --format '{{.Names}} {{.Status}}'
 "
 

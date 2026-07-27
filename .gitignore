@@ -27,3 +27,10 @@ Thumbs.db
 
 # Large archives / SQL dumps (keep local only)
 tiptopbot.zip
+*.sql
+
+# Local runtime configuration and one-off maintenance tools
+/env
+/public/clear-cache.php
+/public/debug_storage.php
+/public/run_migrations.php

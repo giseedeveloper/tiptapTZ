@@ -18,6 +18,16 @@ class RestaurantWalletService
     }
 
     /**
+     * Only methods where TIPTAP receives funds can become withdrawable.
+     *
+     * @return list<string>
+     */
+    private function platformSettledMethods(): array
+    {
+        return ['ussd', 'card', 'mobile'];
+    }
+
+    /**
      * @return list<string>
      */
     private function settledWithdrawalStatuses(): array
@@ -35,6 +45,8 @@ class RestaurantWalletService
         return (float) Payment::query()
             ->where('restaurant_id', $restaurant->id)
             ->whereIn('status', $this->paidPaymentStatuses())
+            ->whereIn('method', $this->platformSettledMethods())
+            ->where('is_demo', false)
             ->sum('amount');
     }
 
@@ -111,6 +123,8 @@ class RestaurantWalletService
         $payments = Payment::query()
             ->where('restaurant_id', $restaurant->id)
             ->whereIn('status', $this->paidPaymentStatuses())
+            ->whereIn('method', $this->platformSettledMethods())
+            ->where('is_demo', false)
             ->get(['amount', 'payment_type', 'method']);
 
         $byType = $payments

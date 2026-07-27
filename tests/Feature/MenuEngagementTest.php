@@ -44,7 +44,7 @@ beforeEach(function (): void {
     }
 
     $this->botUser->assignRole('bot_service');
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 });
 
 test('menu pdf request records engagement session and view menu event', function (): void {
@@ -133,6 +133,49 @@ test('order placement converts pending menu engagement session', function (): vo
         'wa_id' => '255712345678',
         'status' => MenuEngagementSession::STATUS_CONVERTED,
     ]);
+});
+
+test('bot order rejects menu items and tables from another restaurant', function (): void {
+    $otherRestaurant = \App\Models\Restaurant::create([
+        'name' => 'Other Venue',
+        'is_active' => true,
+    ]);
+    $otherCategory = \App\Models\Category::withoutGlobalScopes()->create([
+        'restaurant_id' => $otherRestaurant->id,
+        'name' => 'Other Menu',
+    ]);
+    $otherItem = MenuItem::withoutGlobalScopes()->create([
+        'restaurant_id' => $otherRestaurant->id,
+        'category_id' => $otherCategory->id,
+        'name' => 'Foreign Dish',
+        'price' => 9000,
+        'is_available' => true,
+    ]);
+    $otherTable = \App\Models\Table::withoutGlobalScopes()->create([
+        'restaurant_id' => $otherRestaurant->id,
+        'name' => 'X1',
+        'is_active' => true,
+    ]);
+
+    $this->postJson('/api/bot/order', [
+        'restaurant_id' => $this->restaurant->id,
+        'table_id' => $this->table->id,
+        'customer_phone' => '255712345678',
+        'items' => [
+            ['menu_item_id' => $otherItem->id, 'quantity' => 1],
+        ],
+    ])->assertUnprocessable();
+
+    $this->postJson('/api/bot/order', [
+        'restaurant_id' => $this->restaurant->id,
+        'table_id' => $otherTable->id,
+        'customer_phone' => '255712345678',
+        'items' => [
+            ['menu_item_id' => $otherItem->id, 'quantity' => 1],
+        ],
+    ])->assertUnprocessable();
+
+    expect(Order::withoutGlobalScopes()->count())->toBe(0);
 });
 
 test('manager can view engagement dashboard and dismiss alert', function (): void {

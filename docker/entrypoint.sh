@@ -32,18 +32,18 @@ if ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
     fi
 fi
 
+if [ -d /opt/tiptap-public ]; then
+    echo "[public] Syncing immutable public files from image..."
+    find public -mindepth 1 -maxdepth 1 ! -name storage -exec rm -rf -- {} +
+    cp -a /opt/tiptap-public/. public/
+fi
+
 STORAGE_LINK="${APP_DIR}/public/storage"
 STORAGE_TARGET="${APP_DIR}/storage/app/public"
 if [ ! -L "${STORAGE_LINK}" ] || [ "$(readlink -f "${STORAGE_LINK}" 2>/dev/null || readlink "${STORAGE_LINK}")" != "${STORAGE_TARGET}" ]; then
     echo "[storage] Creating storage symlink..."
     rm -f "${STORAGE_LINK}"
     ln -s "${STORAGE_TARGET}" "${STORAGE_LINK}"
-fi
-
-if [ -d /opt/tiptap-build-assets ]; then
-    echo "[assets] Syncing Vite build assets..."
-    mkdir -p public/build
-    cp -a /opt/tiptap-build-assets/. public/build/
 fi
 
 DB_HOST="${DB_HOST:-mysql}"
@@ -81,21 +81,6 @@ php artisan migrate --force --no-interaction
 
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
-
-if [ -d storage/docker-ssh ]; then
-    chown -R www-data:www-data storage/docker-ssh
-    chmod 700 storage/docker-ssh
-    [ -f storage/docker-ssh/docker_control ] && chmod 600 storage/docker-ssh/docker_control
-    [ -f storage/docker-ssh/docker_control.pub ] && chmod 644 storage/docker-ssh/docker_control.pub
-fi
-
-if [ -S /var/run/docker.sock ]; then
-    DOCKER_GID=$(stat -c '%g' /var/run/docker.sock)
-    if ! getent group docker >/dev/null 2>&1; then
-        addgroup -g "${DOCKER_GID}" docker 2>/dev/null || addgroup docker
-    fi
-    adduser www-data docker 2>/dev/null || true
-fi
 
 APP_ENV="${APP_ENV:-production}"
 if [ "${APP_ENV}" = "production" ]; then

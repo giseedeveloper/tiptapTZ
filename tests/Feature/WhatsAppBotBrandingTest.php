@@ -21,7 +21,7 @@ beforeEach(function (): void {
     ]);
     $this->admin->assignRole('super_admin');
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 });
 
 test('branding returns default welcome image and title', function (): void {

@@ -72,7 +72,7 @@ it('exposes post-payment tip options for waiter barista kitchen and split', func
         'is_active' => true,
     ]);
 
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $this->getJson("/api/bot/restaurant/{$this->restaurant->id}/post-payment-tip-options?waiter_id={$this->waiter->id}")
         ->assertOk()
@@ -87,7 +87,7 @@ it('exposes post-payment tip options for waiter barista kitchen and split', func
 });
 
 it('filters tippable staff by role query', function (): void {
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $waiters = $this->getJson("/api/bot/restaurant/{$this->restaurant->id}/waiters?tippable_only=1&role=waiter")
         ->assertOk()
@@ -117,7 +117,7 @@ it('settles a 50/50 split tip across waiter and kitchen pool', function (): void
     ]);
 
     Setting::set('demo_push', '1');
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $response = $this->postJson('/api/bot/payment/quick', [
         'restaurant_id' => $this->restaurant->id,

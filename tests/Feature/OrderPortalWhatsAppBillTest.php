@@ -225,3 +225,21 @@ it('order portal whatsapp bill returns bot error details as json', function () {
 
     expect($order->fresh()->bill_image_pushed_at)->toBeNull();
 });
+
+it('revokes an existing order portal token when the manager revokes its password', function () {
+    $restaurant = Restaurant::create([
+        'name' => 'Revocation Cafe',
+        'is_active' => true,
+    ]);
+    $waiter = User::factory()->create(['restaurant_id' => $restaurant->id]);
+    $token = createOrderPortalToken($restaurant, $waiter, 'REVOKE99');
+
+    OrderPortalPassword::query()
+        ->where('restaurant_id', $restaurant->id)
+        ->where('user_id', $waiter->id)
+        ->update(['revoked_at' => now()]);
+
+    $this->withToken($token)
+        ->getJson('/api/order-portal/orders')
+        ->assertUnauthorized();
+});

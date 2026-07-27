@@ -43,7 +43,7 @@ it('allows manager to upload menu pdf', function () {
 });
 
 it('returns menu pdf url from bot api', function () {
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 
     $path = 'menu_pdfs/test-menu.pdf';
     Storage::disk('public')->put($path, '%PDF-1.4 fake');

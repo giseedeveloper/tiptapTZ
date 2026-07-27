@@ -29,71 +29,79 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        RateLimiter::for("login", function (Request $request) {
+        RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
         });
 
-        RateLimiter::for("admin-search", function (Request $request) {
+        RateLimiter::for('order-portal-login', function (Request $request) {
+            return Limit::perMinute(8)->by($request->ip());
+        });
+
+        RateLimiter::for('admin-search', function (Request $request) {
             return Limit::perMinute(30)->by(
                 $request->user()?->id ?: $request->ip(),
             );
         });
 
-        RateLimiter::for("bot-token", function (Request $request) {
+        RateLimiter::for('bot-token', function (Request $request) {
             return Limit::perMinute(3)->by(
                 $request->user()?->id ?: $request->ip(),
             );
         });
 
-        RateLimiter::for("docker-control", function (Request $request) {
+        RateLimiter::for('docker-control', function (Request $request) {
             return Limit::perMinute(10)->by(
                 $request->user()?->id ?: $request->ip(),
             );
         });
 
-        View::composer("layouts.waiter", function ($view): void {
-            if (Auth::check() && Auth::user()->hasRole("waiter")) {
+        View::composer('layouts.waiter', function ($view): void {
+            if (Auth::check() && Auth::user()->hasRole('waiter')) {
                 $view->with(
-                    "unreadSalaryCount",
+                    'unreadSalaryCount',
                     Auth::user()
                         ->unreadNotifications()
-                        ->where("type", SalaryPaymentConfirmed::class)
+                        ->where('type', SalaryPaymentConfirmed::class)
                         ->count(),
                 );
             }
         });
 
-        View::composer("layouts.manager", function ($view): void {
-            if (Auth::check() && (Auth::user()->hasRole("manager") || Auth::user()->isBranchManager())) {
-                $view->with("menuEngagementUnread", Auth::user()->unreadNotifications()
-                    ->where("type", CustomerMenuEngagementNotification::class)
+        View::composer('layouts.manager', function ($view): void {
+            if (Auth::check() && (Auth::user()->hasRole('manager') || Auth::user()->isBranchManager())) {
+                $view->with('menuEngagementUnread', Auth::user()->unreadNotifications()
+                    ->where('type', CustomerMenuEngagementNotification::class)
                     ->count());
 
                 if (Auth::user()->isBranchManager()) {
                     $ids = Auth::user()->accessibleRestaurantIds();
-                    $view->with("accessibleBranches", \App\Models\Restaurant::query()
-                        ->whereIn("id", $ids)
-                        ->orderBy("branch_sort_order")
+                    $view->with('accessibleBranches', \App\Models\Restaurant::query()
+                        ->whereIn('id', $ids)
+                        ->orderBy('branch_sort_order')
                         ->get());
-                    $view->with("activeBranchId", session("active_branch_id"));
+                    $view->with('activeBranchId', session('active_branch_id'));
                 }
             }
         });
 
-        View::composer("*", function ($view): void {
-            $view->with("currencySymbol", Money::symbol());
+        View::composer('*', function ($view): void {
+            $view->with('currencySymbol', Money::symbol());
         });
 
         View::composer(
-            ["welcome", "partials.landing-contact", "partials.social-links"],
+            ['welcome', 'partials.landing-contact', 'partials.social-links'],
             function ($view): void {
-                $view->with("landing", LandingPageContent::viewData());
+                if ($view->getName() === 'welcome') {
+                    LandingPageContent::flushCache();
+                }
+
+                $view->with('landing', LandingPageContent::viewData());
             },
         );
 
-        View::composer("welcome", function ($view): void {
+        View::composer('welcome', function ($view): void {
             $view->with(
-                "plans",
+                'plans',
                 \App\Models\SubscriptionPackage::query()
                     ->active()
                     ->ordered()
@@ -101,13 +109,13 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        View::composer(["components.admin-layout", "admin.*"], function (
+        View::composer(['components.admin-layout', 'admin.*'], function (
             $view,
         ): void {
-            $view->with("adminAccess", AdminPortalAccess::class);
+            $view->with('adminAccess', AdminPortalAccess::class);
         });
 
-        Blade::if("adminCan", function (string $permission): bool {
+        Blade::if('adminCan', function (string $permission): bool {
             return AdminPortalAccess::can(auth()->user(), $permission);
         });
     }

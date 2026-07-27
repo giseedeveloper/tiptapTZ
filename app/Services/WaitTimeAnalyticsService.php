@@ -18,9 +18,7 @@ use Illuminate\Support\Collection;
  */
 class WaitTimeAnalyticsService
 {
-    public function __construct(private OrderWorkflowService $workflow)
-    {
-    }
+    public function __construct(private OrderWorkflowService $workflow) {}
 
     /**
      * @return array{
@@ -49,14 +47,31 @@ class WaitTimeAnalyticsService
                 continue;
             }
 
-            if ($order->ready_at && $order->ready_at->greaterThan($start)) {
-                $toReady[] = $start->diffInSeconds($order->ready_at) / 60;
+            $readyMinutes = $this->workflow->analyticsDurationMinutes(
+                $start,
+                $order->ready_at,
+                OrderWorkflowService::MAX_STAGE_DURATION_MINUTES,
+            );
+            if ($readyMinutes !== null) {
+                $toReady[] = $readyMinutes;
             }
-            if ($order->served_at && $order->served_at->greaterThan($start)) {
-                $toServed[] = $start->diffInSeconds($order->served_at) / 60;
+
+            $servedMinutes = $this->workflow->analyticsDurationMinutes(
+                $start,
+                $order->served_at,
+                OrderWorkflowService::MAX_STAGE_DURATION_MINUTES,
+            );
+            if ($servedMinutes !== null) {
+                $toServed[] = $servedMinutes;
             }
-            if ($order->completed_at && $order->completed_at->greaterThan($start)) {
-                $cycle[] = $start->diffInSeconds($order->completed_at) / 60;
+
+            $cycleMinutes = $this->workflow->analyticsDurationMinutes(
+                $start,
+                $order->completed_at,
+                OrderWorkflowService::MAX_CYCLE_DURATION_MINUTES,
+            );
+            if ($cycleMinutes !== null) {
+                $cycle[] = $cycleMinutes;
             }
         }
 
@@ -130,11 +145,22 @@ class WaitTimeAnalyticsService
                 if (! $start) {
                     continue;
                 }
-                if ($order->ready_at && $order->ready_at->greaterThan($start)) {
-                    $toReady[] = $start->diffInSeconds($order->ready_at) / 60;
+                $readyMinutes = $this->workflow->analyticsDurationMinutes(
+                    $start,
+                    $order->ready_at,
+                    OrderWorkflowService::MAX_STAGE_DURATION_MINUTES,
+                );
+                if ($readyMinutes !== null) {
+                    $toReady[] = $readyMinutes;
                 }
-                if ($order->served_at && $order->served_at->greaterThan($start)) {
-                    $toServed[] = $start->diffInSeconds($order->served_at) / 60;
+
+                $servedMinutes = $this->workflow->analyticsDurationMinutes(
+                    $start,
+                    $order->served_at,
+                    OrderWorkflowService::MAX_STAGE_DURATION_MINUTES,
+                );
+                if ($servedMinutes !== null) {
+                    $toServed[] = $servedMinutes;
                 }
             }
 
@@ -187,11 +213,22 @@ class WaitTimeAnalyticsService
                     if (! $start) {
                         continue;
                     }
-                    if ($order->ready_at && $order->ready_at->greaterThan($start)) {
-                        $toReady[] = $start->diffInSeconds($order->ready_at) / 60;
+                    $readyMinutes = $this->workflow->analyticsDurationMinutes(
+                        $start,
+                        $order->ready_at,
+                        OrderWorkflowService::MAX_STAGE_DURATION_MINUTES,
+                    );
+                    if ($readyMinutes !== null) {
+                        $toReady[] = $readyMinutes;
                     }
-                    if ($order->served_at && $order->served_at->greaterThan($start)) {
-                        $toServed[] = $start->diffInSeconds($order->served_at) / 60;
+
+                    $servedMinutes = $this->workflow->analyticsDurationMinutes(
+                        $start,
+                        $order->served_at,
+                        OrderWorkflowService::MAX_STAGE_DURATION_MINUTES,
+                    );
+                    if ($servedMinutes !== null) {
+                        $toServed[] = $servedMinutes;
                     }
                 }
 

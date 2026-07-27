@@ -20,9 +20,7 @@ services:
       - certbot_certs:/etc/letsencrypt:ro
     depends_on:
       app:
-        condition: service_started
-      phpmyadmin:
-        condition: service_started
+        condition: service_healthy
     networks:
       - tiptap_net
 
@@ -48,10 +46,15 @@ services:
       - app_public:/var/www/html/public
       - app_storage:/var/www/html/storage
       - ./.env.docker:/var/www/html/.env:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan about --only=environment >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - tiptap_net
 
@@ -69,7 +72,7 @@ services:
       - ./.env.docker:/var/www/html/.env:ro
     depends_on:
       app:
-        condition: service_started
+        condition: service_healthy
       mysql:
         condition: service_healthy
     networks:
@@ -79,8 +82,9 @@ services:
     image: mysql:8.0
     container_name: tiptap_tz_mysql
     restart: unless-stopped
+    env_file:
+      - .env.docker
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-TiptapTz@2026!}
       MYSQL_DATABASE: taptap
     command:
       - --character-set-server=utf8mb4
@@ -89,30 +93,12 @@ services:
       - --innodb-buffer-pool-size=256M
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./TiptapR.sql:/docker-entrypoint-initdb.d/01_tiptap.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-TiptapTz@2026!}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 40s
-    networks:
-      - tiptap_net
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: tiptap_tz_phpmyadmin
-    restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-TiptapTz@2026!}
-      PMA_ABSOLUTE_URI: https://tiptapafrica.co.tz/database/
-      UPLOAD_LIMIT: 512M
-    depends_on:
-      mysql:
-        condition: service_healthy
     networks:
       - tiptap_net
 

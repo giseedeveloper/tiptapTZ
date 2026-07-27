@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\LandingPageContent;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
@@ -21,5 +22,9 @@ class Setting extends Model
             ['key' => $key],
             ['value' => (string) $value, 'group' => $group]
         );
+
+        if ($key === 'whatsapp_bot_number' || str_starts_with($key, 'landing_')) {
+            LandingPageContent::flushCache();
+        }
     }
 }

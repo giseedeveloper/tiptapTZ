@@ -200,7 +200,7 @@ Route::prefix('v1/manager')->middleware(['auth:sanctum', 'role:manager'])->group
 });
 
 // WhatsApp Bot Routes
-Route::prefix('bot')->middleware('auth:sanctum')->group(function () {
+Route::prefix('bot')->middleware(['auth:sanctum', 'role:bot_service', 'abilities:bot'])->group(function () {
     Route::get('/verify-restaurant', [App\Http\Controllers\Api\WhatsAppBotController::class, 'verifyRestaurant']);
     Route::get('/verify-tag', [App\Http\Controllers\Api\WhatsAppBotController::class, 'verifyTag']);
     Route::match(['get', 'post'], '/parse-entry', [App\Http\Controllers\Api\WhatsAppBotController::class, 'parseEntry']);
@@ -245,7 +245,8 @@ Route::post('/whatsapp/webhook', [App\Http\Controllers\Api\WhatsAppWebhookContro
 
 // Order Portal API (session auth via password; use Accept: application/json + Cookie for JSON)
 Route::prefix('order-portal')->middleware('web')->group(function () {
-    Route::post('/login', [\App\Http\Controllers\OrderPortal\LoginController::class, 'store']);
+    Route::post('/login', [\App\Http\Controllers\OrderPortal\LoginController::class, 'store'])
+        ->middleware('throttle:order-portal-login');
     Route::post('/logout', [\App\Http\Controllers\OrderPortal\LoginController::class, 'destroy'])
         ->middleware('order.portal');
 

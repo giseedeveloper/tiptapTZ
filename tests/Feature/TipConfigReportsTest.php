@@ -103,7 +103,7 @@ it('hides disabled tip categories from the bot post-payment options', function (
     $pool->update(['is_enabled' => true]);
     TipPoolMember::create(['tip_pool_id' => $pool->id, 'user_id' => $this->chef->id, 'weight' => 1, 'is_active' => true]);
 
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $this->getJson("/api/bot/restaurant/{$this->restaurant->id}/post-payment-tip-options")
         ->assertOk()
@@ -120,7 +120,7 @@ it('builds tip reports split by waiter, barista and kitchen', function (): void 
     TipPoolMember::create(['tip_pool_id' => $pool->id, 'user_id' => $this->chef->id, 'weight' => 1, 'is_active' => true]);
 
     Setting::set('demo_push', '1');
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     // Waiter tip
     $this->postJson('/api/bot/payment/quick', [

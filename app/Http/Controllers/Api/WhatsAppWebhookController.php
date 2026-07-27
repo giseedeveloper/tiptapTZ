@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Support\WhatsAppBotUrls;
-use App\Support\WhatsAppWebhookForwarder;
+use App\Jobs\ForwardWhatsAppWebhook;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -47,19 +45,7 @@ class WhatsAppWebhookController extends Controller
             return response()->json(['status' => 'invalid_signature'], 401);
         }
 
-        $forwardTarget = WhatsAppWebhookForwarder::resolve($payload);
-
-        if ($forwardTarget !== null) {
-            Log::info('WhatsApp webhook forwarding to bot.', [
-                'phone_number_id' => WhatsAppWebhookForwarder::extractPhoneNumberId($payload),
-                'url' => $forwardTarget['url'],
-            ]);
-            $this->forwardToBot($forwardTarget['url'], $forwardTarget['secret'], $payload);
-        } else {
-            Log::info('WhatsApp webhook payload received (no bot forward URL set).', [
-                'payload_keys' => array_keys($payload),
-            ]);
-        }
+        ForwardWhatsAppWebhook::dispatch($payload);
 
         return response()->json(['status' => 'received']);
     }
@@ -69,7 +55,7 @@ class WhatsAppWebhookController extends Controller
         $appSecret = (string) config('services.whatsapp.app_secret', '');
 
         if ($appSecret === '') {
-            return true;
+            return app()->environment(['local', 'testing']);
         }
 
         $header = $request->header('X-Hub-Signature-256', '');
@@ -81,23 +67,5 @@ class WhatsAppWebhookController extends Controller
         $expected = 'sha256='.hash_hmac('sha256', $rawBody, $appSecret);
 
         return hash_equals($expected, $header);
-    }
-
-    protected function forwardToBot(string $url, string $secret, array $payload): void
-    {
-        $timeout = (int) config('whatsapp.bot_notify_timeout', 10);
-
-        try {
-            Http::withHeaders(['X-Bot-Secret' => $secret])
-                ->timeout(min($timeout, 15))
-                ->acceptJson()
-                ->asJson()
-                ->post($url, $payload);
-        } catch (\Throwable $e) {
-            Log::error('Failed forwarding WhatsApp webhook to bot.', [
-                'url' => $url,
-                'message' => $e->getMessage(),
-            ]);
-        }
     }
 }

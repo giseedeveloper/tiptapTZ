@@ -12,6 +12,7 @@ class OrderPortalPassword extends Model
         'restaurant_id',
         'user_id',
         'password',
+        'lookup_hash',
         'generated_at',
         'revoked_at',
     ];
@@ -42,11 +43,31 @@ class OrderPortalPassword extends Model
     public function setPasswordAttribute(string $value): void
     {
         $this->attributes['password'] = Hash::make($value);
+        $this->attributes['lookup_hash'] = self::passwordLookupHash($value);
     }
 
     public function checkPassword(string $plain): bool
     {
         return Hash::check($plain, $this->password);
+    }
+
+    public static function passwordLookupHash(string $plain): string
+    {
+        return hash_hmac(
+            'sha256',
+            strtoupper(trim($plain)),
+            (string) config('app.key'),
+        );
+    }
+
+    public function versionFingerprint(): string
+    {
+        return hash('sha256', (string) $this->password);
+    }
+
+    public static function tokenCacheKey(string $token): string
+    {
+        return 'order_portal_token:'.hash('sha256', $token);
     }
 
     /**

@@ -96,7 +96,7 @@ class BotController extends Controller
         }
 
         $user->tokens()->delete();
-        $token = $user->createToken('WhatsAppBotToken')->plainTextToken;
+        $token = $user->createToken('WhatsAppBotToken', ['bot'])->plainTextToken;
 
         AdminActivityLog::log(
             'bot_token.generated',

@@ -21,8 +21,8 @@ use App\Models\TipPool;
 use App\Models\User;
 use App\Services\BotEventService;
 use App\Services\BotFeedbackService;
-use App\Services\MenuEngagementService;
 use App\Services\FreeWaiterService;
+use App\Services\MenuEngagementService;
 use App\Services\OrderWorkflowService;
 use App\Services\TableActiveOrderService;
 use App\Services\TipPoolService;
@@ -31,8 +31,12 @@ use App\Support\OrderWorkflow;
 use App\Support\WhatsAppBotBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class WhatsAppBotController extends Controller
 {
@@ -511,21 +515,41 @@ class WhatsAppBotController extends Controller
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'table_id' => 'nullable|exists:tables,id',
+            'table_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('tables', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
             'table_number' => 'nullable|string',
-            'waiter_id' => 'nullable|exists:users,id',
+            'waiter_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
             'customer_phone' => 'required',
             'customer_name' => 'nullable|string',
             'whatsapp_jid' => 'nullable|string|max:191',
-            'items' => 'required|array',
-            'items.*.menu_item_id' => 'required|exists:menu_items,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'items' => 'required|array|min:1|max:100',
+            'items.*.menu_item_id' => [
+                'required',
+                'integer',
+                Rule::exists('menu_items', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
+            'items.*.quantity' => 'required|integer|min:1|max:99',
         ]);
 
         // Get table number from table_id if provided
         $tableNumber = $request->table_number;
         if (! $tableNumber && $request->table_id) {
-            $table = Table::withoutGlobalScopes()->find($request->table_id);
+            $table = Table::withoutGlobalScopes()
+                ->where('restaurant_id', $request->restaurant_id)
+                ->find($request->table_id);
             $tableNumber = $table ? $table->name : null;
         }
 
@@ -535,7 +559,9 @@ class WhatsAppBotController extends Controller
                 $orderItems = [];
 
                 foreach ($request->items as $itemData) {
-                    $menuItem = MenuItem::withoutGlobalScopes()->find($itemData['menu_item_id']);
+                    $menuItem = MenuItem::withoutGlobalScopes()
+                        ->where('restaurant_id', $request->restaurant_id)
+                        ->findOrFail($itemData['menu_item_id']);
                     $subtotal = $menuItem->price * $itemData['quantity'];
                     $totalAmount += $subtotal;
 
@@ -657,7 +683,7 @@ class WhatsAppBotController extends Controller
                 $paymentStatus = $selcom->parsePaymentStatus($result);
 
                 if ($paymentStatus === 'paid') {
-                    $payment->update(['status' => 'paid']);
+                    $payment->update(['status' => 'paid', 'settled_at' => now()]);
                     $workflow->completeFromPayment($order, 'whatsapp_ussd');
 
                     // Log successful payment
@@ -745,13 +771,21 @@ class WhatsAppBotController extends Controller
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'order_id' => 'required|exists:orders,id',
-            'amount' => 'required|numeric|min:0',
+            'order_id' => [
+                'required',
+                'integer',
+                Rule::exists('orders', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
+            'amount' => 'required|numeric|min:1',
         ]);
 
         try {
             // Get waiter_id from order if exists
-            $order = Order::withoutGlobalScopes()->find($request->order_id);
+            $order = Order::withoutGlobalScopes()
+                ->where('restaurant_id', $request->restaurant_id)
+                ->findOrFail($request->order_id);
             $waiterId = $order ? $order->waiter_id : null;
 
             $tip = Tip::withoutGlobalScopes()->create([
@@ -788,89 +822,149 @@ class WhatsAppBotController extends Controller
         $request->validate([
             'order_id' => 'required|exists:orders,id',
             'phone_number' => 'required',
-            'amount' => 'required|numeric',
+            'amount' => 'nullable|numeric|min:0.01',
             'network' => 'nullable|string',
+            'idempotency_key' => 'nullable|string|max:100',
         ]);
 
-        $order = Order::withoutGlobalScopes()->with('restaurant')->find($request->order_id);
+        $order = Order::withoutGlobalScopes()->with('restaurant')->findOrFail($request->order_id);
         $restaurant = $order->restaurant;
+        $amount = (float) $order->total_amount;
+        $requestedAmount = $request->filled('amount') ? (float) $request->amount : $amount;
 
-        $transactionId = 'BOT-'.$order->id.'-'.time();
-
-        if (Setting::get('demo_push', '0') === '1') {
-            $payment = Payment::create([
-                'order_id' => $order->id,
-                'restaurant_id' => $order->restaurant_id,
-                'waiter_id' => $order->waiter_id,
-                'amount' => $request->amount,
-                'method' => 'ussd',
-                'status' => 'paid',
-                'transaction_reference' => $transactionId,
-            ]);
-            $workflow->completeFromPayment($order, 'whatsapp_demo');
-
-            $this->recordBotEngagement(
-                $request,
-                BotEngagementEvent::PayBill,
-                (int) $order->restaurant_id,
-                ['order_id' => $order->id, 'method' => 'ussd', 'demo' => true],
-            );
-            $this->recordPaymentSuccess($order, $payment);
-
-            return response()->json([
-                'success' => true,
-                'payment_id' => $payment->id,
-                'message' => 'Demo: Payment marked successful (no push sent)',
+        if (abs($requestedAmount - $amount) > 0.009) {
+            throw ValidationException::withMessages([
+                'amount' => 'Payment amount must match the current order total.',
             ]);
         }
 
-        if (! $restaurant || ! $restaurant->canAcceptMobilePayments()) {
+        $idempotencyKey = trim((string) ($request->header('Idempotency-Key') ?: $request->input('idempotency_key')));
+        $idempotencyKey = $idempotencyKey !== '' ? $idempotencyKey : null;
+        if ($idempotencyKey !== null && strlen($idempotencyKey) > 100) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'The idempotency key may not be greater than 100 characters.',
+            ]);
+        }
+
+        $paymentLock = Cache::lock('payment-initiation:order:'.$order->id, 45);
+        if (! $paymentLock->get()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mobile money payments are not available for this venue right now.',
-            ], 400);
+                'message' => 'A payment request is already being processed for this order.',
+            ], 409);
         }
 
-        $selcom = new \App\Services\SelcomService;
-        $result = $selcom->initiatePayment($restaurant->getSelcomCredentials(), [
-            'order_id' => $transactionId,
-            'email' => $order->customer_phone.'@taptap.com',
-            'name' => 'WhatsApp Customer',
-            'phone' => $request->phone_number,
-            'amount' => $request->amount,
-            'description' => 'Order #'.$order->id,
-        ]);
+        try {
+            if ($idempotencyKey) {
+                $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first();
+                if ($existing) {
+                    abort_unless((int) $existing->order_id === (int) $order->id, 409);
 
-        if (isset($result['status']) && $result['status'] === 'success') {
-            $payment = Payment::create([
-                'order_id' => $order->id,
-                'restaurant_id' => $order->restaurant_id,
-                'waiter_id' => $order->waiter_id,
-                'amount' => $request->amount,
-                'method' => 'ussd',
-                'status' => 'pending',
-                'transaction_reference' => $transactionId,
+                    return response()->json([
+                        'success' => in_array($existing->status, ['pending', 'paid', 'completed'], true),
+                        'payment_id' => $existing->id,
+                        'status' => $existing->status,
+                        'reused' => true,
+                    ]);
+                }
+            }
+
+            $activePayment = $order->payments()
+                ->where('method', 'ussd')
+                ->whereIn('status', ['pending', 'paid', 'completed'])
+                ->latest('id')
+                ->first();
+            if ($activePayment) {
+                return response()->json([
+                    'success' => true,
+                    'payment_id' => $activePayment->id,
+                    'status' => $activePayment->status,
+                    'reused' => true,
+                ]);
+            }
+
+            $transactionId = 'BOT-'.$order->id.'-'.Str::uuid();
+
+            if (Setting::get('demo_push', '0') === '1') {
+                $payment = Payment::create([
+                    'order_id' => $order->id,
+                    'restaurant_id' => $order->restaurant_id,
+                    'waiter_id' => $order->waiter_id,
+                    'amount' => $amount,
+                    'method' => 'ussd',
+                    'status' => 'paid',
+                    'is_demo' => true,
+                    'settled_at' => now(),
+                    'transaction_reference' => $transactionId,
+                    'idempotency_key' => $idempotencyKey,
+                ]);
+                $workflow->completeFromPayment($order, 'whatsapp_demo');
+
+                $this->recordBotEngagement(
+                    $request,
+                    BotEngagementEvent::PayBill,
+                    (int) $order->restaurant_id,
+                    ['order_id' => $order->id, 'method' => 'ussd', 'demo' => true],
+                );
+                $this->recordPaymentSuccess($order, $payment);
+
+                return response()->json([
+                    'success' => true,
+                    'payment_id' => $payment->id,
+                    'message' => 'Demo: Payment marked successful (no push sent)',
+                ]);
+            }
+
+            if (! $restaurant || ! $restaurant->canAcceptMobilePayments()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mobile money payments are not available for this venue right now.',
+                ], 400);
+            }
+
+            $selcom = new \App\Services\SelcomService;
+            $result = $selcom->initiatePayment($restaurant->getSelcomCredentials(), [
+                'order_id' => $transactionId,
+                'email' => $order->customer_phone.'@taptap.com',
+                'name' => 'WhatsApp Customer',
+                'phone' => $request->phone_number,
+                'amount' => $amount,
+                'description' => 'Order #'.$order->id,
             ]);
 
-            $this->recordBotEngagement(
-                $request,
-                BotEngagementEvent::PayBill,
-                (int) $order->restaurant_id,
-                ['order_id' => $order->id, 'method' => 'ussd', 'payment_id' => $payment->id],
-            );
+            if (isset($result['status']) && $result['status'] === 'success') {
+                $payment = Payment::create([
+                    'order_id' => $order->id,
+                    'restaurant_id' => $order->restaurant_id,
+                    'waiter_id' => $order->waiter_id,
+                    'amount' => $amount,
+                    'method' => 'ussd',
+                    'status' => 'pending',
+                    'transaction_reference' => $transactionId,
+                    'idempotency_key' => $idempotencyKey,
+                ]);
+
+                $this->recordBotEngagement(
+                    $request,
+                    BotEngagementEvent::PayBill,
+                    (int) $order->restaurant_id,
+                    ['order_id' => $order->id, 'method' => 'ussd', 'payment_id' => $payment->id],
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'payment_id' => $payment->id,
+                    'message' => 'USSD Prompt sent to '.$request->phone_number,
+                ]);
+            }
 
             return response()->json([
-                'success' => true,
-                'payment_id' => $payment->id,
-                'message' => 'USSD Prompt sent to '.$request->phone_number,
-            ]);
+                'success' => false,
+                'message' => 'Unable to initiate payment right now. Please try again.',
+            ], 400);
+        } finally {
+            $paymentLock->release();
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => $result['message'] ?? 'Failed to initiate payment with '.config('tiptap.payment_gateway'),
-            'debug' => $result,
-        ], 400);
     }
 
     /**
@@ -887,6 +981,7 @@ class WhatsAppBotController extends Controller
             'network' => 'nullable|string',
             'waiter_id' => 'nullable|exists:users,id',
             'tip_pool_id' => 'nullable|exists:tip_pools,id',
+            'idempotency_key' => 'nullable|string|max:100',
         ]);
 
         if ($request->filled('waiter_id')) {
@@ -921,122 +1016,167 @@ class WhatsAppBotController extends Controller
             ], 404);
         }
 
-        $transactionId = 'QUICK-'.$restaurant->id.'-'.time();
-
-        if (Setting::get('demo_push', '0') === '1') {
-            $paymentData = [
-                'restaurant_id' => $restaurant->id,
-                'customer_phone' => $request->phone_number,
-                'amount' => $request->amount,
-                'method' => 'ussd',
-                'payment_type' => 'quick',
-                'status' => 'paid',
-                'transaction_reference' => $transactionId,
-                'description' => $request->description,
-            ];
-            if (Schema::hasColumn('payments', 'waiter_id') && $request->waiter_id) {
-                $paymentData['waiter_id'] = $request->waiter_id;
-            }
-            if (Schema::hasColumn('payments', 'tip_pool_id') && $request->tip_pool_id) {
-                $paymentData['tip_pool_id'] = $request->tip_pool_id;
-            }
-            $payment = Payment::create($paymentData);
-
-            if ($payment->waiter_id || $payment->tip_pool_id) {
-                $tipPools->settleQuickTipPayment($payment);
-            }
-
-            Activity::create([
-                'description' => 'Demo: Quick payment completed: '.Money::format($request->amount),
-                'type' => 'payment_success',
-                'properties' => [
-                    'payment_id' => $payment->id,
-                    'amount' => $payment->amount,
-                    'phone' => $request->phone_number,
-                ],
-            ]);
-
-            $this->recordBotEngagement(
-                $request,
-                BotEngagementEvent::PayBill,
-                (int) $restaurant->id,
-                ['payment_id' => $payment->id, 'method' => 'ussd', 'quick' => true, 'demo' => true],
-            );
-
-            return response()->json([
-                'success' => true,
-                'payment_id' => $payment->id,
-                'message' => 'Demo: Payment marked successful (no push sent)',
-                'description' => $request->description,
+        $idempotencyKey = trim((string) ($request->header('Idempotency-Key') ?: $request->input('idempotency_key')));
+        $idempotencyKey = $idempotencyKey !== '' ? $idempotencyKey : null;
+        if ($idempotencyKey !== null && strlen($idempotencyKey) > 100) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'The idempotency key may not be greater than 100 characters.',
             ]);
         }
 
-        if (! $restaurant->canAcceptMobilePayments()) {
+        $lockFingerprint = $idempotencyKey ?: hash('sha256', implode('|', [
+            $restaurant->id,
+            $request->phone_number,
+            $request->amount,
+            $request->description,
+            $request->waiter_id,
+            $request->tip_pool_id,
+        ]));
+        $paymentLock = Cache::lock('payment-initiation:quick:'.$lockFingerprint, 45);
+        if (! $paymentLock->get()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mobile money payments are not available for this venue right now.',
-            ], 400);
+                'message' => 'This payment request is already being processed.',
+            ], 409);
         }
 
-        $selcom = new \App\Services\SelcomService;
-        $result = $selcom->initiatePayment($restaurant->getSelcomCredentials(), [
-            'order_id' => $transactionId,
-            'email' => $request->phone_number.'@taptap.com',
-            'name' => 'WhatsApp Customer',
-            'phone' => $request->phone_number,
-            'amount' => $request->amount,
-            'description' => $request->description,
-        ]);
+        try {
+            if ($idempotencyKey) {
+                $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first();
+                if ($existing) {
+                    abort_unless((int) $existing->restaurant_id === (int) $restaurant->id, 409);
 
-        if (isset($result['status']) && $result['status'] === 'success') {
-            $paymentData = [
-                'restaurant_id' => $restaurant->id,
-                'customer_phone' => $request->phone_number,
-                'amount' => $request->amount,
-                'method' => 'ussd',
-                'payment_type' => 'quick',
-                'status' => 'pending',
-                'transaction_reference' => $transactionId,
-                'description' => $request->description,
-            ];
-            if (Schema::hasColumn('payments', 'waiter_id') && $request->waiter_id) {
-                $paymentData['waiter_id'] = $request->waiter_id;
+                    return response()->json([
+                        'success' => in_array($existing->status, ['pending', 'paid', 'completed'], true),
+                        'payment_id' => $existing->id,
+                        'status' => $existing->status,
+                        'reused' => true,
+                    ]);
+                }
             }
-            if (Schema::hasColumn('payments', 'tip_pool_id') && $request->tip_pool_id) {
-                $paymentData['tip_pool_id'] = $request->tip_pool_id;
-            }
-            $payment = Payment::create($paymentData);
 
-            Activity::create([
-                'description' => 'Quick payment initiated: '.Money::format($request->amount)." from {$request->phone_number}",
-                'type' => 'quick_payment',
-                'properties' => [
-                    'payment_id' => $payment->id,
-                    'source' => 'whatsapp',
+            $transactionId = 'QUICK-'.$restaurant->id.'-'.Str::uuid();
+
+            if (Setting::get('demo_push', '0') === '1') {
+                $paymentData = [
+                    'restaurant_id' => $restaurant->id,
+                    'customer_phone' => $request->phone_number,
+                    'amount' => $request->amount,
+                    'method' => 'ussd',
+                    'payment_type' => 'quick',
+                    'status' => 'paid',
+                    'is_demo' => true,
+                    'settled_at' => now(),
+                    'transaction_reference' => $transactionId,
+                    'idempotency_key' => $idempotencyKey,
                     'description' => $request->description,
-                ],
+                ];
+                if (Schema::hasColumn('payments', 'waiter_id') && $request->waiter_id) {
+                    $paymentData['waiter_id'] = $request->waiter_id;
+                }
+                if (Schema::hasColumn('payments', 'tip_pool_id') && $request->tip_pool_id) {
+                    $paymentData['tip_pool_id'] = $request->tip_pool_id;
+                }
+                $payment = Payment::create($paymentData);
+
+                if ($payment->waiter_id || $payment->tip_pool_id) {
+                    $tipPools->settleQuickTipPayment($payment);
+                }
+
+                Activity::create([
+                    'description' => 'Demo: Quick payment completed: '.Money::format($request->amount),
+                    'type' => 'payment_success',
+                    'properties' => [
+                        'payment_id' => $payment->id,
+                        'amount' => $payment->amount,
+                        'phone' => $request->phone_number,
+                    ],
+                ]);
+
+                $this->recordBotEngagement(
+                    $request,
+                    BotEngagementEvent::PayBill,
+                    (int) $restaurant->id,
+                    ['payment_id' => $payment->id, 'method' => 'ussd', 'quick' => true, 'demo' => true],
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'payment_id' => $payment->id,
+                    'message' => 'Demo: Payment marked successful (no push sent)',
+                    'description' => $request->description,
+                ]);
+            }
+
+            if (! $restaurant->canAcceptMobilePayments()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mobile money payments are not available for this venue right now.',
+                ], 400);
+            }
+
+            $selcom = new \App\Services\SelcomService;
+            $result = $selcom->initiatePayment($restaurant->getSelcomCredentials(), [
+                'order_id' => $transactionId,
+                'email' => $request->phone_number.'@taptap.com',
+                'name' => 'WhatsApp Customer',
+                'phone' => $request->phone_number,
+                'amount' => $request->amount,
+                'description' => $request->description,
             ]);
 
-            $this->recordBotEngagement(
-                $request,
-                BotEngagementEvent::PayBill,
-                (int) $restaurant->id,
-                ['payment_id' => $payment->id, 'method' => 'ussd', 'quick' => true],
-            );
+            if (isset($result['status']) && $result['status'] === 'success') {
+                $paymentData = [
+                    'restaurant_id' => $restaurant->id,
+                    'customer_phone' => $request->phone_number,
+                    'amount' => $request->amount,
+                    'method' => 'ussd',
+                    'payment_type' => 'quick',
+                    'status' => 'pending',
+                    'transaction_reference' => $transactionId,
+                    'idempotency_key' => $idempotencyKey,
+                    'description' => $request->description,
+                ];
+                if (Schema::hasColumn('payments', 'waiter_id') && $request->waiter_id) {
+                    $paymentData['waiter_id'] = $request->waiter_id;
+                }
+                if (Schema::hasColumn('payments', 'tip_pool_id') && $request->tip_pool_id) {
+                    $paymentData['tip_pool_id'] = $request->tip_pool_id;
+                }
+                $payment = Payment::create($paymentData);
+
+                Activity::create([
+                    'description' => 'Quick payment initiated: '.Money::format($request->amount)." from {$request->phone_number}",
+                    'type' => 'quick_payment',
+                    'properties' => [
+                        'payment_id' => $payment->id,
+                        'source' => 'whatsapp',
+                        'description' => $request->description,
+                    ],
+                ]);
+
+                $this->recordBotEngagement(
+                    $request,
+                    BotEngagementEvent::PayBill,
+                    (int) $restaurant->id,
+                    ['payment_id' => $payment->id, 'method' => 'ussd', 'quick' => true],
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'payment_id' => $payment->id,
+                    'message' => 'USSD Prompt sent to '.$request->phone_number,
+                    'description' => $request->description,
+                ]);
+            }
 
             return response()->json([
-                'success' => true,
-                'payment_id' => $payment->id,
-                'message' => 'USSD Prompt sent to '.$request->phone_number,
-                'description' => $request->description,
-            ]);
+                'success' => false,
+                'message' => 'Unable to initiate payment right now. Please try again.',
+            ], 400);
+        } finally {
+            $paymentLock->release();
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => $result['message'] ?? 'Failed to initiate payment with '.config('tiptap.payment_gateway'),
-            'debug' => $result,
-        ], 400);
     }
 
     /**
@@ -1086,7 +1226,7 @@ class WhatsAppBotController extends Controller
 
                 // Update payment status based on Selcom response
                 if ($paymentStatus === 'paid') {
-                    $payment->update(['status' => 'paid']);
+                    $payment->update(['status' => 'paid', 'settled_at' => now()]);
 
                     if ($payment->waiter_id || $payment->tip_pool_id) {
                         app(TipPoolService::class)->settleQuickTipPayment($payment->fresh());
@@ -1197,12 +1337,28 @@ class WhatsAppBotController extends Controller
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
             'table_number' => 'nullable|string|max:50',
-            'table_id' => 'nullable|exists:tables,id',
-            'waiter_id' => 'nullable|exists:users,id',
+            'table_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('tables', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
+            'waiter_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
             'type' => 'required|in:call_waiter,request_bill',
         ]);
 
-        $table = $request->table_id ? Table::withoutGlobalScopes()->find($request->table_id) : null;
+        $table = $request->table_id
+            ? Table::withoutGlobalScopes()
+                ->where('restaurant_id', $request->restaurant_id)
+                ->find($request->table_id)
+            : null;
         $tableNumber = CustomerRequest::sanitizeTableNumber($request->table_number);
         if (($tableNumber === null || $tableNumber === '') && $table) {
             $tableNumber = $table->name;
@@ -1226,7 +1382,9 @@ class WhatsAppBotController extends Controller
         }
 
         if ($waiterId) {
-            $waiterForRequest = User::find($waiterId);
+            $waiterForRequest = User::query()
+                ->where('restaurant_id', $request->restaurant_id)
+                ->find($waiterId);
             if (! $waiterForRequest || ! $waiterForRequest->is_online) {
                 $waiterId = null;
             }
@@ -1235,7 +1393,9 @@ class WhatsAppBotController extends Controller
         // Get waiter info if waiter_id is set
         $waiterName = null;
         if ($waiterId) {
-            $waiter = User::find($waiterId);
+            $waiter = User::query()
+                ->where('restaurant_id', $request->restaurant_id)
+                ->find($waiterId);
             $waiterName = $waiter ? $waiter->name : null;
         }
 
@@ -1468,11 +1628,23 @@ class WhatsAppBotController extends Controller
             ], 404);
         }
 
+        $request->validate([
+            'table_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('tables', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $restaurant->id)
+                ),
+            ],
+        ]);
+
         $tableId = $request->filled('table_id') ? (int) $request->input('table_id') : null;
         $tableNumber = $request->input('table_number');
 
         if (! $tableNumber && $tableId) {
-            $table = Table::withoutGlobalScopes()->find($tableId);
+            $table = Table::withoutGlobalScopes()
+                ->where('restaurant_id', $restaurant->id)
+                ->find($tableId);
             $tableNumber = $table?->name;
         }
 
@@ -1518,13 +1690,25 @@ class WhatsAppBotController extends Controller
     {
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'table_id' => 'nullable|exists:tables,id',
+            'table_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('tables', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
             'table_number' => 'nullable|string',
-            'waiter_id' => 'nullable|exists:users,id',
+            'waiter_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('restaurant_id', $request->input('restaurant_id'))
+                ),
+            ],
             'customer_phone' => 'required',
             'customer_name' => 'nullable|string',
             'whatsapp_jid' => 'nullable|string|max:191',
-            'order_text' => 'required|string',
+            'order_text' => 'required|string|max:1000',
         ]);
 
         $text = $request->order_text;
@@ -1533,7 +1717,9 @@ class WhatsAppBotController extends Controller
         // Get table number from table_id if provided
         $tableNumber = $request->table_number;
         if (! $tableNumber && $request->table_id) {
-            $table = Table::withoutGlobalScopes()->find($request->table_id);
+            $table = Table::withoutGlobalScopes()
+                ->where('restaurant_id', $restaurantId)
+                ->find($request->table_id);
             $tableNumber = $table ? $table->name : null;
         }
 
@@ -1563,6 +1749,11 @@ class WhatsAppBotController extends Controller
                 $q1 = isset($matches[1]) && $matches[1] !== '' ? (int) $matches[1] : 0;
                 $q2 = isset($matches[2]) && $matches[2] !== '' ? (int) $matches[2] : 0;
                 $quantity = max($q1, $q2, 1);
+                if ($quantity > 99) {
+                    throw ValidationException::withMessages([
+                        'order_text' => 'Quantity for each menu item cannot exceed 99.',
+                    ]);
+                }
 
                 $matchedItems[] = [
                     'menu_item_id' => $item->id,

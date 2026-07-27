@@ -21,7 +21,7 @@ beforeEach(function (): void {
 
     $this->botUser->assignRole('bot_service');
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 });
 
 test('show returns defaults when no session exists yet', function (): void {
@@ -142,6 +142,13 @@ test('endpoints reject unauthenticated requests', function (): void {
     $this->withHeaders(['Accept' => 'application/json'])
         ->get('/api/bot/session?wa_id=255712345678')
         ->assertUnauthorized();
+});
+
+test('bot endpoints reject a token without the bot ability', function (): void {
+    Sanctum::actingAs($this->botUser, ['app']);
+
+    $this->getJson('/api/bot/session?wa_id=255700000099')
+        ->assertForbidden();
 });
 
 test('show expires idle restaurant sessions and returns expiry metadata', function (): void {

@@ -10,6 +10,12 @@ class LandingPageContent
 
     private static ?array $viewData = null;
 
+    public static function flushCache(): void
+    {
+        self::$storedValues = null;
+        self::$viewData = null;
+    }
+
     public static function value(string $key): string
     {
         $storedValues = self::storedValues();

@@ -44,7 +44,7 @@ beforeEach(function (): void {
 
     $this->botUser->assignRole('bot_service');
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 });
 
 test('bot can submit waiter feedback', function (): void {

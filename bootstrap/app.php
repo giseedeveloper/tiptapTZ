@@ -6,16 +6,18 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . "/../routes/web.php",
-        api: __DIR__ . "/../routes/api.php",
-        commands: __DIR__ . "/../routes/console.php",
-        health: "/up",
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
             'admin.portal' => \App\Http\Middleware\EnsureAdminPortal::class,
             'admin.section' => \App\Http\Middleware\EnsureAdminSection::class,
             'waiter.linked' => \App\Http\Middleware\EnsureWaiterIsLinked::class,
@@ -31,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Order Portal API (app nje ya browser) haitumii CSRF token
         $middleware->validateCsrfTokens(
-            except: ["api/order-portal/*", "order-portal/login"],
+            except: ['api/order-portal/*', 'order-portal/login'],
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

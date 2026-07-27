@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\Restaurant;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 
 it('returns bill image for a valid signed order url', function () {
     config()->set('whatsapp.bill_image_base_url', '');
@@ -88,8 +89,10 @@ it('includes bill image url in bot order status when order is served', function 
     $apiUser = User::factory()->create([
         'restaurant_id' => $restaurant->id,
     ]);
+    Role::firstOrCreate(['name' => 'bot_service', 'guard_name' => 'web']);
+    $apiUser->assignRole('bot_service');
 
-    Sanctum::actingAs($apiUser);
+    Sanctum::actingAs($apiUser, ['bot']);
 
     $order = Order::withoutGlobalScopes()->create([
         'restaurant_id' => $restaurant->id,

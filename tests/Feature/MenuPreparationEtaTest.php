@@ -99,7 +99,7 @@ test('bot category items and item details expose eta before ordering', function 
         'preparation_time' => null,
     ]);
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 
     $this->getJson('/api/bot/category/'.$this->category->id.'/items')
         ->assertOk()
@@ -158,7 +158,7 @@ test('manager api can override preparation time used for customer eta', function
 
     expect($item->fresh()->preparation_time)->toBe(12);
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 
     $this->getJson('/api/bot/item/'.$item->id)
         ->assertOk()

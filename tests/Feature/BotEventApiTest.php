@@ -49,7 +49,7 @@ beforeEach(function (): void {
 
     $this->botUser->assignRole('bot_service');
 
-    Sanctum::actingAs($this->botUser);
+    Sanctum::actingAs($this->botUser, ['bot']);
 });
 
 test('bot service can store a bot engagement event', function (): void {

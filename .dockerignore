@@ -3,6 +3,8 @@
 .env
 .env.*
 !.env.docker.example
+env
+*.sql
 node_modules
 vendor
 storage/logs/*
@@ -20,3 +22,6 @@ tests
 phpunit.xml
 temp_log.txt
 docker-from-sauth
+public/clear-cache.php
+public/debug_storage.php
+public/run_migrations.php

@@ -70,7 +70,7 @@ it('lets manager enable and disable digital tipping for specific staff', functio
 });
 
 it('bot tippable waiters list excludes staff without digital tips enabled', function (): void {
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $all = $this->getJson("/api/bot/restaurant/{$this->restaurant->id}/waiters")
         ->assertOk()
@@ -91,7 +91,7 @@ it('bot tippable waiters list excludes staff without digital tips enabled', func
 });
 
 it('rejects quick tip payments to staff without digital tips enabled', function (): void {
-    Sanctum::actingAs($this->bot);
+    Sanctum::actingAs($this->bot, ['bot']);
 
     $this->postJson('/api/bot/payment/quick', [
         'restaurant_id' => $this->restaurant->id,

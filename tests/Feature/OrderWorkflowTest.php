@@ -150,6 +150,48 @@ it('exposes stage times and bottlenecks on the manager dashboard', function (): 
         ->assertSee('Bottlenecks', false);
 });
 
+it('excludes reversed and stale workflow clocks from dashboard averages', function (): void {
+    $completedAt = now()->subMinutes(5);
+    $receivedAt = $completedAt->copy()->subMinutes(48);
+
+    $valid = makeOrder();
+    $valid->forceFill([
+        'status' => OrderWorkflow::COMPLETED,
+        'created_at' => $receivedAt,
+        'received_at' => $receivedAt,
+        'accepted_at' => $receivedAt->copy()->addMinutes(2),
+        'preparing_at' => $receivedAt->copy()->addMinutes(7),
+        'ready_at' => $receivedAt->copy()->addMinutes(28),
+        'served_at' => $receivedAt->copy()->addMinutes(35),
+        'completed_at' => $completedAt,
+    ])->saveQuietly();
+
+    $invalid = makeOrder();
+    $invalid->forceFill([
+        'status' => OrderWorkflow::COMPLETED,
+        'created_at' => $completedAt->copy()->subHour(),
+        'received_at' => $completedAt->copy()->addDay(),
+        'completed_at' => $completedAt,
+    ])->saveQuietly();
+
+    OrderStatusEvent::create([
+        'order_id' => $invalid->id,
+        'restaurant_id' => $this->restaurant->id,
+        'from_status' => OrderWorkflow::RECEIVED,
+        'to_status' => OrderWorkflow::ACCEPTED,
+        'changed_by' => $this->manager->id,
+        'source' => 'legacy_test',
+        'duration_seconds' => 30 * 24 * 60 * 60,
+    ]);
+
+    $metrics = $this->workflow->dashboardMetrics($this->restaurant->id);
+    $receivedStage = collect($metrics['stage_times'])->firstWhere('key', OrderWorkflow::RECEIVED);
+
+    expect($metrics['avg_total_minutes'])->toBe(48.0)
+        ->and($receivedStage['avg_minutes'])->toBe(2.0)
+        ->and($receivedStage['sample_size'])->toBe(1);
+});
+
 it('accepts legacy paid status on API update and stores completed', function (): void {
     $order = makeOrder(['status' => OrderWorkflow::SERVED, 'served_at' => now()]);
 

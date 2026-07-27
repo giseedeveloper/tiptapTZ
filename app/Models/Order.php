@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    private const DEFAULT_WHATSAPP_COUNTRY_CODE = '255';
+
     protected $fillable = [
         'restaurant_id',
         'waiter_id',
@@ -199,7 +201,14 @@ class Order extends Model
      */
     protected static function whatsappJidFromDigits(string $digits): string
     {
-        $countryCode = (string) config('tiptap.country_code', '27');
+        $countryCode = self::DEFAULT_WHATSAPP_COUNTRY_CODE;
+
+        if (function_exists('app') && app()->bound('config')) {
+            $countryCode = (string) app('config')->get(
+                'tiptap.country_code',
+                self::DEFAULT_WHATSAPP_COUNTRY_CODE,
+            );
+        }
 
         if (preg_match('/^0(\d{9})$/', $digits, $matches) === 1) {
             return $countryCode.$matches[1].'@s.whatsapp.net';

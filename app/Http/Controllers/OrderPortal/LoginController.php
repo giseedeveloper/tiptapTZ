@@ -29,12 +29,27 @@ class LoginController extends Controller
         ]);
 
         $plain = $request->password;
+        $lookupHash = OrderPortalPassword::passwordLookupHash($plain);
 
         $credential = OrderPortalPassword::query()
             ->whereNull('revoked_at')
+            ->where('lookup_hash', $lookupHash)
             ->with(['user', 'restaurant'])
-            ->get()
-            ->first(fn ($c) => $c->checkPassword($plain));
+            ->first();
+
+        // Upgrade credentials created before indexed password lookup existed.
+        if (! $credential) {
+            $credential = OrderPortalPassword::query()
+                ->whereNull('revoked_at')
+                ->whereNull('lookup_hash')
+                ->with(['user', 'restaurant'])
+                ->get()
+                ->first(fn (OrderPortalPassword $candidate) => $candidate->checkPassword($plain));
+
+            if ($credential) {
+                $credential->forceFill(['lookup_hash' => $lookupHash])->saveQuietly();
+            }
+        }
 
         if (! $credential) {
             if ($request->expectsJson()) {
@@ -59,17 +74,22 @@ class LoginController extends Controller
             return back()->with('error', 'Huna ufikiaji wa Order Portal. Wasiliana na manager wako.');
         }
 
-        session([
+        $request->session()->regenerate();
+        $request->session()->put([
             'order_portal_restaurant_id' => $credential->restaurant_id,
             'order_portal_user_id' => $user->id,
+            'order_portal_credential_id' => $credential->id,
+            'order_portal_credential_version' => $credential->versionFingerprint(),
         ]);
 
         if ($request->expectsJson()) {
             $token = Str::random(64);
-            Cache::put('order_portal_token:'.$token, [
+            Cache::put(OrderPortalPassword::tokenCacheKey($token), [
                 'restaurant_id' => $credential->restaurant_id,
                 'user_id' => $user->id,
-            ], now()->addDays(30));
+                'credential_id' => $credential->id,
+                'credential_version' => $credential->versionFingerprint(),
+            ], now()->addHours(max(1, (int) config('order_portal.token_ttl_hours', 12))));
 
             return response()->json([
                 'success' => true,
@@ -91,9 +111,10 @@ class LoginController extends Controller
     {
         $bearer = $request->bearerToken();
         if ($bearer) {
-            Cache::forget('order_portal_token:'.$bearer);
+            Cache::forget(OrderPortalPassword::tokenCacheKey($bearer));
         }
-        session()->forget(['order_portal_restaurant_id', 'order_portal_user_id']);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         if ($request->expectsJson()) {
             return response()->json([

@@ -1097,7 +1097,7 @@ Route::prefix("order-portal")
         Route::post("/login", [
             \App\Http\Controllers\OrderPortal\LoginController::class,
             "store",
-        ]);
+        ])->middleware("throttle:order-portal-login");
         Route::post("/logout", [
             \App\Http\Controllers\OrderPortal\LoginController::class,
             "destroy",

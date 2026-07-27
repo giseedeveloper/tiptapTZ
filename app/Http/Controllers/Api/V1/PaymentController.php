@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\Concerns\AuthorizesRestaurantAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
@@ -9,9 +10,15 @@ use App\Services\OrderWorkflowService;
 use App\Services\SelcomService;
 use App\Support\Money;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
+    use AuthorizesRestaurantAccess;
+
     protected SelcomService $selcom;
 
     public function __construct(SelcomService $selcom, private OrderWorkflowService $workflow)
@@ -26,54 +33,107 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'phone_number' => 'required|string',
+            'phone_number' => 'required|string|max:30',
         ]);
 
         $order = Order::with('restaurant')->find($validated['order_id']);
-        $restaurant = $order->restaurant;
+        $this->authorizeOrderAccess($request, $order);
+        $idempotencyKey = trim((string) $request->header('Idempotency-Key', ''));
+        if (strlen($idempotencyKey) > 100) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'The idempotency key may not be greater than 100 characters.',
+            ]);
+        }
+        $idempotencyKey = $idempotencyKey !== '' ? $idempotencyKey : null;
 
-        if (! $restaurant || ! $restaurant->canAcceptMobilePayments()) {
+        $paymentLock = Cache::lock('payment-initiation:order:'.$order->id, 45);
+        if (! $paymentLock->get()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mobile money payments are not available for this venue right now.',
-            ], 400);
+                'message' => 'A payment request is already being processed for this order.',
+            ], 409);
         }
 
-        $transactionRef = 'TXN-'.strtoupper(uniqid());
+        try {
+            $order->refresh();
+            $restaurant = $order->restaurant;
 
-        $result = $this->selcom->initiatePayment($restaurant->getSelcomCredentials(), [
-            'order_id' => $transactionRef,
-            'email' => 'customer@taptap.co.tz',
-            'name' => 'Customer',
-            'phone' => $validated['phone_number'],
-            'amount' => $order->total_amount,
-            'description' => 'Order #'.$order->id,
-        ]);
+            if ($idempotencyKey) {
+                $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first();
+                if ($existing) {
+                    abort_unless((int) $existing->order_id === (int) $order->id, 409);
 
-        if (isset($result['status']) && $result['status'] === 'success') {
-            $payment = Payment::create([
-                'order_id' => $order->id,
-                'restaurant_id' => $restaurant->id,
-                'waiter_id' => $order->waiter_id,
-                'customer_phone' => $validated['phone_number'],
+                    return response()->json([
+                        'success' => in_array($existing->status, ['pending', 'paid', 'completed'], true),
+                        'payment_id' => $existing->id,
+                        'status' => $existing->status,
+                        'transaction_reference' => $existing->transaction_reference,
+                        'reused' => true,
+                    ]);
+                }
+            }
+
+            $activePayment = $order->payments()
+                ->where('method', 'ussd')
+                ->whereIn('status', ['pending', 'paid', 'completed'])
+                ->latest('id')
+                ->first();
+
+            if ($activePayment) {
+                return response()->json([
+                    'success' => true,
+                    'payment_id' => $activePayment->id,
+                    'status' => $activePayment->status,
+                    'transaction_reference' => $activePayment->transaction_reference,
+                    'reused' => true,
+                ]);
+            }
+
+            if (! $restaurant || ! $restaurant->canAcceptMobilePayments()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mobile money payments are not available for this venue right now.',
+                ], 400);
+            }
+
+            $transactionRef = 'TXN-'.Str::uuid();
+            $result = $this->selcom->initiatePayment($restaurant->getSelcomCredentials(), [
+                'order_id' => $transactionRef,
+                'email' => 'customer@taptap.co.tz',
+                'name' => 'Customer',
+                'phone' => $validated['phone_number'],
                 'amount' => $order->total_amount,
-                'method' => 'ussd',
-                'status' => 'pending',
-                'transaction_reference' => $transactionRef,
+                'description' => 'Order #'.$order->id,
             ]);
+
+            if (isset($result['status']) && $result['status'] === 'success') {
+                $payment = Payment::create([
+                    'order_id' => $order->id,
+                    'restaurant_id' => $restaurant->id,
+                    'waiter_id' => $order->waiter_id,
+                    'customer_phone' => $validated['phone_number'],
+                    'amount' => $order->total_amount,
+                    'method' => 'ussd',
+                    'status' => 'pending',
+                    'transaction_reference' => $transactionRef,
+                    'idempotency_key' => $idempotencyKey,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'USSD push sent to '.$validated['phone_number'],
+                    'transaction_reference' => $transactionRef,
+                    'payment_id' => $payment->id,
+                ]);
+            }
 
             return response()->json([
-                'success' => true,
-                'message' => 'USSD push sent to '.$validated['phone_number'],
-                'transaction_reference' => $transactionRef,
-                'payment_id' => $payment->id,
-            ]);
+                'success' => false,
+                'message' => $result['message'] ?? 'Failed to initiate payment',
+            ], 400);
+        } finally {
+            $paymentLock->release();
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => $result['message'] ?? 'Failed to initiate payment',
-        ], 400);
     }
 
     /**
@@ -88,6 +148,7 @@ class PaymentController extends Controller
         ]);
 
         $order = Order::find($validated['order_id']);
+        $this->authorizeOrderAccess($request, $order);
         $orderTotal = (float) $order->total_amount;
         $amountReceived = (float) $validated['amount_received'];
         $changeToGive = max(0, $amountReceived - $orderTotal);
@@ -116,21 +177,46 @@ class PaymentController extends Controller
         ]);
 
         $order = Order::with('restaurant')->find($validated['order_id']);
-        $orderTotal = (float) $order->total_amount;
-        $amountReceived = isset($validated['amount_received']) ? (float) $validated['amount_received'] : null;
-        $changeToGive = $amountReceived !== null ? max(0, $amountReceived - $orderTotal) : null;
+        $this->authorizeOrderAccess($request, $order);
 
-        $payment = Payment::create([
-            'order_id' => $order->id,
-            'restaurant_id' => $order->restaurant_id,
-            'waiter_id' => $order->waiter_id,
-            'amount' => $order->total_amount,
-            'method' => 'cash',
-            'status' => 'paid',
-            'transaction_reference' => 'CASH-'.strtoupper(uniqid()),
-        ]);
+        [$payment, $orderTotal, $amountReceived, $changeToGive] = DB::transaction(function () use ($order, $validated): array {
+            $order = Order::withoutGlobalScopes()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $orderTotal = (float) $order->total_amount;
+            $amountReceived = isset($validated['amount_received']) ? (float) $validated['amount_received'] : null;
 
-        $this->workflow->completeFromPayment($order, 'cash');
+            if ($amountReceived !== null && $amountReceived + 0.00001 < $orderTotal) {
+                throw ValidationException::withMessages([
+                    'amount_received' => 'Amount received cannot be less than the order total.',
+                ]);
+            }
+
+            $changeToGive = $amountReceived !== null ? max(0, $amountReceived - $orderTotal) : null;
+            $payment = Payment::query()
+                ->where('order_id', $order->id)
+                ->where('method', 'cash')
+                ->whereIn('status', ['paid', 'completed'])
+                ->first();
+
+            if (! $payment) {
+                $payment = Payment::create([
+                    'order_id' => $order->id,
+                    'restaurant_id' => $order->restaurant_id,
+                    'waiter_id' => $order->waiter_id,
+                    'amount' => $order->total_amount,
+                    'method' => 'cash',
+                    'status' => 'paid',
+                    'settled_at' => now(),
+                    'transaction_reference' => 'CASH-'.Str::uuid(),
+                ]);
+            }
+
+            $this->workflow->completeFromPayment($order, 'cash');
+
+            return [$payment, $orderTotal, $amountReceived, $changeToGive];
+        });
 
         $response = [
             'success' => true,
@@ -152,8 +238,9 @@ class PaymentController extends Controller
      * Check Payment Status (Polling)
      * This endpoint is called repeatedly by clients to check payment status
      */
-    public function status(Order $order)
+    public function status(Request $request, Order $order)
     {
+        $this->authorizeOrderAccess($request, $order);
         $order->load('restaurant');
         $payment = $order->payments()->where('method', 'ussd')->latest()->first();
 
@@ -168,7 +255,7 @@ class PaymentController extends Controller
                 $paymentStatus = $this->selcom->parsePaymentStatus($result);
 
                 if ($paymentStatus === 'paid') {
-                    $payment->update(['status' => 'paid']);
+                    $payment->update(['status' => 'paid', 'settled_at' => now()]);
                     $this->workflow->completeFromPayment($order, 'ussd');
                 } elseif ($paymentStatus === 'failed') {
                     $payment->update(['status' => 'failed']);

@@ -209,7 +209,7 @@ test('bot demo payment api tags payment to order restaurant only', function () {
 
     $botUser = User::factory()->create();
     $botUser->assignRole('bot_service');
-    $token = $botUser->createToken('bot-test')->plainTextToken;
+    $token = $botUser->createToken('bot-test', ['bot'])->plainTextToken;
 
     $orderA = Order::create([
         'restaurant_id' => $this->restaurantA->id,
@@ -246,8 +246,54 @@ test('bot demo payment api tags payment to order restaurant only', function () {
 
     expect(Payment::query()->where('restaurant_id', $this->restaurantA->id)->count())->toBe(1)
         ->and(Payment::query()->where('restaurant_id', $this->restaurantB->id)->count())->toBe(1)
-        ->and($wallet->availableBalance($this->restaurantA))->toBe(18000.0)
-        ->and($wallet->availableBalance($this->restaurantB))->toBe(42000.0);
+        ->and(Payment::query()->where('is_demo', true)->count())->toBe(2)
+        ->and($wallet->availableBalance($this->restaurantA))->toBe(0.0)
+        ->and($wallet->availableBalance($this->restaurantB))->toBe(0.0);
+});
+
+test('bot payment rejects a manipulated amount and reuses an idempotent request', function () {
+    Setting::set('demo_push', '1', 'payments');
+
+    $botUser = User::factory()->create();
+    $botUser->assignRole('bot_service');
+    $token = $botUser->createToken('bot-payment-security', ['bot'])->plainTextToken;
+    $order = Order::create([
+        'restaurant_id' => $this->restaurantA->id,
+        'table_number' => 'S1',
+        'status' => 'pending',
+        'total_amount' => 18000,
+    ]);
+
+    $this->withToken($token)
+        ->postJson('/api/bot/payment/ussd', [
+            'order_id' => $order->id,
+            'phone_number' => '255700000003',
+            'amount' => 100,
+        ])
+        ->assertUnprocessable();
+
+    $first = $this->withToken($token)
+        ->withHeader('Idempotency-Key', 'secure-order-'.$order->id)
+        ->postJson('/api/bot/payment/ussd', [
+            'order_id' => $order->id,
+            'phone_number' => '255700000003',
+            'amount' => 18000,
+        ])
+        ->assertSuccessful();
+
+    $this->withToken($token)
+        ->withHeader('Idempotency-Key', 'secure-order-'.$order->id)
+        ->postJson('/api/bot/payment/ussd', [
+            'order_id' => $order->id,
+            'phone_number' => '255700000003',
+            'amount' => 18000,
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('payment_id', $first->json('payment_id'))
+        ->assertJsonPath('reused', true);
+
+    expect(Payment::query()->where('order_id', $order->id)->count())->toBe(1)
+        ->and((float) Payment::query()->where('order_id', $order->id)->value('amount'))->toBe(18000.0);
 });
 
 test('manager B wallet does not include restaurant A earnings', function () {
