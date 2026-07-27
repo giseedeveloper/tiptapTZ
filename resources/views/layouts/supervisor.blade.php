@@ -152,11 +152,12 @@
             width: 100%;
         }
     </style>
+    @include('partials.portal-theme')
 </head>
-<body class="font-sans antialiased text-white min-h-screen pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
+<body class="portal-light font-sans antialiased text-white min-h-screen pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
 
     <!-- Top Navigation Bar -->
-    <nav class="glass sticky top-0 z-30 px-4 md:px-6 py-3 flex items-center justify-between border-b border-white/10">
+    <nav class="portal-brand-topbar glass sticky top-0 z-30 px-4 md:px-6 py-3 flex items-center justify-between border-b border-white/10">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0">
                 <img src="{{ asset('images/logo.png') }}" alt="TIPTAP" class="w-full h-full object-contain">

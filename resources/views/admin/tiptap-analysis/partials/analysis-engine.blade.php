@@ -70,8 +70,8 @@
     const buildEmptyDonut = (centerLabel, centerSub, hint) =>
         '<div class="flex flex-col items-center gap-4 w-full">' +
         '<div class="relative shrink-0" style="width:9rem;height:9rem">' +
-        '<div class="w-full h-full rounded-full" style="background:conic-gradient(from -90deg, rgba(255,255,255,0.1) 0% 100%)"></div>' +
-        '<div class="absolute inset-[14%] rounded-full bg-[#12101c] border border-white/10 flex flex-col items-center justify-center text-center px-2">' +
+        '<div class="w-full h-full rounded-full" style="background:conic-gradient(from -90deg, rgba(140,113,246,0.12) 0% 100%)"></div>' +
+        '<div class="absolute inset-[14%] rounded-full bg-white border border-fin-lavender flex flex-col items-center justify-center text-center px-2">' +
         '<span class="text-2xl font-black text-white/70 leading-none">' + esc(centerLabel) + '</span>' +
         (centerSub ? '<span class="text-[9px] font-bold text-white/35 uppercase tracking-widest mt-1">' + esc(centerSub) + '</span>' : '') +
         '</div></div>' +
@@ -93,7 +93,7 @@
         });
         const gradient = parts.length
             ? 'conic-gradient(from -90deg, ' + parts.join(', ') + ')'
-            : 'conic-gradient(from -90deg, rgba(255,255,255,0.08) 0% 100%)';
+            : 'conic-gradient(from -90deg, rgba(140,113,246,0.12) 0% 100%)';
 
         if (filtered.length === 0) {
             root.innerHTML = buildEmptyDonut(centerLabel, centerSub, 'Waiting for data');
@@ -112,7 +112,7 @@
             '<div class="flex flex-col items-center gap-5">' +
             '<div class="relative shrink-0" style="width:9rem;height:9rem">' +
             '<div class="w-full h-full rounded-full shadow-lg shadow-fin-primary/20" style="background:' + gradient + '"></div>' +
-            '<div class="absolute inset-[14%] rounded-full bg-[#12101c] border border-white/10 flex flex-col items-center justify-center text-center px-2">' +
+            '<div class="absolute inset-[14%] rounded-full bg-white border border-fin-lavender flex flex-col items-center justify-center text-center px-2">' +
             '<span class="text-2xl font-black text-white leading-none">' + esc(centerLabel) + '</span>' +
             (centerSub ? '<span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-1">' + esc(centerSub) + '</span>' : '') +
             '</div></div>' +
@@ -264,7 +264,7 @@
         root.innerHTML =
             '<div class="platform-venue-ring platform-animate-in">' +
             '<svg width="152" height="152" viewBox="0 0 100 100">' +
-            '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
+            '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(140,113,246,0.12)" stroke-width="10"/>' +
             '<circle cx="50" cy="50" r="42" fill="none" stroke="url(#venueGrad)" stroke-width="10" ' +
             'stroke-linecap="round" stroke-dasharray="' + dash + ' ' + circumference + '"/>' +
             '<defs><linearGradient id="venueGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
@@ -959,7 +959,7 @@
         root.innerHTML =
             '<div class="jn-conversion-ring jn-animate-in">' +
             '<svg width="96" height="96" viewBox="0 0 80 80">' +
-            '<circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>' +
+            '<circle cx="40" cy="40" r="36" fill="none" stroke="rgba(140,113,246,0.12)" stroke-width="8"/>' +
             '<circle cx="40" cy="40" r="36" fill="none" stroke="' + color + '" stroke-width="8" ' +
             'stroke-linecap="round" stroke-dasharray="' + dash + ' ' + circumference + '"/></svg>' +
             '<div class="jn-conversion-ring-center">' +
@@ -994,12 +994,12 @@
             const points = x1 + ',' + y1 + ' ' + x2 + ',' + y1 + ' ' + x3 + ',' + y2 + ' ' + x4 + ',' + y2;
             const pct = startCount > 0 ? Math.round((step.count / startCount) * 1000) / 10 : 0;
 
-            shapes += '<polygon class="jn-funnel-layer" points="' + points + '" fill="' + color + '" opacity="0.88" stroke="rgba(255,255,255,0.15)" stroke-width="1">' +
+            shapes += '<polygon class="jn-funnel-layer" points="' + points + '" fill="' + color + '" opacity="0.88" stroke="rgba(91,63,214,0.24)" stroke-width="1">' +
                 '<title>' + esc(step.label) + ': ' + fmt(step.count || 0) + ' (' + pct + '%)</title></polygon>';
 
             if (topW > 50) {
-                labels += '<text x="' + cx + '" y="' + (y + layerH / 2 + 4) + '" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">' + esc(step.label) + '</text>' +
-                    '<text x="' + cx + '" y="' + (y + layerH / 2 + 16) + '" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="9" font-weight="600">' + fmt(step.count || 0) + ' · ' + pct + '%</text>';
+                labels += '<text x="' + cx + '" y="' + (y + layerH / 2 + 4) + '" text-anchor="middle" fill="#12141C" font-size="11" font-weight="700">' + esc(step.label) + '</text>' +
+                    '<text x="' + cx + '" y="' + (y + layerH / 2 + 16) + '" text-anchor="middle" fill="#64708B" font-size="9" font-weight="600">' + fmt(step.count || 0) + ' · ' + pct + '%</text>';
             }
             y += layerH + gap;
         });
@@ -1285,7 +1285,7 @@
             root.innerHTML =
                 '<div class="fb-rating-gauge-ring fb-animate-in">' +
                 '<svg width="144" height="144" viewBox="0 0 100 100">' +
-                '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/></svg>' +
+                '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(140,113,246,0.12)" stroke-width="10"/></svg>' +
                 '<div class="fb-rating-gauge-center">' +
                 '<span class="text-3xl font-black text-white/50 tabular-nums">0</span>' +
                 '<span class="text-[9px] font-bold text-white/35 mt-0.5">out of 5</span></div></div>';
@@ -1304,7 +1304,7 @@
         root.innerHTML =
             '<div class="fb-rating-gauge-ring fb-animate-in">' +
             '<svg width="144" height="144" viewBox="0 0 100 100">' +
-            '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
+            '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(140,113,246,0.12)" stroke-width="10"/>' +
             '<circle cx="50" cy="50" r="42" fill="none" stroke="' + color + '" stroke-width="10" ' +
             'stroke-linecap="round" stroke-dasharray="' + dash + ' ' + circumference + '"/></svg>' +
             '<div class="fb-rating-gauge-center">' +
@@ -2028,7 +2028,7 @@
             root.innerHTML =
                 '<div class="pl-venue-ring pl-animate-in">' +
                 '<svg width="152" height="152" viewBox="0 0 100 100">' +
-                '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
+                '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(140,113,246,0.12)" stroke-width="10"/>' +
                 '<circle cx="50" cy="50" r="42" fill="none" stroke="url(#pulseVenueGrad)" stroke-width="10" ' +
                 'stroke-linecap="round" stroke-dasharray="' + dash + ' ' + circumference + '"/>' +
                 '<defs><linearGradient id="pulseVenueGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +

@@ -12,13 +12,13 @@
     }
     $gradient = count($gradientParts) > 0
         ? 'conic-gradient(from -90deg, '.implode(', ', $gradientParts).')'
-        : 'conic-gradient(from -90deg, rgba(255,255,255,0.08) 0% 100%)';
+        : 'conic-gradient(from -90deg, rgba(140,113,246,0.12) 0% 100%)';
 @endphp
 
 <div class="flex flex-col items-center gap-5">
     <div class="relative shrink-0" style="width: {{ $size }}; height: {{ $size }};">
         <div class="w-full h-full rounded-full shadow-lg shadow-fin-primary/20" style="background: {{ $gradient }};"></div>
-        <div class="absolute inset-[14%] rounded-full bg-[#12101c] border border-white/10 flex flex-col items-center justify-center text-center px-2">
+        <div class="absolute inset-[14%] rounded-full bg-white border border-fin-lavender flex flex-col items-center justify-center text-center px-2">
             <span class="text-2xl font-black text-white leading-none">{{ $centerLabel }}</span>
             @if($centerSub)
                 <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-1">{{ $centerSub }}</span>

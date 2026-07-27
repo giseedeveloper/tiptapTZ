@@ -23,11 +23,12 @@
             .sidebar-collapsed { width: 80px !important; }
             .main-expanded { margin-left: 80px !important; }
         </style>
+        @include('partials.portal-theme')
     </head>
-    <body class="font-sans antialiased bg-[#F8FAFC] text-deep-blue">
+    <body class="portal-light font-sans antialiased bg-[#F8FAFC] text-deep-blue">
         <div class="flex min-h-screen">
             <!-- Sidebar -->
-            <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-deep-blue text-white transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden shadow-2xl">
+            <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white text-[#12141C] border-r border-[#E8E8ED] transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden shadow-xl">
                 <div class="flex flex-col h-full p-6">
                     <!-- Logo -->
                     <div class="flex items-center justify-between mb-10 px-2">

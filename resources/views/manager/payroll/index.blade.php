@@ -312,7 +312,7 @@
                                     <span class="acc-name">{{ $waiter->name }}</span>
                                     <span class="acc-pill {{ $isPaid ? 'paid' : 'pending' }}">{{ $isPaid ? '✓ Paid' : '○ Pending' }}</span>
                                 </div>
-                                <div class="acc-gw">GW-{{ $waiter->global_waiter_number ?? '—' }}</div>
+                                <div class="acc-gw">{{ $waiter->global_waiter_number ?? '—' }}</div>
                             </div>
                             <div class="acc-net-peek">
                                 <div class="plabel">Net</div>

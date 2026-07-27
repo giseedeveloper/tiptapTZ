@@ -106,7 +106,7 @@
                             <div class="flex justify-between items-start mb-1">
                                 <div>
                                     <h5 class="font-bold text-white truncate">{{ $feedback->order->customer_name ?? 'Feedback for ' . ($feedback->waiter->name ?? 'Service') }}</h5>
-                                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{{ $feedback->created_at->diffForHumans() }} • Table #{{ $feedback->order->table_number ?? 'N/A' }}</p>
+                                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{{ $feedback->created_at->diffForHumans() }} • {{ \App\Support\TableDisplay::label($feedback->order?->table_number) }}</p>
                                 </div>
                                 <div class="flex gap-0.5">
                                     @for($i = 1; $i <= 5; $i++)

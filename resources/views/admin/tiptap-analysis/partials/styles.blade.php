@@ -1356,4 +1356,136 @@
     .pl-insight-card.is-warning { border-color: rgba(245,158,11,0.35); background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(12,10,22,0.9) 100%); }
     .pl-insight-card.is-info { border-color: rgba(140,113,246,0.35); background: linear-gradient(135deg, rgba(140,113,246,0.1) 0%, rgba(12,10,22,0.9) 100%); }
     .pl-animate-in { animation: platform-fade-up 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) both; }
+
+    /* ── Light portal surface overrides ── */
+    .portal-light .hub-hero,
+    .portal-light .analysis-hero,
+    .portal-light .tiptap-analysis-content [class$="-hero"],
+    .portal-light .tiptap-analysis-content [class*="-hero "] {
+        background: linear-gradient(135deg, rgba(140, 113, 246, 0.14) 0%, rgba(245, 243, 255, 0.96) 48%, #FFFFFF 100%) !important;
+        border-color: rgba(140, 113, 246, 0.24) !important;
+        box-shadow: 0 22px 54px -34px rgba(91, 63, 214, 0.38) !important;
+    }
+
+    .portal-light .hub-card,
+    .portal-light .analysis-hub-card,
+    .portal-light .journey-step-card,
+    .portal-light .tiptap-analysis-content [class$="-panel"],
+    .portal-light .tiptap-analysis-content [class*="-panel "],
+    .portal-light .tiptap-analysis-content [class$="-card"],
+    .portal-light .tiptap-analysis-content [class*="-card "] {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border-color: rgba(140, 113, 246, 0.14) !important;
+        box-shadow: 0 16px 38px -28px rgba(91, 63, 214, 0.30) !important;
+    }
+
+    .portal-light .hub-badge,
+    .portal-light .hub-stat-chip,
+    .portal-light .hub-pill,
+    .portal-light .analysis-hub-pill,
+    .portal-light .tiptap-analysis-content [class$="-chip"],
+    .portal-light .tiptap-analysis-content [class*="-chip "],
+    .portal-light .tiptap-analysis-content [class$="-pill"],
+    .portal-light .tiptap-analysis-content [class*="-pill "] {
+        background: rgba(140, 113, 246, 0.065) !important;
+        border-color: rgba(140, 113, 246, 0.18) !important;
+        color: #64708B !important;
+    }
+
+    .portal-light .hub-stat-chip__value,
+    .portal-light .hub-card__title,
+    .portal-light .tiptap-analysis-content [class$="-value"],
+    .portal-light .tiptap-analysis-content [class*="-value "],
+    .portal-light .tiptap-analysis-content .value,
+    .portal-light .tiptap-analysis-content :is(h2, h3, h4) {
+        color: #12141C !important;
+    }
+
+    .portal-light .hub-stat-chip__label,
+    .portal-light .hub-stat-chip__sub,
+    .portal-light .hub-card__tag,
+    .portal-light .hub-card__desc,
+    .portal-light .hub-card__cta,
+    .portal-light .hub-card__arrow,
+    .portal-light .tiptap-analysis-content [class$="-label"],
+    .portal-light .tiptap-analysis-content [class*="-label "],
+    .portal-light .tiptap-analysis-content [class$="-desc"],
+    .portal-light .tiptap-analysis-content [class*="-desc "],
+    .portal-light .chart-empty-state__text,
+    .portal-light .chart-zero-hint,
+    .portal-light .wa-trend-ytick,
+    .portal-light .wa-trend-xtick,
+    .portal-light .lg-hour-ytick,
+    .portal-light .lg-hour-xtick,
+    .portal-light .platform-bar-label {
+        color: #64708B !important;
+    }
+
+    .portal-light .hub-pill:hover,
+    .portal-light .hub-card:hover .hub-card__cta,
+    .portal-light .hub-card:hover .hub-card__arrow,
+    .portal-light .analysis-hub-pill:hover {
+        color: #5B3FD6 !important;
+    }
+
+    .portal-light .chart-empty-state,
+    .portal-light .spotlight-placeholder {
+        background: rgba(140, 113, 246, 0.035) !important;
+        border-color: rgba(140, 113, 246, 0.20) !important;
+    }
+
+    .portal-light .analysis-filter-bar,
+    .portal-light .platform-bar-tooltip,
+    .portal-light .platform-venue-ring-center,
+    .portal-light .jn-conversion-ring-center,
+    .portal-light .fb-rating-gauge-center,
+    .portal-light .pl-venue-ring-center {
+        background: #FFFFFF !important;
+        border-color: #E8E8ED !important;
+        color: #12141C !important;
+        box-shadow: 0 12px 30px -24px rgba(91, 63, 214, 0.35) !important;
+    }
+
+    .portal-light .tiptap-analysis-content [class$="-bar-track"],
+    .portal-light .tiptap-analysis-content [class*="-bar-track "],
+    .portal-light .tiptap-analysis-content [class$="-retention-track"],
+    .portal-light .tiptap-analysis-content [class*="-retention-track "] {
+        background: #EDE9FE !important;
+    }
+
+    .portal-light .tiptap-analysis-content table th {
+        color: #64708B !important;
+    }
+
+    .portal-light .tiptap-analysis-content table td {
+        color: #334155 !important;
+        border-color: #E8E8ED !important;
+    }
+
+    .portal-light .tiptap-analysis-content [class*="-insight-card"].is-positive,
+    .portal-light .journey-step-card.is-success {
+        background: #ECFDF5 !important;
+        border-color: rgba(16, 185, 129, 0.24) !important;
+    }
+
+    .portal-light .tiptap-analysis-content [class*="-insight-card"].is-warning,
+    .portal-light .journey-step-card.is-weakest {
+        background: #FFFBEB !important;
+        border-color: rgba(245, 158, 11, 0.26) !important;
+    }
+
+    .portal-light .tiptap-analysis-content [class*="-insight-card"].is-alert {
+        background: #FFF1F2 !important;
+        border-color: rgba(244, 63, 94, 0.24) !important;
+    }
+
+    .portal-light .tiptap-analysis-content [class*="-insight-card"].is-info {
+        background: #F5F3FF !important;
+        border-color: rgba(140, 113, 246, 0.24) !important;
+    }
+
+    .portal-light .analysis-skeleton {
+        background: linear-gradient(90deg, #F5F3FF 25%, #EDE9FE 50%, #F5F3FF 75%) !important;
+        background-size: 200% 100% !important;
+    }
 </style>

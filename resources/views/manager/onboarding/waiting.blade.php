@@ -34,8 +34,9 @@
         .dot-blink span:nth-child(2) { animation-delay: 0.2s; }
         .dot-blink span:nth-child(3) { animation-delay: 0.4s; }
     </style>
+    @include('partials.portal-theme')
 </head>
-<body class="text-white antialiased">
+<body class="portal-light text-white antialiased">
     @php $isRejected = $restaurant->isRejected(); @endphp
 
     <div class="fixed inset-0 pointer-events-none overflow-hidden">

@@ -35,7 +35,7 @@
                         <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">
                             {{ $feedback->created_at->diffForHumans() }}
                             @if($feedback->order?->table_number)
-                                • Table #{{ $feedback->order->table_number }}
+                                • {{ \App\Support\TableDisplay::label($feedback->order->table_number) }}
                             @endif
                             • Order #{{ $feedback->order_id }}
                         </p>

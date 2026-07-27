@@ -3,12 +3,12 @@
         Live Orders
     </x-slot>
 
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
             <h2 class="text-3xl font-bold text-white tracking-tight">Live Orders</h2>
             <p class="text-sm font-medium text-white/40 uppercase tracking-wider">Real-time order management</p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex w-full flex-wrap gap-3 sm:w-auto">
             <button onclick="openCreateOrderModal()" class="bg-violet-600 hover:bg-violet-700 text-white px-5 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg shadow-violet-600/20">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -78,14 +78,14 @@
                     @forelse($col['orders'] as $order)
                         @php
                             $stageStarted = $order->{$col['key'].'_at'} ?? $order->updated_at ?? $order->created_at;
-                            $minsInStage = $stageStarted ? $stageStarted->diffInMinutes(now()) : 0;
+                            $minsInStage = $stageStarted ? max(0, (int) floor($stageStarted->diffInMinutes(now()))) : 0;
                             $isWhatsAppOrder = filled($order->whatsapp_jid);
                             $billAlreadySent = ! is_null($order->bill_image_pushed_at);
                         @endphp
                         <div class="glass p-4 rounded-xl card-hover group">
                             <div class="flex justify-between items-start mb-3">
                                 <div class="flex flex-col gap-1">
-                                    <span class="{{ $col['tag'] }} px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border">Table #{{ $order->table_number }}</span>
+                                    <span class="{{ $col['tag'] }} px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border">{{ \App\Support\TableDisplay::label($order->table_number) }}</span>
                                     @if($order->waiter)
                                         <span class="text-[10px] font-medium text-cyan-500">{{ $order->waiter->name }}</span>
                                     @else

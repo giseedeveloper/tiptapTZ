@@ -143,7 +143,7 @@
                                 <div>{{ $order->created_at->format('M d, Y') }}</div>
                                 <div class="text-xs text-white/40">{{ $order->created_at->format('H:i') }}</div>
                             </td>
-                            <td class="px-6 py-5 font-semibold text-white">Table #{{ $order->table_number }}</td>
+                            <td class="px-6 py-5 font-semibold text-white">{{ \App\Support\TableDisplay::label($order->table_number) }}</td>
                             <td class="px-6 py-5 text-sm text-white/70">
                                 <div>{{ $order->customer_name ?? 'N/A' }}</div>
                                 <div class="text-xs text-white/40">{{ $order->customer_phone ?? 'N/A' }}</div>
@@ -272,7 +272,7 @@
                                                 </div>
                                                 <div class="flex justify-between">
                                                     <span class="text-white/40">Table:</span>
-                                                    <span class="text-white font-semibold">#{{ $order->table_number }}</span>
+                                                    <span class="text-white font-semibold">{{ \App\Support\TableDisplay::label($order->table_number) }}</span>
                                                 </div>
                                                 <div class="flex justify-between">
                                                     <span class="text-white/40">Waiter:</span>

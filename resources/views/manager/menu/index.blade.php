@@ -4,12 +4,12 @@
     </x-slot>
 
     <div x-data="{ selectedCategory: 'all' }">
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
                 <h2 class="text-3xl font-bold text-white tracking-tight">Menu Management</h2>
                 <p class="text-sm font-medium text-white/40 uppercase tracking-wider">Manage your categories and dishes</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex w-full flex-wrap gap-3 sm:w-auto">
                 <button onclick="openCategoriesModal()" class="glass px-5 py-3 rounded-xl font-semibold text-white/60 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>

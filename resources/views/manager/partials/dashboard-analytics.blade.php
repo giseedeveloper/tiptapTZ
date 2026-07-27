@@ -27,7 +27,7 @@
         $conicParts[] = $segment['color'].' '.$cursor.'% '.$end.'%';
         $cursor = $end;
     }
-    $conicGradient = count($conicParts) > 0 ? implode(', ', $conicParts) : 'rgba(255,255,255,0.08) 0% 100%';
+    $conicGradient = count($conicParts) > 0 ? implode(', ', $conicParts) : 'rgba(140,113,246,0.12) 0% 100%';
 
     $weekProgress = $weekComparison['previous'] > 0
         ? min(100, round(($weekComparison['current'] / $weekComparison['previous']) * 100))
@@ -61,8 +61,8 @@
         position: absolute;
         inset: 18%;
         border-radius: 9999px;
-        background: #12101c;
-        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        background: #FFFFFF;
+        box-shadow: inset 0 0 20px rgba(140, 113, 246, 0.08);
     }
 </style>
 

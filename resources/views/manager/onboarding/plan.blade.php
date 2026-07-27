@@ -24,8 +24,9 @@
         .plan-card.is-selected .plan-check { opacity: 1; transform: scale(1); }
         .plan-check { opacity: 0; transform: scale(0.5); transition: all 0.2s ease; }
     </style>
+    @include('partials.portal-theme')
 </head>
-<body class="text-white antialiased">
+<body class="portal-light text-white antialiased">
     <div class="fixed inset-0 pointer-events-none overflow-hidden">
         <div class="orb absolute top-[-8rem] right-[-6rem] w-[32rem] h-[32rem] bg-violet-600/15 rounded-full blur-[130px]"></div>
         <div class="orb absolute bottom-[-10rem] left-[-6rem] w-[30rem] h-[30rem] bg-cyan-600/10 rounded-full blur-[130px]" style="animation-delay:-7s"></div>

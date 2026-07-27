@@ -241,7 +241,7 @@
                                         @endif
                                     </div>
                                     <div>
-                                        <h4 class="text-lg font-bold text-white">Table #{{ $request->table_number }}</h4>
+                                        <h4 class="text-lg font-bold text-white">{{ \App\Support\TableDisplay::label($request->table_number) }}</h4>
                                         <p class="text-[10px] font-medium uppercase tracking-widest text-white/40">{{ $request->created_at->diffForHumans() }}</p>
                                     </div>
                                 </div>

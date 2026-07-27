@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#0f0a1e">
+    <meta name="theme-color" content="#4B256D">
     <title>TIPTAP ORDER @if(isset($restaurant)) · {{ $restaurant->name }} @endif</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,14 +29,15 @@
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .touch-action-manipulation { touch-action: manipulation; }
     </style>
+    @include('partials.portal-theme')
 </head>
-<body class="font-sans antialiased text-white min-h-screen">
-    <div class="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+<body class="portal-light font-sans antialiased text-white min-h-screen">
+    <div class="portal-brand-ambient fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div class="absolute top-0 right-0 w-[min(80vw,500px)] h-[min(80vw,500px)] bg-violet-600/15 rounded-full blur-[120px] -mr-32 -mt-32"></div>
-        <div class="absolute bottom-0 left-0 w-[min(80vw,500px)] h-[min(80vw,500px)] bg-cyan-600/15 rounded-full blur-[120px] -ml-32 -mb-32"></div>
+        <div class="absolute bottom-0 left-0 w-[min(80vw,500px)] h-[min(80vw,500px)] bg-fin-primary-dark/10 rounded-full blur-[120px] -ml-32 -mb-32"></div>
     </div>
 
-    <header class="sticky top-0 z-30 border-b border-white/10 glass pt-[env(safe-area-inset-top)]">
+    <header class="portal-brand-topbar sticky top-0 z-30 border-b border-white/10 glass pt-[env(safe-area-inset-top)]">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div class="flex items-center gap-2 shrink-0">

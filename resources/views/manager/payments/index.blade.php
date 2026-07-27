@@ -62,12 +62,12 @@
         }
     </style>
 
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
             <h2 class="text-3xl font-bold text-white tracking-tight">Payments & Revenue</h2>
             <p class="text-sm font-medium text-white/40 uppercase tracking-wider">Track your earnings and payment methods</p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex w-full flex-wrap gap-3 sm:w-auto">
             <form method="GET" action="{{ route('manager.payments.export') }}" class="inline">
                 <input type="hidden" name="period" value="{{ $period }}">
                 @if($period === 'custom')
@@ -125,29 +125,29 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="glass-card p-6 rounded-2xl">
             <p class="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Total Revenue</p>
-            <p class="text-3xl font-bold text-white mb-1">Tsh {{ number_format($totalRevenue) }}</p>
+            <p class="text-2xl xl:text-3xl font-bold text-white whitespace-nowrap mb-1">Tsh {{ number_format($totalRevenue) }}</p>
             <p class="text-xs text-emerald-400 font-semibold">{{ $totalOrders }} orders</p>
         </div>
         <div class="glass-card p-6 rounded-2xl">
             <p class="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Total Tips</p>
-            <p class="text-3xl font-bold text-white mb-1">Tsh {{ number_format($totalTips) }}</p>
+            <p class="text-2xl xl:text-3xl font-bold text-white whitespace-nowrap mb-1">Tsh {{ number_format($totalTips) }}</p>
             <p class="text-xs text-cyan-400 font-semibold">{{ $tips->count() }} tips</p>
         </div>
         <div class="glass-card p-6 rounded-2xl">
             <p class="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Avg Order Value</p>
-            <p class="text-3xl font-bold text-white mb-1">Tsh {{ number_format($avgOrderValue) }}</p>
+            <p class="text-2xl xl:text-3xl font-bold text-white whitespace-nowrap mb-1">Tsh {{ number_format($avgOrderValue) }}</p>
             <p class="text-xs text-violet-400 font-semibold">Per transaction</p>
         </div>
         <div class="glass-card p-6 rounded-2xl">
             <p class="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Total Earnings</p>
-            <p class="text-3xl font-bold text-white mb-1">Tsh {{ number_format($totalRevenue + $totalTips) }}</p>
+            <p class="text-2xl xl:text-3xl font-bold text-white whitespace-nowrap mb-1">Tsh {{ number_format($totalRevenue + $totalTips) }}</p>
             <p class="text-xs text-amber-400 font-semibold">Revenue + Tips</p>
         </div>
     </div>
 
     <!-- Revenue Chart -->
     <div class="revenue-chart-container glass-card p-8 rounded-2xl mb-8">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
                 <h3 class="text-xl font-bold text-white tracking-tight">
                     Revenue Trend
@@ -181,8 +181,8 @@
             @endif
         </div>
         
-        <div class="h-72 px-4 pb-4 border-b border-white/10">
-            <div class="h-full flex items-end justify-between gap-2">
+        <div class="h-72 max-w-full overflow-x-auto px-4 pb-4 border-b border-white/10">
+            <div class="h-full min-w-max flex items-end justify-between gap-2">
                 @forelse($dailyRevenue as $day)
                     @php
                         $maxRevenue = collect($dailyRevenue)->max('revenue') ?: 1;
@@ -221,7 +221,7 @@
         </div>
         
         <!-- Chart Legend & Stats -->
-        <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/5">
+        <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between mt-6 pt-4 border-t border-white/5">
             <div class="flex items-center gap-6">
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500"></div>
@@ -232,7 +232,7 @@
                     <span class="text-xs text-white/60">Growth</span>
                 </div>
             </div>
-            <div class="flex items-center gap-6 text-right">
+            <div class="grid w-full grid-cols-3 gap-4 text-right sm:w-auto sm:flex sm:items-center sm:gap-6">
                 <div>
                     <p class="text-[10px] text-white/40 uppercase tracking-wider">Total</p>
                     <p class="text-lg font-bold text-white">Tsh {{ number_format($totalCurrent) }}</p>
@@ -307,7 +307,7 @@
                     @forelse($payments as $payment)
                         <tr class="hover:bg-white/[0.02] transition-colors">
                             <td class="px-6 py-5 text-sm text-white/60">{{ $payment->created_at->format('M d, H:i') }}</td>
-                            <td class="px-6 py-5 font-semibold text-white">Table #{{ $payment->order?->table_number ?? 'N/A' }}</td>
+                            <td class="px-6 py-5 font-semibold text-white">{{ \App\Support\TableDisplay::label($payment->order?->table_number) }}</td>
                             <td class="px-6 py-5 text-sm text-cyan-400">{{ $payment->waiter?->name ?? 'Unassigned' }}</td>
                             <td class="px-6 py-5">
                                 <span class="bg-cyan-500/10 text-cyan-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border border-cyan-500/20">{{ $payment->method }}</span>

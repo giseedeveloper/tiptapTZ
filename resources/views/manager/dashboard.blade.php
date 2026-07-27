@@ -10,9 +10,9 @@
     @endif
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="manager-kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <!-- Stat 1: Orders -->
-        <div class="glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
+        <div class="manager-kpi-card glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-violet-500/20 to-violet-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-5">
@@ -29,7 +29,7 @@
         </div>
 
         <!-- Stat 2: Revenue -->
-        <div class="glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
+        <div class="manager-kpi-card glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-5">
@@ -46,7 +46,7 @@
         </div>
 
         <!-- Stat 3: Rating -->
-        <div class="glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
+        <div class="manager-kpi-card glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-5">
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Stat 4: Waiters -->
-        <div class="glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
+        <div class="manager-kpi-card glass-card rounded-2xl p-6 card-hover relative overflow-hidden group">
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-5">
@@ -88,13 +88,13 @@
     @endif
 
     <!-- Smart Live Order Tracking -->
-    <div class="mb-10">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h3 class="text-2xl font-bold text-white tracking-tight">Live Order Tracking</h3>
-                <p class="text-sm font-medium text-white/40 uppercase tracking-wider">Real-time kitchen & service status</p>
+    <div class="manager-live-tracking mb-10">
+        <div class="manager-live-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 min-w-0">
+            <div class="min-w-0">
+                <h3 class="text-xl sm:text-2xl font-bold text-white tracking-tight break-words">Live Order Tracking</h3>
+                <p class="text-xs sm:text-sm font-medium text-white/40 uppercase tracking-wide break-words">Real-time kitchen & service status</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex flex-wrap gap-2 sm:gap-3 shrink-0">
                 <button onclick="window.location.reload()" class="glass px-4 py-2.5 rounded-xl font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2 text-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
@@ -110,9 +110,9 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="manager-order-board grid grid-cols-1 lg:grid-cols-4 gap-6">
             <!-- Pending Column -->
-            <div class="glass-card p-5 rounded-2xl">
+            <div class="manager-status-card glass-card p-5 rounded-2xl">
                 <div class="flex items-center justify-between mb-5 px-1">
                     <div class="flex items-center gap-2">
                         <div class="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
@@ -124,7 +124,7 @@
                     @forelse($pendingOrders->take(3) as $order)
                         <div class="glass p-4 rounded-xl card-hover">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-bold text-white">Table #{{ $order->table_number }}</span>
+                                <span class="text-sm font-bold text-white">{{ \App\Support\TableDisplay::label($order->table_number) }}</span>
                                 <span class="text-[10px] font-medium text-white/40">{{ $order->created_at->diffForHumans() }}</span>
                             </div>
                             <div class="flex -space-x-2 mb-3">
@@ -166,7 +166,7 @@
             </div>
 
             <!-- Preparing Column -->
-            <div class="glass-card p-5 rounded-2xl">
+            <div class="manager-status-card glass-card p-5 rounded-2xl">
                 <div class="flex items-center justify-between mb-5 px-1">
                     <div class="flex items-center gap-2">
                         <div class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
@@ -178,7 +178,7 @@
                     @forelse($preparingOrders->take(3) as $order)
                         <div class="glass p-4 rounded-xl card-hover">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-bold text-white">Table #{{ $order->table_number }}</span>
+                                <span class="text-sm font-bold text-white">{{ \App\Support\TableDisplay::label($order->table_number) }}</span>
                                 <div class="flex items-center gap-1 text-amber-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -208,7 +208,7 @@
             </div>
 
             <!-- Served Column -->
-            <div class="glass-card p-5 rounded-2xl">
+            <div class="manager-status-card glass-card p-5 rounded-2xl">
                 <div class="flex items-center justify-between mb-5 px-1">
                     <div class="flex items-center gap-2">
                         <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -220,7 +220,7 @@
                     @forelse($servedOrders->take(3) as $order)
                         <div class="glass p-4 rounded-xl card-hover">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-bold text-white">Table #{{ $order->table_number }}</span>
+                                <span class="text-sm font-bold text-white">{{ \App\Support\TableDisplay::label($order->table_number) }}</span>
                                 <span class="bg-emerald-500/10 text-emerald-400 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border border-emerald-500/20">Ready to Pay</span>
                             </div>
                             <div class="flex items-center gap-3 mb-3">
@@ -250,7 +250,7 @@
             </div>
 
             <!-- Paid Column -->
-            <div class="glass-card p-5 rounded-2xl">
+            <div class="manager-status-card glass-card p-5 rounded-2xl">
                 <div class="flex items-center justify-between mb-5 px-1">
                     <div class="flex items-center gap-2">
                         <div class="w-2 h-2 bg-cyan-500 rounded-full"></div>
@@ -262,7 +262,7 @@
                     @forelse($paidOrders->take(3) as $order)
                         <div class="glass p-4 rounded-xl opacity-60">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-bold text-white">Table #{{ $order->table_number }}</span>
+                                <span class="text-sm font-bold text-white">{{ \App\Support\TableDisplay::label($order->table_number) }}</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
                                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                                 </svg>
@@ -283,7 +283,7 @@
     </div>
 
     <!-- Recent Feedback & Messages -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="manager-secondary-grid grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Customer Feedback -->
         <div class="glass-card p-6 rounded-2xl">
             <div class="flex items-center justify-between mb-6">
